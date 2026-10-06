@@ -1,0 +1,31 @@
+@model BibliotecaPublica.Models.LoginViewModel
+
+@if (TempData["Mensaje"] != null)
+{
+    <div id="alerta-mensaje" class="alert alert-success text-center">
+        @TempData["Mensaje"]
+    </div>
+}
+
+<form asp-controller="Usuarios" asp-action="Login" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+
+    <div asp-validation-summary="All" class="alert alert-danger"></div>
+
+    <div class="form-group">
+        <label asp-for="Email" class="form-label">Correo o Usuario</label>
+        <input asp-for="Email" class="form-control" placeholder="ingreso@ejemplo.com" required autofocus />
+        <span asp-validation-for="Email" class="mensaje-error"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Password" class="form-label">Contraseña</label>
+        <input asp-for="Password" type="password" class="form-control" required />
+        <span asp-validation-for="Password" class="mensaje-error"></span>
+    </div>
+
+    <div class="form-actions form-actions-full">
+        <button type="submit" class="btn btn-primary btn-full">Iniciar Sesión</button>
+    </div>
+</form>

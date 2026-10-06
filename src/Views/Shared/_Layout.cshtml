@@ -1,5 +1,6 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,25 +9,84 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/src.styles.css" asp-append-version="true" />
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
+
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">src</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
+                        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <ul class="navbar-nav flex-grow-1">
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Inicio</a>
+                            </li>
+                            @if (User.IsInRole("Administrador"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Usuarios" asp-action="Index">Usuarios</a>
+                                </li>
+                            }
+                        </ul>
+                        <ul class="navbar-nav align-items-center gap-3">
+                            @if (User.Identity != null && User.Identity.IsAuthenticated)
+                            {
+                                var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                                var fullName = User.FindFirst("FullName")?.Value ?? User.Identity.Name;
+                                var avatarUrl = User.FindFirst("Avatar")?.Value;
+
+                                <li class="nav-item d-flex align-items-center gap-2">
+                                    <a class="d-flex align-items-center text-decoration-none text-dark gap-2"
+                                       href="/Perfil/@currentUserId">
+                                        @if (!string.IsNullOrEmpty(avatarUrl))
+                                        {
+                                            <img src="@avatarUrl" alt="Avatar" class="rounded-circle border"
+                                                 style="width: 36px; height: 36px; object-fit: cover;" />
+                                        }
+                                        else
+                                        {
+                                            <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center fw-bold"
+                                                 style="width: 36px; height: 36px; font-size: 14px;">
+                                                @(string.IsNullOrEmpty(fullName) ? "U" : fullName.Substring(0, 1).ToUpper())
+                                            </div>
+                                        }
+                                        <span class="fw-semibold">@fullName</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1"
+                                       asp-controller="Usuarios" asp-action="Logout">
+                                        <span class="material-symbols-outlined" style="font-size: 18px;">logout</span>
+                                        Cerrar Sesión
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Usuarios" asp-action="Login">Iniciar Sesión</a>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <ul class="navbar-nav ms-auto">
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Usuarios" asp-action="Login">Iniciar Sesión</a>
+                            </li>
+                        </ul>
+                    }
                 </div>
             </div>
         </nav>
@@ -39,7 +99,7 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2026 - src - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; Biblioteca pública - Laboratorio II - 2026
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
@@ -47,4 +107,5 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
+
 </html>

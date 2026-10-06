@@ -1,0 +1,78 @@
+@model BibliotecaPublica.Models.Usuario
+@using BibliotecaPublica.Models
+
+@{
+    ViewData["Title"] = "Crear Nuevo Usuario";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/formularios.css" />
+}
+
+<div class="form-card form-card-narrow">
+    <div class="card-header-flex">
+        <h2>Crear Nuevo Usuario</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            Volver
+        </a>
+    </div>
+
+    <form asp-action="Create" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <div class="form-group">
+            <label asp-for="Nombre" class="form-label">Nombre</label>
+            <input asp-for="Nombre" class="form-control" required />
+            <span asp-validation-for="Nombre" class="mensaje-error"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Apellido" class="form-label">Apellido</label>
+            <input asp-for="Apellido" class="form-control" required />
+            <span asp-validation-for="Apellido" class="mensaje-error"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="NombreUsuario" class="form-label">Nombre de Usuario</label>
+            <input asp-for="NombreUsuario" class="form-control" required />
+            <span asp-validation-for="NombreUsuario" class="mensaje-error"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Email" class="form-label">Correo Electrónico</label>
+            <input asp-for="Email" type="email" class="form-control" required />
+            <span asp-validation-for="Email" class="mensaje-error"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Password" class="form-label">Contraseña</label>
+            <input asp-for="Password" type="password" class="form-control" required />
+            <span asp-validation-for="Password" class="mensaje-error"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Rol" class="form-label">Rol de Usuario</label>
+            <select asp-for="Rol" class="form-select" asp-items="Html.GetEnumSelectList<EnRoles>()">
+            </select>
+            <span asp-validation-for="Rol" class="mensaje-error"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="AvatarFile" class="form-label">Foto de Perfil (Opcional)</label>
+            <input asp-for="AvatarFile" type="file" accept="image/*" class="form-control" />
+            <span asp-validation-for="AvatarFile" class="mensaje-error"></span>
+        </div>
+
+        <div class="form-actions">
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Guardar Usuario</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

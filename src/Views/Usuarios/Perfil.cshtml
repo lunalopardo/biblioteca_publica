@@ -1,0 +1,153 @@
+@using BibliotecaPublica.Models
+@model BibliotecaPublica.Models.Usuario
+@{
+    ViewData["Title"] = "Perfil de Usuario";
+    int currentUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
+    bool esMiPerfil = (Model.Id == currentUserId);
+    bool esAdmin = User.IsInRole("Administrador");
+    var mensaje = ViewBag.Mensaje ?? TempData["Mensaje"];
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/formularios.css" />
+}
+
+<div class="form-card">
+    <div class="card-header-flex">
+        <h3>@(esMiPerfil ? "Mi Perfil" : $"Perfil de {Model.NombreUsuario}")</h3>
+        <span class="badge badge-role">
+            @(Model.Rol == 1 ? "Administrador" : "Empleado")
+        </span>
+    </div>
+
+    @if (!Model.Activo)
+    {
+        <div class="alert alert-danger text-center">
+            Este usuario se encuentra inactivo en el sistema.
+        </div>
+    }
+
+    @if (mensaje != null)
+    {
+        <div id="alerta-mensaje" class="alert alert-success text-center">
+            @mensaje
+        </div>
+    }
+
+    <form asp-controller="Usuarios" asp-action="Perfil" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data">
+        
+        <div class="avatar-profile-box">
+            <img id="imgPreview" src="@(string.IsNullOrEmpty(Model.Avatar) ? "#" : Model.Avatar)"
+                 class="avatar-img-lg @(string.IsNullOrEmpty(Model.Avatar) ? "is-hidden" : "")" alt="Avatar" />
+
+            <div id="avatarPlaceholder"
+                 class="avatar-placeholder-lg @(!string.IsNullOrEmpty(Model.Avatar) ? "is-hidden" : "")">
+                @(string.IsNullOrEmpty(Model.Nombre) ? "U" : Model.Nombre.Substring(0, 1).ToUpper())
+            </div>
+
+            @if (Model.Activo)
+            {
+                <div>
+                    <label for="avatarFile" class="btn btn-outline-secondary">
+                        Cambiar Foto de Perfil
+                    </label>
+                    <input type="file" id="avatarFile" name="avatarFile" accept="image/*" class="is-hidden" onchange="previewImage(event)">
+                </div>
+            }
+        </div>
+
+        <div class="form-grid-2">
+            <div class="form-group">
+                <label class="form-label">Nombre de Usuario</label>
+                <input type="text" value="@Model.NombreUsuario" disabled class="form-control" />
+            </div>
+            <div class="form-group">
+                <label asp-for="Email" class="form-label">Correo Electrónico</label>
+                <input asp-for="Email" type="email" class="form-control" required disabled="@(!Model.Activo)" />
+            </div>
+        </div>
+
+        <div class="form-grid-2">
+            <div class="form-group">
+                <label asp-for="Nombre" class="form-label">Nombre</label>
+                <input asp-for="Nombre" type="text" class="form-control" required disabled="@(!Model.Activo)" />
+            </div>
+            <div class="form-group">
+                <label asp-for="Apellido" class="form-label">Apellido</label>
+                <input asp-for="Apellido" type="text" class="form-control" required disabled="@(!Model.Activo)" />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Password" class="form-label">Contraseña</label>
+            <input asp-for="Password" type="password" class="form-control" placeholder="Dejar en blanco para mantener la actual" disabled="@(!Model.Activo)" />
+        </div>
+
+        <div class="form-actions">
+            <a href="javascript:history.back()" class="btn btn-outline-secondary">Volver</a>
+            @if (Model.Activo)
+            {
+                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+            }
+        </div>
+
+    </form>
+
+    @if (esAdmin && !esMiPerfil)
+    {
+        if (Model.Activo)
+        {
+            <div class="action-banner action-banner-danger">
+                <div>
+                    <strong class="action-banner-title">Dar de baja empleado</strong>
+                    <p class="action-banner-desc">Esta acción desactivará al usuario del sistema.</p>
+                </div>
+                <form asp-controller="Usuarios" asp-action="Eliminar" asp-route-id="@Model.Id" method="post"
+                      onsubmit="return confirm('¿Está seguro de que desea desactivar a este usuario?');">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        }
+        else
+        {
+            <div class="action-banner action-banner-success">
+                <div>
+                    <strong class="action-banner-title">Reactivar empleado</strong>
+                    <p class="action-banner-desc">Esta acción le devolverá el acceso al sistema a este usuario.</p>
+                </div>
+                <form asp-controller="Usuarios" asp-action="Reactivar" asp-route-id="@Model.Id" method="post"
+                      onsubmit="return confirm('¿Está seguro de que desea reactivar a este usuario?');">
+                    <button type="submit" class="btn btn-success">Reactivar Empleado</button>
+                </form>
+            </div>
+        }
+    }
+
+</div>
+
+@section Scripts {
+    <script src="~/js/alert.js" asp-append-version="true"></script>
+    <script>
+        function previewImage(event) {
+            const input = event.target;
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    const imgPreview = document.getElementById('imgPreview');
+                    const placeholder = document.getElementById('avatarPlaceholder');
+
+                    imgPreview.src = e.target.result;
+                    imgPreview.classList.remove('is-hidden');
+
+                    if (placeholder) {
+                        placeholder.classList.add('is-hidden');
+                    }
+                };
+
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
+}

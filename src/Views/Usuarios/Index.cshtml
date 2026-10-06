@@ -1,0 +1,145 @@
+@model IEnumerable<BibliotecaPublica.Models.Usuario>
+@{
+    ViewData["Title"] = "Listado de Usuarios";
+    string filtroActual = ViewData["FiltroActual"] as string ?? "";
+    int paginaActual = (int)(ViewData["PaginaActual"] ?? 1);
+    int totalPaginas = (int)(ViewData["TotalPaginas"] ?? 1);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/formularios.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <h3>Listado de Usuarios</h3>
+        <a asp-action="Create" class="btn btn-primary">
+            + Nuevo Usuario
+        </a>
+    </div>
+
+    @if (TempData["Mensaje"] != null)
+    {
+        <div id="alerta-mensaje" class="alert alert-success text-center">
+            @TempData["Mensaje"]
+        </div>
+    }
+
+    <form asp-action="Index" method="get" class="search-bar">
+        <input type="text" name="buscar" value="@filtroActual" class="form-control"
+               placeholder="Buscar por usuario, nombre, apellido o email..." />
+        
+        <button type="submit" class="btn btn-primary">
+            <span class="material-symbols-outlined">search</span>
+            <span>Buscar</span>
+        </button>
+
+        @if (!string.IsNullOrEmpty(filtroActual))
+        {
+            <a asp-action="Index" class="btn btn-outline-secondary">Limpiar</a>
+        }
+    </form>
+
+    <div class="table-responsive">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>Avatar</th>
+                    <th>Usuario</th>
+                    <th>Nombre y Apellido</th>
+                    <th>Email</th>
+                    <th>Rol</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-3">No se encontraron usuarios.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var usuario in Model)
+                    {
+                        <tr>
+                            <td>
+                                @if (!string.IsNullOrEmpty(usuario.Avatar))
+                                {
+                                    <img src="@usuario.Avatar" alt="Avatar" class="avatar-img-sm" />
+                                }
+                                else
+                                {
+                                    <div class="avatar-placeholder-sm">
+                                        @(string.IsNullOrEmpty(usuario.Nombre) ? "U" : usuario.Nombre.Substring(0, 1).ToUpper())
+                                    </div>
+                                }
+                            </td>
+                            <td class="fw-bold">@usuario.NombreUsuario</td>
+                            <td>@usuario.Nombre @usuario.Apellido</td>
+                            <td>@usuario.Email</td>
+                            <td>
+                                <span class="badge badge-role">
+                                    @usuario.RolNombre
+                                </span>
+                            </td>
+                            <td>
+                                @if (usuario.Activo)
+                                {
+                                    <span class="badge badge-active">Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-inactive">Inactivo</span>
+                                }
+                            </td>
+                            <td class="actions-cell">
+                                <a asp-action="Perfil" asp-route-id="@usuario.Id" class="btn btn-outline-secondary btn-sm">
+                                    Ver Perfil
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (totalPaginas > 1)
+    {
+        <nav class="pagination-container">
+            <ul class="pagination-custom">
+                <li class="page-item @(paginaActual <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-pagina="@(paginaActual - 1)"
+                       asp-route-buscar="@filtroActual">
+                        Anterior
+                    </a>
+                </li>
+
+                @for (int i = 1; i <= totalPaginas; i++)
+                {
+                    <li class="page-item @(i == paginaActual ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-pagina="@i" asp-route-buscar="@filtroActual">
+                            @i
+                        </a>
+                    </li>
+                }
+
+                <li class="page-item @(paginaActual >= totalPaginas ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-pagina="@(paginaActual + 1)"
+                       asp-route-buscar="@filtroActual">
+                        Siguiente
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/alert.js" asp-append-version="true"></script>
+}
