@@ -1,0 +1,72 @@
+@model BibliotecaPublica.Models.Afiliado
+
+@{
+    ViewData["Title"] = "Detalles del Afiliado";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/formularios.css" />
+}
+
+<div class="form-card form-card-narrow">
+    <div class="card-header-flex">
+        <h2>Detalles del Afiliado</h2>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Nombre y Apellido</label>
+        <div class="form-control-view">@Model.Apellido, @Model.Nombre</div>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Correo Electrónico</label>
+        <div class="form-control-view">@Model.Email</div>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Teléfono</label>
+        <div class="form-control-view">@(string.IsNullOrEmpty(Model.Telefono) ? "No especificado" : Model.Telefono)
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Fecha de Alta</label>
+        <div class="form-control-view">@Model.FechaAlta.ToString("dd/MM/yyyy")</div>
+    </div>
+
+    <div class="form-grid-2">
+        <div class="form-group">
+            <label class="form-label">Estado de la Cuota</label>
+            <div style="margin-top: 6px;">
+                @if (Model.Estado)
+                {
+                    <span class="badge badge-active">Al día</span>
+                }
+                else
+                {
+                    <span class="badge badge-inactive">Adeuda</span>
+                }
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Estado de Sanción</label>
+            <div style="margin-top: 6px;">
+                @if (Model.Sancionado)
+                {
+                    <span class="badge badge-inactive">Sancionado</span>
+                }
+                else
+                {
+                    <span class="badge badge-active">Normal</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <a asp-action="Index" class="btn btn-outline-secondary">Volver al Listado</a>
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Editar Afiliado</a>
+    </div>
+</div>

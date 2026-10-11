@@ -27,6 +27,7 @@ builder.Services.AddScoped<IPasswordHasher<Usuario>, PasswordHasher<Usuario>>();
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddScoped<RepositorioUsuario>();
+builder.Services.AddScoped<RepositorioAfiliado>();
 
 var app = builder.Build();
 
