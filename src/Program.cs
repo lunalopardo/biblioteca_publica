@@ -28,6 +28,8 @@ builder.Services.AddControllersWithViews();
 
 builder.Services.AddScoped<RepositorioUsuario>();
 builder.Services.AddScoped<RepositorioAfiliado>();
+builder.Services.AddScoped<RepositorioAutor>();
+builder.Services.AddScoped<RepositorioNacionalidad>();
 
 var app = builder.Build();
 
