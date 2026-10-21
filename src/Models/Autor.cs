@@ -15,8 +15,10 @@ public class Autor
     [StringLength(30, ErrorMessage = "El apellido no puede superar los 30 caracteres.")]
     public string Apellido { get; set; } = string.Empty;
 
-    [StringLength(30, ErrorMessage = "La nacionalidad no puede superar los 30 caracteres.")]
-    public string? Nacionalidad { get; set; }
+    [Display(Name = "Nacionalidad")]
+    [Required(ErrorMessage = "Debe seleccionar una nacionalidad.")]
+    public int IdNacionalidad { get; set; }
+    public string? NacionalidadNombre { get; set; }
 
     [Display(Name = "Biografía")]
     public string? Biografia { get; set; }
