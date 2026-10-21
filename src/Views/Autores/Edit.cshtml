@@ -1,0 +1,99 @@
+@model BibliotecaPublica.Models.Autor
+
+@{
+    ViewData["Title"] = "Editar Autor";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/formularios.css" />
+}
+
+<div class="form-card form-card-narrow">
+    <div class="card-header-flex">
+        <h2>Editar Autor</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            Volver
+        </a>
+    </div>
+
+    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="Foto" />
+
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <div class="avatar-profile-box">
+            <img id="imgPreview" src="@(string.IsNullOrEmpty(Model.Foto) ? "#" : Model.Foto)"
+                 class="avatar-img-lg @(string.IsNullOrEmpty(Model.Foto) ? "is-hidden" : "")" alt="Foto" />
+
+            <div id="picturePlaceholder"
+                 class="avatar-placeholder-lg @(!string.IsNullOrEmpty(Model.Foto) ? "is-hidden" : "")">
+                @(string.IsNullOrEmpty(Model.Nombre) ? "A" : Model.Nombre.Substring(0, 1).ToUpper())
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Nombre" class="form-label">Nombre</label>
+            <input asp-for="Nombre" class="form-control" required />
+            <span asp-validation-for="Nombre" class="mensaje-error"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Apellido" class="form-label">Apellido</label>
+            <input asp-for="Apellido" class="form-control" required />
+            <span asp-validation-for="Apellido" class="mensaje-error"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="IdNacionalidad" class="form-label">Nacionalidad</label>
+            <select asp-for="IdNacionalidad" class="form-control"
+                    asp-items="@(new SelectList(ViewBag.Nacionalidades, "Id", "Nombre"))">
+                <option value="">-- Seleccione una nacionalidad --</option>
+            </select>
+            <span asp-validation-for="IdNacionalidad" class="mensaje-error"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Biografia" class="form-label">Biografía</label>
+            <textarea asp-for="Biografia" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="Biografia" class="mensaje-error"></span>
+        </div>
+
+        <div class="form-group">
+            <label for="fotoFile" class="form-label">Cambiar Foto (Opcional)</label>
+            <input type="file" id="fotoFile" name="fotoFile" accept="image/*" class="form-control"
+                   onchange="previewImage(event)" />
+        </div>
+
+        <div class="form-actions">
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function previewImage(event) {
+            const input = event.target;
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const imgPreview = document.getElementById('imgPreview');
+                    const placeholder = document.getElementById('picturePlaceholder');
+
+                    imgPreview.src = e.target.result;
+                    imgPreview.classList.remove('is-hidden');
+
+                    if (placeholder) {
+                        placeholder.classList.add('is-hidden');
+                    }
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
+}

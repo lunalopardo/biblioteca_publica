@@ -1,0 +1,49 @@
+@model BibliotecaPublica.Models.Autor
+
+@{
+    ViewData["Title"] = "Detalles del Autor";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/formularios.css" />
+}
+
+<div class="form-card form-card-narrow">
+    <div class="card-header-flex">
+        <h2>Detalles del Autor</h2>
+    </div>
+
+    <div class="avatar-profile-box" style="text-align: center; margin-bottom: 20px;">
+        @if (!string.IsNullOrEmpty(Model.Foto))
+        {
+            <img src="@Model.Foto" alt="Foto del Autor" class="avatar-img-lg" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;" />
+        }
+        else
+        {
+            <div class="avatar-placeholder-lg" style="width: 100px; height: 100px; border-radius: 50%; background-color: var(--primary-color); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto;">
+                @(string.IsNullOrEmpty(Model.Nombre) ? "A" : Model.Nombre.Substring(0, 1).ToUpper())
+            </div>
+        }
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Nombre y Apellido</label>
+        <div class="form-control-view">@Model.Apellido, @Model.Nombre</div>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Nacionalidad</label>
+        <div class="form-control-view">@Model.NacionalidadNombre</div>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Biografía</label>
+        <div class="form-control-view">@(string.IsNullOrEmpty(Model.Biografia) ? "Sin biografía" : Model.Biografia)</div>
+    </div>
+
+    <div class="form-actions">
+        <a asp-action="Index" class="btn btn-outline-secondary">Volver al Listado</a>
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Editar Autor</a>
+    </div>
+</div>

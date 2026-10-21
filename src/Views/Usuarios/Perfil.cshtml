@@ -35,7 +35,8 @@
         </div>
     }
 
-    <form asp-controller="Usuarios" asp-action="Perfil" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data">
+    <form asp-controller="Usuarios" asp-action="Perfil" asp-route-id="@Model.Id" method="post"
+          enctype="multipart/form-data">
         
         <div class="avatar-profile-box">
             <img id="imgPreview" src="@(string.IsNullOrEmpty(Model.Avatar) ? "#" : Model.Avatar)"
@@ -52,7 +53,8 @@
                     <label for="avatarFile" class="btn btn-outline-secondary">
                         Cambiar Foto de Perfil
                     </label>
-                    <input type="file" id="avatarFile" name="avatarFile" accept="image/*" class="is-hidden" onchange="previewImage(event)">
+                    <input type="file" id="avatarFile" name="avatarFile" accept="image/*" class="is-hidden"
+                           onchange="previewImage(event)">
                 </div>
             }
         </div>
@@ -81,7 +83,8 @@
 
         <div class="form-group">
             <label asp-for="Password" class="form-label">Contraseña</label>
-            <input asp-for="Password" type="password" class="form-control" placeholder="Dejar en blanco para mantener la actual" disabled="@(!Model.Activo)" />
+            <input asp-for="Password" type="password" class="form-control"
+                   placeholder="Dejar en blanco para mantener la actual" disabled="@(!Model.Activo)" />
         </div>
 
         <div class="form-actions">

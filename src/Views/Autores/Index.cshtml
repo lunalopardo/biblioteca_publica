@@ -1,0 +1,167 @@
+@model IEnumerable<BibliotecaPublica.Models.Autor>
+@{
+    ViewData["Title"] = "Listado de Autores";
+    string filtroActual = ViewData["FiltroActual"] as string ?? "";
+    int paginaActual = (int)(ViewData["PaginaActual"] ?? 1);
+    int totalPaginas = (int)(ViewData["TotalPaginas"] ?? 1);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/formularios.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <h3>Listado de Autores</h3>
+        <a asp-action="Create" class="btn btn-primary">
+            + Nuevo Autor
+        </a>
+    </div>
+
+    @if (TempData["Mensaje"] != null)
+    {
+        <div id="alerta-mensaje" class="alert alert-success text-center">
+            @TempData["Mensaje"]
+        </div>
+    }
+
+    <form asp-action="Index" method="get" class="search-bar">
+        <input type="text" name="buscar" value="@filtroActual" class="form-control"
+               placeholder="Buscar por nombre o apellido..." />
+        
+        <button type="submit" class="btn btn-primary">
+            <span class="material-symbols-outlined">search</span>
+            <span>Buscar</span>
+        </button>
+
+        @if (!string.IsNullOrEmpty(filtroActual))
+        {
+            <a asp-action="Index" class="btn btn-outline-secondary">Limpiar</a>
+        }
+    </form>
+
+    <div class="table-responsive">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>Foto</th>
+                    <th>Nombre y Apellido</th>
+                    <th>Nacionalidad</th>
+                    <th>Biografía</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center py-3">No se encontraron autores registrados.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var autor in Model)
+                    {
+                        <tr>
+                            <td>
+                                @if (!string.IsNullOrEmpty(autor.Foto))
+                                {
+                                    <img src="@autor.Foto" alt="Foto" class="avatar-img-sm" />
+                                }
+                                else
+                                {
+                                    <div class="avatar-placeholder-sm">
+                                        @(string.IsNullOrEmpty(autor.Nombre) ? "A" : autor.Nombre.Substring(0, 1).ToUpper())
+                                    </div>
+                                }
+                            </td>
+                            <td class="fw-bold">@autor.Apellido, @autor.Nombre</td>
+                            <td>@autor.NacionalidadNombre</td>
+                            <td>@(string.IsNullOrEmpty(autor.Biografia) ? "-" : autor.Biografia)</td>
+                            
+                            <td class="actions-cell">
+                                <a asp-action="Details" asp-route-id="@autor.Id" class="btn btn-outline-secondary btn-sm">
+                                    Ver
+                                </a>
+                                <a asp-action="Edit" asp-route-id="@autor.Id" class="btn btn-outline-secondary btn-sm">
+                                    Editar
+                                </a>
+                                @if (User.IsInRole("Administrador"))
+                                {
+                                    <button type="button" class="btn btn-danger btn-sm"
+                                            onclick="abrirModalEliminar(@autor.Id, '@autor.Apellido, @autor.Nombre')">
+                                        Eliminar
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (totalPaginas > 1)
+    {
+        <nav class="pagination-container">
+            <ul class="pagination-custom">
+                <li class="page-item @(paginaActual <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-pagina="@(paginaActual - 1)"
+                       asp-route-buscar="@filtroActual">
+                        Anterior
+                    </a>
+                </li>
+
+                @for (int i = 1; i <= totalPaginas; i++)
+                {
+                    <li class="page-item @(i == paginaActual ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-pagina="@i" asp-route-buscar="@filtroActual">
+                            @i
+                        </a>
+                    </li>
+                }
+
+                <li class="page-item @(paginaActual >= totalPaginas ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-pagina="@(paginaActual + 1)"
+                       asp-route-buscar="@filtroActual">
+                        Siguiente
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>
+
+<!-- Modal de Eliminación -->
+<div id="modalEliminar" class="custom-modal-overlay" style="display: none;">
+    <div class="custom-modal">
+        <h3 class="modal-title">Confirmar Baja</h3>
+        <p id="modalTexto" class="modal-desc">¿Está seguro de que desea dar de baja a este autor?</p>
+        
+        <form id="formEliminar" asp-action="Delete" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="autorIdEliminar" name="id" />
+            <div class="form-actions" style="margin-top: 20px;">
+                <button type="button" class="btn btn-outline-secondary" onclick="cerrarModalEliminar()">Cancelar</button>
+                <button type="submit" class="btn btn-danger">Sí, dar de baja</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/alert.js" asp-append-version="true"></script>
+    <script>
+        function abrirModalEliminar(id, nombreAutor) {
+            document.getElementById('autorIdEliminar').value = id;
+            document.getElementById('modalTexto').innerText = `¿Está seguro de que desea dar de baja a "${nombreAutor}"?`;
+            document.getElementById('modalEliminar').style.display = 'flex';
+        }
+
+        function cerrarModalEliminar() {
+            document.getElementById('modalEliminar').style.display = 'none';
+        }
+    </script>
+}
