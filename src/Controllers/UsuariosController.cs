@@ -90,8 +90,8 @@ public class UsuariosController : Controller
         return View();
     }
 
-    // GET: /Perfil/5
-    [HttpGet("Perfil/{id:int}")]
+    // GET: /Usuarios/Perfil/5
+    [HttpGet]
     public IActionResult Perfil(int id)
     {
         int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
@@ -113,8 +113,8 @@ public class UsuariosController : Controller
         return View(usuario);
     }
 
-    // POST: /Perfil/5
-    [HttpPost("Perfil/{id:int}")]
+    // POST: /Usuarios/Perfil/5
+    [HttpPost]
     public async Task<IActionResult> Perfil(int id, Usuario modelo)
     {
         int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
