@@ -32,7 +32,7 @@
                placeholder="Buscar por usuario, nombre, apellido o email..." />
         
         <button type="submit" class="btn btn-primary">
-            <span class="material-symbols-outlined">search</span>
+            <span class="material-symbols-outlined" style="font-size: 1.1rem; vertical-align: middle;">search</span>
             <span>Buscar</span>
         </button>
 
@@ -59,7 +59,7 @@
                 @if (!Model.Any())
                 {
                     <tr>
-                        <td colspan="7" class="text-center py-3">No se encontraron usuarios.</td>
+                        <td colspan="7" class="text-center py-4 text-muted">No se encontraron usuarios.</td>
                     </tr>
                 }
                 else
@@ -83,23 +83,23 @@
                             <td>@usuario.Nombre @usuario.Apellido</td>
                             <td>@usuario.Email</td>
                             <td>
-                                <span class="badge badge-role">
+                                <span class="badge-role">
                                     @usuario.RolNombre
                                 </span>
                             </td>
                             <td>
                                 @if (usuario.Activo)
                                 {
-                                    <span class="badge badge-active">Activo</span>
+                                    <span class="badge-active">Activo</span>
                                 }
                                 else
                                 {
-                                    <span class="badge badge-inactive">Inactivo</span>
+                                    <span class="badge-inactive">Inactivo</span>
                                 }
                             </td>
-                            <td class="actions-cell">
-                                <a asp-action="Perfil" asp-route-id="@usuario.Id" class="btn btn-outline-secondary btn-sm">
-                                    Ver Perfil
+                            <td class="text-end">
+                                <a asp-action="Perfil" asp-route-id="@usuario.Id" class="btn-icon" title="Ver detalle">
+                                    <span class="material-symbols-outlined">visibility</span>
                                 </a>
                             </td>
                         </tr>

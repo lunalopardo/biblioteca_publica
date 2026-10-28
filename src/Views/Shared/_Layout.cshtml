@@ -40,6 +40,12 @@
                                 <li class="nav-item">
                                     <a class="nav-link" asp-controller="Afiliados" asp-action="Index">Afiliados</a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Generos" asp-action="Index">Géneros</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Autores" asp-action="Index">Autores</a>
+                                </li>
                             }
                         </ul>
                         <ul class="navbar-nav align-items-center gap-3">
@@ -51,7 +57,7 @@
 
                                 <li class="nav-item d-flex align-items-center gap-2">
                                     <a class="d-flex align-items-center text-decoration-none text-dark gap-2"
-                                       href="/Perfil/@currentUserId">
+                                       href="/Usuarios/Perfil/@currentUserId">
                                         @if (!string.IsNullOrEmpty(avatarUrl))
                                         {
                                             <img src="@avatarUrl" alt="Avatar" class="rounded-circle border"

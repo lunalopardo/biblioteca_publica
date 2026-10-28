@@ -9,7 +9,8 @@
 @section Styles {
     <link rel="stylesheet" href="~/css/site.css" />
     <link rel="stylesheet" href="~/css/formularios.css" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 }
 
 <div class="page-container">
@@ -49,8 +50,7 @@
                     <th>Foto</th>
                     <th>Nombre y Apellido</th>
                     <th>Nacionalidad</th>
-                    <th>Biografía</th>
-                    <th class="text-end">Acciones</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -79,20 +79,20 @@
                             </td>
                             <td class="fw-bold">@autor.Apellido, @autor.Nombre</td>
                             <td>@autor.NacionalidadNombre</td>
-                            <td>@(string.IsNullOrEmpty(autor.Biografia) ? "-" : autor.Biografia)</td>
                             
                             <td class="actions-cell">
-                                <a asp-action="Details" asp-route-id="@autor.Id" class="btn btn-outline-secondary btn-sm">
-                                    Ver
+                                <a asp-action="Details" asp-route-id="@autor.Id" class="btn-icon" title="Ver detalle">
+                                    <span class="material-symbols-outlined">visibility</span>
                                 </a>
-                                <a asp-action="Edit" asp-route-id="@autor.Id" class="btn btn-outline-secondary btn-sm">
-                                    Editar
+                                <a asp-action="Edit" asp-route-id="@autor.Id" class="btn-icon" title="Editar">
+                                    <span class="material-symbols-outlined">edit</span>
                                 </a>
                                 @if (User.IsInRole("Administrador"))
                                 {
-                                    <button type="button" class="btn btn-danger btn-sm"
-                                            onclick="abrirModalEliminar(@autor.Id, '@autor.Apellido, @autor.Nombre')">
-                                        Eliminar
+                                    <button type="button" class="btn-icon btn-icon-danger" title="Eliminar" data-bs-toggle="modal"
+                                            data-bs-target="#modalEliminar" data-id="@autor.Id"
+                                            data-nombre="@autor.Apellido, @autor.Nombre">
+                                        <span class="material-symbols-outlined">delete</span>
                                     </button>
                                 }
                             </td>
@@ -144,7 +144,8 @@
             @Html.AntiForgeryToken()
             <input type="hidden" id="autorIdEliminar" name="id" />
             <div class="form-actions" style="margin-top: 20px;">
-                <button type="button" class="btn btn-outline-secondary" onclick="cerrarModalEliminar()">Cancelar</button>
+                <button type="button" class="btn btn-outline-secondary"
+                        onclick="cerrarModalEliminar()">Cancelar</button>
                 <button type="submit" class="btn btn-danger">Sí, dar de baja</button>
             </div>
         </form>

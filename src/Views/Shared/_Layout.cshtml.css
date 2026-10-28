@@ -1,37 +1,85 @@
-﻿/* Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-for details on configuring this project to bundle and minify static web assets. */
-
-a.navbar-brand {
-  white-space: normal;
-  text-align: center;
-  word-break: break-all;
+﻿/* Navegación */
+header nav,
+.navbar {
+  background-color: var(--bg-card) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  padding: 0.85rem 2.5rem !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
 }
 
-a {
-  color: #0077cc;
+/* Marca / Logo */
+.navbar-brand {
+  color: var(--accent) !important;
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+  margin-right: 2.5rem !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Contenedor de la lista de navegación */
+.navbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Ítems/Enlaces del Menú */
+.nav-link {
+  color: var(--text-secondary) !important;
+  font-weight: 500;
+  font-size: 0.92rem;
+  padding: 0.5rem 0.85rem !important;
+  border-radius: 8px;
+  transition: all 0.2s ease !important;
+  position: relative;
+}
+
+.nav-link:hover {
+  color: var(--accent) !important;
+  background-color: var(--bg-hover);
+}
+
+.nav-link.active {
+  color: var(--accent) !important;
+  font-weight: 600;
+  background-color: rgba(15, 118, 110, 0.08);
 }
 
 .btn-primary {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+  color: #ffffff;
+  background-color: var(--accent);
+  border-color: var(--accent);
+  border-radius: 10px;
+  font-weight: 600;
+  padding: 8px 16px;
 }
 
-.nav-pills .nav-link.active, .nav-pills .show > .nav-link {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+.btn-primary:hover {
+  background-color: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.nav-pills .nav-link.active,
+.nav-pills .show>.nav-link {
+  color: #ffffff;
+  background-color: var(--accent);
+  border-color: var(--accent);
+  border-radius: 8px;
 }
 
 .border-top {
-  border-top: 1px solid #e5e5e5;
+  border-top: 1px solid var(--border-color);
 }
+
 .border-bottom {
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .box-shadow {
-  box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
 button.accept-policy {
