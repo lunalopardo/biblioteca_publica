@@ -30,6 +30,7 @@ builder.Services.AddScoped<RepositorioUsuario>();
 builder.Services.AddScoped<RepositorioAfiliado>();
 builder.Services.AddScoped<RepositorioAutor>();
 builder.Services.AddScoped<RepositorioNacionalidad>();
+builder.Services.AddScoped<RepositorioGenero>();
 
 var app = builder.Build();
 
