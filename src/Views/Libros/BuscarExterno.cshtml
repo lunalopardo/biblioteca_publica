@@ -1,0 +1,193 @@
+@using System.Text.Json.Nodes
+@model List<JsonObject>
+@{
+    ViewData["Title"] = "Importar desde Open Library";
+    string filtroExterno = ViewData["FiltroExterno"] as string ?? "";
+    int paginaActual = (int)(ViewData["PaginaActual"] ?? 1);
+    int totalPaginas = (int)(ViewData["TotalPaginas"] ?? 1);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/formularios.css" />
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h3>Catálogo Global (Open Library)</h3>
+            <p class="text-muted mb-0" style="font-size: 0.9rem;">Buscá libros en la base de datos mundial e importalos
+                a tu biblioteca.</p>
+            </div>
+            <a asp-action="Create" class="btn btn-outline-secondary">
+                Carga manual
+            </a>
+        </div>
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger text-center">@TempData["Error"]</div>
+        }
+
+        <form asp-action="BuscarExterno" method="get" class="search-bar">
+            <input type="text" name="q" value="@filtroExterno" class="form-control"
+                   placeholder="Escribí el título del libro o autor a buscar..." required />
+        
+            <button type="submit" class="btn btn-primary">
+                <span class="material-symbols-outlined" style="font-size: 1.1rem; vertical-align: middle;">search</span>
+                <span>Buscar</span>
+            </button>
+
+            @if (!string.IsNullOrEmpty(filtroExterno))
+            {
+                <a asp-action="BuscarExterno" class="btn btn-outline-secondary">Limpiar</a>
+            }
+        </form>
+
+        @if (Model != null && Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>Portada</th>
+                            <th>Título</th>
+                            <th>Autor</th>
+                            <th>Año</th>
+                            <th>ISBN</th>
+                            <th class="text-end">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var doc in Model)
+                        {
+                            var titulo = doc["title"]?.GetValue<string>() ?? "Sin título";
+                        
+                            var authorsArray = doc["author_name"]?.AsArray();
+                            string autorNombre = authorsArray != null && authorsArray.Count > 0 ?
+                    authorsArray[0]?.GetValue<string>() ?? "Desconocido" : "Desconocido";
+
+                            int? anio = doc["first_publish_year"] != null ? doc["first_publish_year"]?.GetValue<int>() : null;
+                        
+                            var isbnArray = doc["isbn"]?.AsArray();
+                            string isbn = isbnArray != null && isbnArray.Count > 0 ? isbnArray[0]?.GetValue<string>() ?? "" : "";
+
+                            int? paginas = doc["number_of_pages_median"] != null ? doc["number_of_pages_median"]?.GetValue<int>() :
+                    null;
+                        
+                            var coverId = doc["cover_i"] != null ? doc["cover_i"]?.GetValue<long>() : null;
+                            string portadaUrl = coverId != null ? $"https://covers.openlibrary.org/b/id/{coverId}-M.jpg" : "";
+
+                            var publisherArray = doc["publisher"]?.AsArray();
+                            string editorial = publisherArray != null && publisherArray.Count > 0 ?
+                    publisherArray[0]?.GetValue<string>() ?? "" : "";
+
+                            <tr>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(portadaUrl))
+                                    {
+                                        <img src="@portadaUrl" alt="Portada"
+                                             style="width: 35px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border-color);" />
+                                    }
+                                    else
+                                    {
+                                        <div
+                                            style="width: 35px; height: 50px; background-color: var(--text-muted); color: #fff; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 0.6rem; margin: 0 auto;">
+                                            Sin img</div>
+                                        }
+                                    </td>
+                                    <td class="fw-bold text-start">@titulo</td>
+                                    <td>@autorNombre</td>
+                                    <td>@(anio?.ToString() ?? "-")</td>
+                                    <td>@(string.IsNullOrEmpty(isbn) ? "-" : isbn)</td>
+                                    <td class="text-end">
+                                        <form asp-action="ImportarExterno" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="titulo" value="@titulo" />
+                                            <input type="hidden" name="autorNombre" value="@autorNombre" />
+                                            <input type="hidden" name="anio" value="@anio" />
+                                            <input type="hidden" name="isbn" value="@isbn" />
+                                            <input type="hidden" name="paginas" value="@paginas" />
+                                            <input type="hidden" name="portadaUrl" value="@portadaUrl" />
+                                            <input type="hidden" name="editorial" value="@editorial" />
+
+                                            <button type="submit" class="btn btn-primary btn-sm"
+                                                    style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">
+                                                Importar
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @if (totalPaginas > 1)
+                {
+                    <nav class="pagination-container">
+                        <ul class="pagination-custom">
+                            <li class="page-item @(paginaActual <= 1 ? "disabled" : "")">
+                                <a class="page-link" asp-action="BuscarExterno" asp-route-q="@filtroExterno"
+                                   asp-route-pagina="@(paginaActual - 1)">Anterior</a>
+                            </li>
+
+                            @{
+                                int delta = 2;
+                                int rangoInicio = Math.Max(1, paginaActual - delta);
+                                int rangoFin = Math.Min(totalPaginas, paginaActual + delta);
+
+                                if (rangoInicio > 1)
+                                {
+                                    <li class="page-item @(1 == paginaActual ? "active" : "")">
+                                        <a class="page-link" asp-action="BuscarExterno" asp-route-q="@filtroExterno" asp-route-pagina="1">1</a>
+                                    </li>
+                                    if (rangoInicio > 2)
+                                    {
+                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                    }
+                                }
+
+                                for (int i = rangoInicio; i <= rangoFin; i++)
+                                {
+                                    <li class="page-item @(i == paginaActual ? "active" : "")">
+                                        <a class="page-link" asp-action="BuscarExterno" asp-route-q="@filtroExterno"
+                                           asp-route-pagina="@i">@i</a>
+                                    </li>
+                                }
+
+                                if (rangoFin < totalPaginas)
+                                {
+                                    if (rangoFin < totalPaginas - 1)
+                                    {
+                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                    }
+                                    <li class="page-item @(totalPaginas == paginaActual ? "active" : "")">
+                                        <a class="page-link" asp-action="BuscarExterno" asp-route-q="@filtroExterno"
+                                           asp-route-pagina="@totalPaginas">@totalPaginas</a>
+                                    </li>
+                                }
+                            }
+                            
+                            <li class="page-item @(paginaActual >= totalPaginas ? "disabled" : "")">
+                                <a class="page-link" asp-action="BuscarExterno" asp-route-q="@filtroExterno"
+                                   asp-route-pagina="@(paginaActual + 1)">Siguiente</a>
+                            </li>
+                        </ul>
+                    </nav>
+                }
+            }
+    else if (!string.IsNullOrEmpty(filtroExterno))
+            {
+                <div class="text-center py-5 text-muted">
+                    <p>No se encontraron resultados en Open Library para "@filtroExterno".</p>
+                    <a asp-action="Create" class="btn btn-primary mt-2">Cargar este libro manualmente</a>
+                </div>
+            }
+        </div>
+
+        @section Scripts {
+            <script src="~/js/alert.js" asp-append-version="true"></script>
+        }

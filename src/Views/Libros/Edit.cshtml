@@ -1,0 +1,134 @@
+@model BibliotecaPublica.Models.Libro
+@{
+    ViewData["Title"] = "Editar Libro";
+    var autores = ViewBag.Autores as IList<BibliotecaPublica.Models.Autor>;
+    var generos = ViewBag.Generos as IList<BibliotecaPublica.Models.Genero>;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/formularios.css" />
+}
+
+<div class="form-card" style="max-width: 750px;">
+    <div class="card-header-flex">
+        <h3>Editar Libro</h3>
+    </div>
+
+    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="Portada" />
+
+        <div class="form-group text-center mb-4">
+            <label class="form-label d-block">Portada del Libro</label>
+            
+            <img id="imgPreview" src="@(string.IsNullOrEmpty(Model.Portada) ? "#" : Model.Portada)" alt="Portada"
+                 class="mb-3 @(string.IsNullOrEmpty(Model.Portada) ? "is-hidden" : "")"
+                 style="width: 100px; height: 140px; object-fit: cover; border-radius: 4px; border: 2px solid var(--color-accent); display: block; margin: 0 auto 1rem auto;" />
+
+            <div id="portadaPlaceholder"
+                 class="text-muted mb-3 @(!string.IsNullOrEmpty(Model.Portada) ? "is-hidden" : "")">
+                Sin portada registrada
+            </div>
+
+            <div>
+                <label for="PortadaFile" class="btn btn-outline-secondary btn-sm">
+                    Cambiar Portada
+                </label>
+                <input asp-for="PortadaFile" type="file" accept="image/*" class="is-hidden" id="PortadaFile"
+                       onchange="previewImage(event)" />
+            </div>
+            <span asp-validation-for="PortadaFile" class="mensaje-error"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Titulo" class="form-label"></label>
+            <input asp-for="Titulo" class="form-control" required />
+            <span asp-validation-for="Titulo" class="mensaje-error"></span>
+        </div>
+
+        <div class="form-grid-2">
+            <div class="form-group">
+                <label asp-for="IdAutor" class="form-label">Autor</label>
+                <select asp-for="IdAutor" class="form-control" required>
+                    <option value="">Seleccione un autor...</option>
+                    @if (autores != null)
+                    {
+                        foreach (var autor in autores)
+                        {
+                            <option value="@autor.Id">@autor.Apellido, @autor.Nombre</option>
+                        }
+                    }
+                </select>
+                <span asp-validation-for="IdAutor" class="mensaje-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="IdEditorial" class="form-label">Editorial</label>
+                <select asp-for="IdEditorial" class="form-control">
+                    <option value="">Seleccione una editorial...</option>
+                    @if (ViewBag.Editoriales != null)
+                    {
+                        foreach (var ed in (IList<BibliotecaPublica.Models.Editorial>)ViewBag.Editoriales)
+                        {
+                            <option value="@ed.Id">@ed.Nombre</option>
+                        }
+                    }
+                </select>
+                <span asp-validation-for="IdEditorial" class="mensaje-error"></span>
+            </div>
+        </div>
+
+        <div class="form-grid-3" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label asp-for="Isbn" class="form-label">ISBN</label>
+                <input asp-for="Isbn" class="form-control" />
+                <span asp-validation-for="Isbn" class="mensaje-error"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Paginas" class="form-label"></label>
+                <input asp-for="Paginas" type="number" class="form-control" />
+                <span asp-validation-for="Paginas" class="mensaje-error"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="AnioPublicacion" class="form-label"></label>
+                <input asp-for="AnioPublicacion" type="number" class="form-control" />
+                <span asp-validation-for="AnioPublicacion" class="mensaje-error"></span>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        function previewImage(event) {
+            const input = event.target;
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    const imgPreview = document.getElementById('imgPreview');
+                    const placeholder = document.getElementById('portadaPlaceholder');
+
+                    imgPreview.src = e.target.result;
+                    imgPreview.classList.remove('is-hidden');
+
+                    if (placeholder) {
+                        placeholder.classList.add('is-hidden');
+                    }
+                };
+
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
+}

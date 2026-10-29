@@ -1,0 +1,45 @@
+@model BibliotecaPublica.Models.Libro
+@{
+    ViewData["Title"] = "Detalle del Libro";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/formularios.css" />
+}
+
+<div class="form-card details-card">
+    <div class="card-header-flex">
+        <h3>Detalle del Libro</h3>
+        <span class="badge badge-active">Activo en Sistema</span>
+    </div>
+
+    <div class="details-flex">
+        <div class="details-img-container">
+            @if (!string.IsNullOrEmpty(Model.Portada))
+            {
+                <img src="@Model.Portada" alt="Portada" class="details-cover-img" />
+            }
+            else
+            {
+                <div class="details-cover-placeholder">
+                    Sin Portada
+                </div>
+            }
+        </div>
+
+        <div class="details-info">
+            <h2 class="details-title">@Model.Titulo</h2>
+            <p><strong>Autor:</strong> @(Model.Autor != null ? $"{Model.Autor.Apellido}, {Model.Autor.Nombre}" :
+                                "Desconocido")</p>
+                <p><strong>Editorial:</strong> @(Model.Editorial != null ? Model.Editorial.Nombre : "No especificada")</p>
+                <p><strong>ISBN:</strong> @(string.IsNullOrEmpty(Model.Isbn) ? "No registrado" : Model.Isbn)</p>
+                <p><strong>Año de Publicación:</strong> @(Model.AnioPublicacion?.ToString() ?? "-")</p>
+                <p><strong>Cantidad de Páginas:</strong> @(Model.Paginas?.ToString() ?? "-")</p>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a asp-action="Index" class="btn btn-outline-secondary">Volver al Listado</a>
+        </div>
+    </div>
