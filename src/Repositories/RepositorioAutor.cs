@@ -7,7 +7,35 @@ public class RepositorioAutor : RepositorioBase
 {
     public RepositorioAutor(IConfiguration configuration) : base(configuration) { }
 
-    // Listado paginado con búsqueda general (Incluye JOIN con nacionalidad)
+    // Obtener todos los autores activos (sin paginado)
+    public IList<Autor> ObtenerTodos()
+    {
+        var listado = new List<Autor>();
+        string sql = @"
+            SELECT a.id, a.nombre, a.apellido, a.id_nacionalidad, n.nombre AS nacionalidad_nombre, a.biografia, a.foto, a.activo 
+            FROM autor a
+            LEFT JOIN nacionalidad n ON a.id_nacionalidad = n.id
+            WHERE a.activo = 1
+            ORDER BY a.apellido, a.nombre ASC";
+
+        using (MySqlConnection connection = new MySqlConnection(connectionString))
+        {
+            connection.Open();
+            using (MySqlCommand command = new MySqlCommand(sql, connection))
+            {
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        listado.Add(ParseAutor(reader));
+                    }
+                }
+            }
+        }
+        return listado;
+    }
+
+    // Listado paginado
     public IList<Autor> ObtenerPaginado(string? buscar = null, int paginaNro = 1, int tamPagina = 5)
     {
         IList<Autor> res = new List<Autor>();
@@ -104,18 +132,21 @@ public class RepositorioAutor : RepositorioBase
     public int Create(Autor autor)
     {
         var query = @"INSERT INTO autor (nombre, apellido, id_nacionalidad, biografia, foto, activo) 
-                      VALUES (@nombre, @apellido, @id_nacionalidad, @biografia, @foto, 1)";
+                  VALUES (@nombre, @apellido, @id_nacionalidad, @biografia, @foto, 1);
+                  SELECT LAST_INSERT_ID();";
 
         using MySqlConnection connection = new(connectionString);
         using MySqlCommand command = new(query, connection);
         command.Parameters.AddWithValue("@nombre", autor.Nombre);
         command.Parameters.AddWithValue("@apellido", autor.Apellido);
-        command.Parameters.AddWithValue("@id_nacionalidad", autor.IdNacionalidad);
+
+        command.Parameters.AddWithValue("@id_nacionalidad", autor.IdNacionalidad <= 0 ? DBNull.Value : autor.IdNacionalidad);
+
         command.Parameters.AddWithValue("@biografia", (object?)autor.Biografia ?? DBNull.Value);
         command.Parameters.AddWithValue("@foto", (object?)autor.Foto ?? DBNull.Value);
 
         connection.Open();
-        return command.ExecuteNonQuery();
+        return Convert.ToInt32(command.ExecuteScalar());
     }
 
     // Editar autor
@@ -205,7 +236,7 @@ public class RepositorioAutor : RepositorioBase
             Id = reader.GetInt32("id"),
             Nombre = reader.GetString("nombre"),
             Apellido = reader.GetString("apellido"),
-            IdNacionalidad = reader.GetInt32("id_nacionalidad"),
+            IdNacionalidad = reader.IsDBNull(reader.GetOrdinal("id_nacionalidad")) ? 0 : reader.GetInt32("id_nacionalidad"),
             NacionalidadNombre = reader.IsDBNull(reader.GetOrdinal("nacionalidad_nombre")) ? string.Empty : reader.GetString("nacionalidad_nombre"),
             Biografia = reader.IsDBNull(reader.GetOrdinal("biografia")) ? string.Empty : reader.GetString("biografia"),
             Foto = reader.IsDBNull(reader.GetOrdinal("foto")) ? null : reader.GetString("foto"),
