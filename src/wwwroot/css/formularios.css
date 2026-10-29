@@ -362,3 +362,54 @@
   font-size: 0.83rem;
   color: var(--text-muted);
 }
+
+/* --- Estilos para la vista de Detalles de Libros --- */
+.details-card {
+    max-width: 750px;
+}
+
+.details-flex {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+}
+
+.details-img-container {
+    flex: 0 0 160px;
+    text-align: center;
+}
+
+.details-cover-img {
+    width: 150px;
+    height: 220px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--color-accent);
+    box-shadow: var(--shadow-md);
+}
+
+.details-cover-placeholder {
+    width: 150px;
+    height: 220px;
+    background-color: var(--color-primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    font-weight: bold;
+    margin: 0 auto;
+}
+
+.details-info {
+    flex: 1;
+    min-width: 250px;
+}
+
+.details-title {
+    color: var(--color-primary);
+    margin-top: 0;
+    font-size: 1.5rem;
+}
