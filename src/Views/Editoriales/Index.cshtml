@@ -1,0 +1,219 @@
+@model IEnumerable<BibliotecaPublica.Models.Editorial>
+
+@{
+    ViewData["Title"] = "Editoriales";
+    string filtroActual = ViewData["FiltroActual"] as string ?? "";
+    int paginaActual = (int)(ViewData["PaginaActual"] ?? 1);
+    int totalPaginas = (int)(ViewData["TotalPaginas"] ?? 1);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/formularios.css" />
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+}
+
+<div class="form-card" style="max-width: 650px;">
+    <div class="card-header-flex">
+        <h2>Editoriales</h2>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrear">
+            + Nueva Editorial
+        </button>
+    </div>
+
+    <!-- Buscador -->
+    <form asp-action="Index" method="get" class="mb-4">
+        <div class="form-search-bar">
+            <input type="text" name="buscar" value="@filtroActual" class="form-control"
+                   placeholder="Buscar edtorial..."/>
+
+            <button type="submit" class="btn btn-outline-secondary">
+                <span class="material-symbols-outlined" style="font-size: 1.2rem;">search</span>
+                <span>Buscar</span>
+            </button>
+
+            @if (!string.IsNullOrEmpty(filtroActual))
+            {
+                <a asp-action="Index" class="btn btn-outline-danger">Limpiar</a>
+            }
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Nombre</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="3" class="text-center py-4 text-muted">No se encontraron resultados.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (BibliotecaPublica.Models.Editorial editorial in Model)
+                    {
+                        <tr>
+                            <td>@editorial.Id</td>
+                            <td>@editorial.Nombre</td>
+                            <td class="text-end">
+                                <button type="button" class="btn-icon" title="Editar" data-bs-toggle="modal"
+                                        data-bs-target="#modalEditar" data-id="@editorial.Id" data-nombre="@editorial.Nombre">
+                                    <span class="material-symbols-outlined" style="font-size: 1rem;">edit</span>
+                                </button>
+
+                                <button type="button" class="btn-icon btn-icon-danger" title="Borrar" data-bs-toggle="modal"
+                                        data-bs-target="#modalEliminar" data-id="@editorial.Id" data-nombre="@editorial.Nombre">
+                                    <span class="material-symbols-outlined" style="font-size: 1rem;">delete</span>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginación -->
+    @if (totalPaginas > 1)
+    {
+        <nav class="pagination-container">
+            <ul class="pagination-custom">
+                <li class="page-item @(paginaActual <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-pagina="@(paginaActual - 1)"
+                       asp-route-buscar="@filtroActual">
+                        Anterior
+                    </a>
+                </li>
+
+                @for (int i = 1; i <= totalPaginas; i++)
+                {
+                    <li class="page-item @(i == paginaActual ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-pagina="@i" asp-route-buscar="@filtroActual">
+                            @i
+                        </a>
+                    </li>
+                }
+
+                <li class="page-item @(paginaActual >= totalPaginas ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-pagina="@(paginaActual + 1)"
+                       asp-route-buscar="@filtroActual">
+                        Siguiente
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>
+
+<!-- Modal crear -->
+<div class="modal fade" id="modalCrear" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content form-card border-0 shadow-lg" style="margin: 0; max-width: 100%;">
+            <h3 class="modal-title-custom">Nuevo editorial</h3>
+
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="form-group">
+                    <label for="Nombre" class="form-label">Nombre</label>
+                    <input type="text" name="Nombre" class="form-control" required />
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal editar -->
+<div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content form-card border-0 shadow-lg" style="margin: 0; max-width: 100%;">
+            <h3 class="modal-title-custom">Editar editorial</h3>
+
+            <form asp-action="Edit" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="edit-id" name="Id" />
+
+                <div class="form-group">
+                    <label for="edit-nombre" class="form-label">Nombre</label>
+                    <input type="text" id="edit-nombre" name="Nombre" class="form-control" required />
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal eliminar -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content form-card border-0 shadow-lg" style="margin: 0; max-width: 100%;">
+            <h3 class="modal-title-custom text-danger">Eliminar editorial</h3>
+
+            <p class="modal-subtitle">¿Estás seguro de que querés eliminar este registro?</p>
+
+            <div class="detail-box">
+                <p><strong>Código:</strong> <span id="delete-id-text"></span></p>
+                <p><strong>Nombre:</strong> <span id="delete-nombre-text"></span></p>
+            </div>
+
+            <form asp-action="Delete" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="delete-id" name="id" />
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-danger">Confirmar baja</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var modalEditar = document.getElementById('modalEditar');
+            if (modalEditar) {
+                modalEditar.addEventListener('show.bs.modal', function (event) {
+                    var button = event.relatedTarget;
+                    modalEditar.querySelector('#edit-id').value = button.getAttribute('data-id');
+                    modalEditar.querySelector('#edit-nombre').value = button.getAttribute('data-nombre');
+                });
+            }
+
+            var modalEliminar = document.getElementById('modalEliminar');
+            if (modalEliminar) {
+                modalEliminar.addEventListener('show.bs.modal', function (event) {
+                    var button = event.relatedTarget;
+                    var id = button.getAttribute('data-id');
+                    var nombre = button.getAttribute('data-nombre');
+
+                    modalEliminar.querySelector('#delete-id').value = id;
+                    modalEliminar.querySelector('#delete-id-text').textContent = id;
+                    modalEliminar.querySelector('#delete-nombre-text').textContent = nombre;
+                });
+            }
+        });
+    </script>
+}
