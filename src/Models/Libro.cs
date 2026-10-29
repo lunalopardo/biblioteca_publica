@@ -32,8 +32,10 @@ public class Libro
     [Display(Name = "Imagen de portada")]
     public IFormFile? PortadaFile { get; set; }
 
-    [StringLength(100, ErrorMessage = "La editorial no puede superar los 100 caracteres.")]
-    public string? Editorial { get; set; }
+    [Display(Name = "Editorial")]
+    public int? IdEditorial { get; set; }
+
+    public Editorial? Editorial { get; set; }
 
     [Display(Name = "Activo")]
     public bool Activo { get; set; } = true;
