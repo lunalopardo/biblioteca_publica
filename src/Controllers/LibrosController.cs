@@ -56,7 +56,7 @@ public class LibrosController : Controller
     public IActionResult Create()
     {
         ViewBag.Autores = _repositorioAutor.ObtenerTodos();
-        ViewBag.Generos = _repositorioGenero.ObtenerTodos();
+        ViewBag.Generos = _repositorioGenero.ObtenerActivos();
         ViewBag.Editoriales = _repositorioEditorial.ObtenerTodas();
         return View();
     }
@@ -75,7 +75,7 @@ public class LibrosController : Controller
         if (!ModelState.IsValid)
         {
             ViewBag.Autores = _repositorioAutor.ObtenerTodos();
-            ViewBag.Generos = _repositorioGenero.ObtenerTodos();
+            ViewBag.Generos = _repositorioGenero.ObtenerActivos();
             ViewBag.Editoriales = _repositorioEditorial.ObtenerTodas();
             return View(libro);
         }
@@ -85,7 +85,13 @@ public class LibrosController : Controller
             libro.Portada = await ImagenesController.GuardarArchivoAsync(libro.PortadaFile, _environment, "libros");
         }
 
-        _repositorioLibro.Create(libro);
+        int idLibroCreado = _repositorioLibro.Create(libro);
+
+        if (idLibroCreado > 0 && libro.GenerosSeleccionados != null && libro.GenerosSeleccionados.Any())
+        {
+            _repositorioLibro.GuardarGeneros(idLibroCreado, libro.GenerosSeleccionados);
+        }
+
         TempData["Mensaje"] = "Libro registrado exitosamente.";
         return RedirectToAction(nameof(Index));
     }
@@ -96,8 +102,13 @@ public class LibrosController : Controller
         var libro = _repositorioLibro.ObtenerPorId(id);
         if (libro == null) return NotFound();
 
+        if (libro.Generos != null)
+        {
+            libro.GenerosSeleccionados = libro.Generos.Select(g => g.Id).ToList();
+        }
+
         ViewBag.Autores = _repositorioAutor.ObtenerTodos();
-        ViewBag.Generos = _repositorioGenero.ObtenerTodos();
+        ViewBag.Generos = _repositorioGenero.ObtenerActivos();
         ViewBag.Editoriales = _repositorioEditorial.ObtenerTodas();
         return View(libro);
     }
@@ -121,7 +132,7 @@ public class LibrosController : Controller
         if (!ModelState.IsValid)
         {
             ViewBag.Autores = _repositorioAutor.ObtenerTodos();
-            ViewBag.Generos = _repositorioGenero.ObtenerTodos();
+            ViewBag.Generos = _repositorioGenero.ObtenerActivos();
             ViewBag.Editoriales = _repositorioEditorial.ObtenerTodas();
             return View(libro);
         }
@@ -137,6 +148,9 @@ public class LibrosController : Controller
         }
 
         _repositorioLibro.Update(libro);
+
+        _repositorioLibro.GuardarGeneros(libro.Id, libro.GenerosSeleccionados ?? new List<int>());
+
         TempData["Mensaje"] = "Libro actualizado correctamente.";
         return RedirectToAction(nameof(Index));
     }

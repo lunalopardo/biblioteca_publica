@@ -464,12 +464,8 @@ body {
 .recent-item {
     display: flex;
     align-items: center;
-<<<<<<< HEAD
     justify-content: flex-start; 
     gap: 1rem;
-=======
-    justify-content: space-between;
->>>>>>> 1f44216bf71fa9d1aac221cc6e76e5e6a9f6a5f2
     padding: 0.85rem 1rem;
     background-color: var(--bg-body);
     border: 1px solid var(--border-color);
@@ -478,7 +474,6 @@ body {
     transition: all 0.2s ease;
 }
 
-<<<<<<< HEAD
 .recent-image {
     flex-shrink: 0;
     display: flex;
@@ -491,26 +486,15 @@ body {
     object-fit: cover;
     border-radius: 6px;
     box-shadow: var(--shadow-sm);
-=======
-.recent-item:hover {
-    background-color: var(--nav-hover-bg);
-    border-color: var(--color-primary);
-    transform: translateX(3px);
->>>>>>> 1f44216bf71fa9d1aac221cc6e76e5e6a9f6a5f2
 }
 
 .recent-info {
     display: flex;
     flex-direction: column;
-<<<<<<< HEAD
     align-items: flex-start;
     text-align: left;
     flex: 1;
     overflow: hidden;
-=======
-    overflow: hidden;
-    padding-right: 0.5rem;
->>>>>>> 1f44216bf71fa9d1aac221cc6e76e5e6a9f6a5f2
 }
 
 .recent-title {
@@ -520,10 +504,7 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-<<<<<<< HEAD
     width: 100%;
-=======
->>>>>>> 1f44216bf71fa9d1aac221cc6e76e5e6a9f6a5f2
 }
 
 .recent-subtitle {
@@ -532,20 +513,14 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-<<<<<<< HEAD
     width: 100%;
-=======
->>>>>>> 1f44216bf71fa9d1aac221cc6e76e5e6a9f6a5f2
 }
 
 .recent-arrow {
     font-size: 20px;
     color: var(--text-muted);
     flex-shrink: 0;
-<<<<<<< HEAD
     margin-left: auto;
-=======
->>>>>>> 1f44216bf71fa9d1aac221cc6e76e5e6a9f6a5f2
     transition: transform 0.2s ease;
 }
 

@@ -1,3 +1,4 @@
+@using BibliotecaPublica.Models
 @model BibliotecaPublica.Models.Libro
 @{
     ViewData["Title"] = "Editar Libro";
@@ -68,6 +69,22 @@
                 </select>
                 <span asp-validation-for="IdEditorial" class="mensaje-error"></span>
             </div>
+        </div>
+
+        <div class="form-group mb-3">
+            <label asp-for="GenerosSeleccionados" class="form-label">Géneros</label>
+            <select asp-for="GenerosSeleccionados" class="form-control" id="GenerosSeleccionados" multiple="multiple">
+                @if (ViewBag.Generos != null)
+                {
+                    foreach (var genero in (List<Genero>)ViewBag.Generos)
+                    {
+                        bool seleccionado = Model.GenerosSeleccionados != null &&
+                Model.GenerosSeleccionados.Contains(genero.Id);
+                        <option value="@genero.Id" selected="@seleccionado">@genero.Nombre</option>
+                    }
+                }
+            </select>
+            <span asp-validation-for="GenerosSeleccionados" class="text-danger"></span>
         </div>
 
         <div class="form-grid-3">
@@ -161,6 +178,12 @@
                         };
                     }
                 }
+            });
+
+            // SELECT2 PARA GÉNEROS (MÚLTIPLE)
+            $('#GenerosSeleccionados').select2({
+                language: "es",
+                placeholder: "Seleccione o busque los géneros..."
             });
         });
     </script>

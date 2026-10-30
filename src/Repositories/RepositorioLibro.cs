@@ -37,7 +37,9 @@ public class RepositorioLibro : RepositorioBase
                 {
                     while (reader.Read())
                     {
-                        listado.Add(ParseLibroConAutor(reader));
+                        var libro = ParseLibroConAutor(reader);
+                        libro.Generos = ObtenerGenerosDeLibro(libro.Id);
+                        listado.Add(libro);
                     }
                 }
             }
@@ -75,12 +77,12 @@ public class RepositorioLibro : RepositorioBase
     public Libro? ObtenerPorId(int id)
     {
         var query = @"SELECT l.*, 
-                             a.id as autor_id, a.nombre as autor_nombre, a.apellido as autor_apellido,
-                             ed.id as editorial_id, ed.nombre as editorial_nombre
-                      FROM Libro l
-                      INNER JOIN Autor a ON l.id_autor = a.id
-                      LEFT JOIN Editorial ed ON l.id_editorial = ed.id
-                      WHERE l.id = @id AND l.activo = 1";
+                           a.id as autor_id, a.nombre as autor_nombre, a.apellido as autor_apellido,
+                           ed.id as editorial_id, ed.nombre as editorial_nombre
+                    FROM Libro l
+                    INNER JOIN Autor a ON l.id_autor = a.id
+                    LEFT JOIN Editorial ed ON l.id_editorial = ed.id
+                    WHERE l.id = @id AND l.activo = 1";
 
         using MySqlConnection connection = new(connectionString);
         using MySqlCommand command = new(query, connection);
@@ -90,7 +92,9 @@ public class RepositorioLibro : RepositorioBase
         using MySqlDataReader reader = command.ExecuteReader();
         if (reader.Read())
         {
-            return ParseLibroConAutor(reader);
+            var libro = ParseLibroConAutor(reader);
+            libro.Generos = ObtenerGenerosDeLibro(libro.Id);
+            return libro;
         }
         return null;
     }
@@ -153,6 +157,59 @@ public class RepositorioLibro : RepositorioBase
         command.Parameters.AddWithValue("@id", id);
         connection.Open();
         return command.ExecuteNonQuery();
+    }
+
+    public void GuardarGeneros(int idLibro, List<int> idsGeneros)
+    {
+        using MySqlConnection connection = new(connectionString);
+        connection.Open();
+
+        var deleteQuery = "DELETE FROM libro_genero WHERE id_libro = @idLibro";
+        using (var cmd = new MySqlCommand(deleteQuery, connection))
+        {
+            cmd.Parameters.AddWithValue("@idLibro", idLibro);
+            cmd.ExecuteNonQuery();
+        }
+
+        if (idsGeneros != null && idsGeneros.Any())
+        {
+            foreach (var idGenero in idsGeneros)
+            {
+                var insertQuery = "INSERT INTO libro_genero (id_libro, id_genero) VALUES (@idLibro, @idGenero)";
+                using (var cmd = new MySqlCommand(insertQuery, connection))
+                {
+                    cmd.Parameters.AddWithValue("@idLibro", idLibro);
+                    cmd.Parameters.AddWithValue("@idGenero", idGenero);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+    }
+
+    public List<Genero> ObtenerGenerosDeLibro(int idLibro)
+    {
+        var listado = new List<Genero>();
+        var query = @"SELECT g.id, g.nombre, g.activo 
+                  FROM Genero g
+                  INNER JOIN libro_genero lg ON g.id = lg.id_genero
+                  WHERE lg.id_libro = @idLibro";
+
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(query, connection);
+        command.Parameters.AddWithValue("@idLibro", idLibro);
+        connection.Open();
+
+        using MySqlDataReader reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            listado.Add(new Genero
+            {
+                Id = reader.GetInt32("id"),
+                Nombre = reader.GetString("nombre"),
+                Activo = reader.GetBoolean("activo")
+            });
+        }
+        return listado;
     }
 
     private static Libro ParseLibroConAutor(MySqlDataReader reader)

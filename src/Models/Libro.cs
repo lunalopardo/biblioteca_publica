@@ -40,6 +40,9 @@ public class Libro
     [Display(Name = "Activo")]
     public bool Activo { get; set; } = true;
 
+    [Display(Name = "Géneros")]
+    public List<int> GenerosSeleccionados { get; set; } = new();
+
     // Propiedades mapeadas mediante JOINs
     public Autor? Autor { get; set; }
     public List<Genero>? Generos { get; set; }

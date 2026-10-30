@@ -8,19 +8,19 @@ namespace BibliotecaPublica.Controllers;
 [Authorize]
 public class GenerosController : Controller
 {
-    private readonly RepositorioGenero _repoGenero;
+    private readonly RepositorioGenero _repositorioGenero;
 
     public GenerosController(RepositorioGenero repoGenero)
     {
-        _repoGenero = repoGenero;
+        _repositorioGenero = repoGenero;
     }
 
     // GET: Generos/Index
     public IActionResult Index(string? buscar, int pagina = 1)
     {
         int registrosPorPagina = 10;
-        var listado = _repoGenero.ObtenerPaginado(buscar, pagina, registrosPorPagina);
-        int totalRegistros = _repoGenero.ObtenerCantidad(buscar);
+        var listado = _repositorioGenero.ObtenerPaginado(buscar, pagina, registrosPorPagina);
+        int totalRegistros = _repositorioGenero.ObtenerCantidad(buscar);
         int totalPaginas = (int)Math.Ceiling((double)totalRegistros / registrosPorPagina);
 
         ViewData["FiltroActual"] = buscar;
@@ -33,7 +33,7 @@ public class GenerosController : Controller
     // GET: Generos/Details/5
     public IActionResult Details(int id)
     {
-        var genero = _repoGenero.ObtenerPorId(id);
+        var genero = _repositorioGenero.ObtenerPorId(id);
         if (genero == null)
         {
             TempData["Error"] = "El género solicitado no existe.";
@@ -58,7 +58,7 @@ public class GenerosController : Controller
         {
             try
             {
-                _repoGenero.Create(genero);
+                _repositorioGenero.Create(genero);
                 TempData["Mensaje"] = "Género creado exitosamente.";
                 return RedirectToAction(nameof(Index));
             }
@@ -74,7 +74,7 @@ public class GenerosController : Controller
     // GET: Generos/Edit/5
     public IActionResult Edit(int id)
     {
-        var genero = _repoGenero.ObtenerPorId(id);
+        var genero = _repositorioGenero.ObtenerPorId(id);
         if (genero == null)
         {
             TempData["Error"] = "El género a editar no existe.";
@@ -98,7 +98,7 @@ public class GenerosController : Controller
         {
             try
             {
-                _repoGenero.Update(genero);
+                _repositorioGenero.Update(genero);
                 TempData["Mensaje"] = "Género actualizado exitosamente.";
                 return RedirectToAction(nameof(Index));
             }
@@ -114,7 +114,7 @@ public class GenerosController : Controller
     // GET: Generos/Delete/5
     public IActionResult Delete(int id)
     {
-        var genero = _repoGenero.ObtenerPorId(id);
+        var genero = _repositorioGenero.ObtenerPorId(id);
         if (genero == null)
         {
             TempData["Error"] = "El género a eliminar no existe.";
@@ -131,7 +131,7 @@ public class GenerosController : Controller
     {
         try
         {
-            _repoGenero.DeleteLogico(id);
+            _repositorioGenero.DeleteLogico(id);
             TempData["Mensaje"] = "Género eliminado exitosamente.";
         }
         catch (Exception ex)
