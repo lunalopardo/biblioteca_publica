@@ -8,19 +8,19 @@ namespace BibliotecaPublica.Controllers;
 [Authorize]
 public class EditorialesController : Controller
 {
-    private readonly RepositorioEditorial _repoEditorial;
+    private readonly RepositorioEditorial _repositorioEditorial;
 
     public EditorialesController(RepositorioEditorial repoEditorial)
     {
-        _repoEditorial = repoEditorial;
+        _repositorioEditorial = repoEditorial;
     }
 
     // GET: Editoriales/Index
     public IActionResult Index(string? buscar, int pagina = 1)
     {
         int registrosPorPagina = 10;
-        var listado = _repoEditorial.ObtenerPaginado(buscar, pagina, registrosPorPagina);
-        int totalRegistros = _repoEditorial.ObtenerCantidad(buscar);
+        var listado = _repositorioEditorial.ObtenerPaginado(buscar, pagina, registrosPorPagina);
+        int totalRegistros = _repositorioEditorial.ObtenerCantidad(buscar);
         int totalPaginas = (int)Math.Ceiling((double)totalRegistros / registrosPorPagina);
 
         ViewData["FiltroActual"] = buscar;
@@ -33,7 +33,7 @@ public class EditorialesController : Controller
     // GET: Editoriales/Details/5
     public IActionResult Details(int id)
     {
-        var Editorial = _repoEditorial.ObtenerPorId(id);
+        var Editorial = _repositorioEditorial.ObtenerPorId(id);
         if (Editorial == null)
         {
             TempData["Error"] = "La editorial solicitada no existe.";
@@ -58,7 +58,7 @@ public class EditorialesController : Controller
         {
             try
             {
-                _repoEditorial.Create(Editorial);
+                _repositorioEditorial.Create(Editorial);
                 TempData["Mensaje"] = "Editorial creada exitosamente.";
                 return RedirectToAction(nameof(Index));
             }
@@ -74,7 +74,7 @@ public class EditorialesController : Controller
     // GET: Editoriales/Edit/5
     public IActionResult Edit(int id)
     {
-        var Editorial = _repoEditorial.ObtenerPorId(id);
+        var Editorial = _repositorioEditorial.ObtenerPorId(id);
         if (Editorial == null)
         {
             TempData["Error"] = "La editorial a editar no existe.";
@@ -98,7 +98,7 @@ public class EditorialesController : Controller
         {
             try
             {
-                _repoEditorial.Update(Editorial);
+                _repositorioEditorial.Update(Editorial);
                 TempData["Mensaje"] = "Editorial actualizada exitosamente.";
                 return RedirectToAction(nameof(Index));
             }
@@ -114,7 +114,7 @@ public class EditorialesController : Controller
     // GET: Editoriales/Delete/5
     public IActionResult Delete(int id)
     {
-        var Editorial = _repoEditorial.ObtenerPorId(id);
+        var Editorial = _repositorioEditorial.ObtenerPorId(id);
         if (Editorial == null)
         {
             TempData["Error"] = "El editorial a eliminar no existe.";
@@ -131,7 +131,7 @@ public class EditorialesController : Controller
     {
         try
         {
-            _repoEditorial.DeleteLogico(id);
+            _repositorioEditorial.DeleteLogico(id);
             TempData["Mensaje"] = "Editorial eliminada exitosamente.";
         }
         catch (Exception ex)
@@ -140,5 +140,24 @@ public class EditorialesController : Controller
         }
 
         return RedirectToAction(nameof(Index));
+    }
+
+    // GET: /Editoriales/Buscar
+    [HttpGet]
+    public IActionResult Buscar(string? q)
+    {
+        var editoriales = _repositorioEditorial.ObtenerTodas();
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            editoriales = editoriales.Where(e => e.Nombre.Contains(q, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+
+        var resultado = editoriales.Select(e => new
+        {
+            id = e.Id,
+            text = e.Nombre
+        });
+
+        return Json(resultado);
     }
 }

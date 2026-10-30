@@ -1,13 +1,12 @@
 @model BibliotecaPublica.Models.Libro
 @{
     ViewData["Title"] = "Editar Libro";
-    var autores = ViewBag.Autores as IList<BibliotecaPublica.Models.Autor>;
-    var generos = ViewBag.Generos as IList<BibliotecaPublica.Models.Genero>;
 }
 
 @section Styles {
     <link rel="stylesheet" href="~/css/site.css" />
     <link rel="stylesheet" href="~/css/formularios.css" />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 }
 
 <div class="form-card" style="max-width: 750px;">
@@ -24,11 +23,10 @@
             <label class="form-label d-block">Portada del Libro</label>
             
             <img id="imgPreview" src="@(string.IsNullOrEmpty(Model.Portada) ? "#" : Model.Portada)" alt="Portada"
-                 class="mb-3 @(string.IsNullOrEmpty(Model.Portada) ? "is-hidden" : "")"
-                 style="width: 100px; height: 140px; object-fit: cover; border-radius: 4px; border: 2px solid var(--color-accent); display: block; margin: 0 auto 1rem auto;" />
+                 class="mb-3 book-cover-preview @(string.IsNullOrEmpty(Model.Portada) ? "is-hidden" : "")" />
 
             <div id="portadaPlaceholder"
-                 class="text-muted mb-3 @(!string.IsNullOrEmpty(Model.Portada) ? "is-hidden" : "")">
+                 class="text-muted mb-3 book-preview-placeholder @(!string.IsNullOrEmpty(Model.Portada) ? "is-hidden" : "")">
                 Sin portada registrada
             </div>
 
@@ -51,14 +49,10 @@
         <div class="form-grid-2">
             <div class="form-group">
                 <label asp-for="IdAutor" class="form-label">Autor</label>
-                <select asp-for="IdAutor" class="form-control" required>
-                    <option value="">Seleccione un autor...</option>
-                    @if (autores != null)
+                <select asp-for="IdAutor" class="form-control" id="IdAutor" required>
+                    @if (Model.Autor != null)
                     {
-                        foreach (var autor in autores)
-                        {
-                            <option value="@autor.Id">@autor.Apellido, @autor.Nombre</option>
-                        }
+                        <option value="@Model.IdAutor" selected>@Model.Autor.Apellido, @Model.Autor.Nombre</option>
                     }
                 </select>
                 <span asp-validation-for="IdAutor" class="mensaje-error"></span>
@@ -66,21 +60,17 @@
 
             <div class="form-group">
                 <label asp-for="IdEditorial" class="form-label">Editorial</label>
-                <select asp-for="IdEditorial" class="form-control">
-                    <option value="">Seleccione una editorial...</option>
-                    @if (ViewBag.Editoriales != null)
+                <select asp-for="IdEditorial" class="form-control" id="IdEditorial">
+                    @if (Model.Editorial != null)
                     {
-                        foreach (var ed in (IList<BibliotecaPublica.Models.Editorial>)ViewBag.Editoriales)
-                        {
-                            <option value="@ed.Id">@ed.Nombre</option>
-                        }
+                        <option value="@Model.IdEditorial" selected>@Model.Editorial.Nombre</option>
                     }
                 </select>
                 <span asp-validation-for="IdEditorial" class="mensaje-error"></span>
             </div>
         </div>
 
-        <div class="form-grid-3" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+        <div class="form-grid-3">
             <div class="form-group">
                 <label asp-for="Isbn" class="form-label">ISBN</label>
                 <input asp-for="Isbn" class="form-control" />
@@ -109,26 +99,69 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/es.js"></script>
+
     <script>
         function previewImage(event) {
             const input = event.target;
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
-
                 reader.onload = function (e) {
                     const imgPreview = document.getElementById('imgPreview');
                     const placeholder = document.getElementById('portadaPlaceholder');
-
                     imgPreview.src = e.target.result;
                     imgPreview.classList.remove('is-hidden');
-
                     if (placeholder) {
                         placeholder.classList.add('is-hidden');
                     }
                 };
-
                 reader.readAsDataURL(input.files[0]);
             }
         }
+
+        $(document).ready(function () {
+
+            // SELECT2 PARA AUTORES
+            $('#IdAutor').select2({
+                language: "es",
+                placeholder: "Escriba para buscar autor...",
+                minimumInputLength: 1,
+                ajax: {
+                    delay: 250,
+                    dataType: "json",
+                    url: function (params) {
+                        let q = params.term ? encodeURIComponent(params.term) : "";
+                        return `/Autores/Buscar?q=${q}`;
+                    },
+                    processResults: function (res) {
+                        return {
+                            results: res.map(i => ({ id: i.id, text: i.text }))
+                        };
+                    }
+                }
+            });
+
+            // SELECT2 PARA EDITORIALES
+            $('#IdEditorial').select2({
+                language: "es",
+                placeholder: "Escriba para buscar editorial...",
+                minimumInputLength: 1,
+                ajax: {
+                    delay: 250,
+                    dataType: "json",
+                    url: function (params) {
+                        let q = params.term ? encodeURIComponent(params.term) : "";
+                        return `/Editoriales/Buscar?q=${q}`;
+                    },
+                    processResults: function (res) {
+                        return {
+                            results: res.map(i => ({ id: i.id, text: i.text }))
+                        };
+                    }
+                }
+            });
+        });
     </script>
 }
