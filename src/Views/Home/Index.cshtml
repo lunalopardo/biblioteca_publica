@@ -1,8 +1,107 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model BibliotecaPublica.Models.HomeViewModel
+@{
+    ViewData["Title"] = "Panel de Control";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Biblioteca pública</h1>
-    <p>Bienvenidos, aún no hay nada por ver aquí.</p>
-</div>
+<div class="dashboard-container">
+    <div class="dashboard-header mb-4">
+        <div>
+            <h1 class="h3 fw-bold text-dark mb-1">Panel de Control</h1>
+            <p class="text-muted small mb-0">Sistema de Gestión Interna • Biblioteca Pública</p>
+        </div>
+        <div class="dashboard-date text-muted small d-none d-md-block">
+            @DateTime.Now.ToString("dddd, dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"))
+        </div>
+    </div>
+
+    <div class="metrics-bar mb-4">
+        <div class="metric-item">
+            <span class="metric-label">Libros Catalogados</span>
+            <span class="metric-value">@Model.TotalLibros</span>
+        </div>
+        <div class="metric-divider"></div>
+        <div class="metric-item">
+            <span class="metric-label">Distintos Autores</span>
+            <span class="metric-value">@Model.TotalAutores</span>
+        </div>
+        <div class="metric-divider"></div>
+        <div class="metric-item">
+            <span class="metric-label">Préstamos Vigentes</span>
+            <span class="metric-value">@Model.TotalPrestamosVigentes</span>
+        </div>
+        <div class="metric-divider"></div>
+        <div class="metric-item">
+            <span class="metric-label">Afiliados Habilitados</span>
+            <span class="metric-value">@Model.TotalAfiliados</span>
+        </div>
+
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="dashboard-main-col">
+            <div class="dashboard-section">
+                <h2 class="section-title">Accesos Operativos</h2>
+                <div class="quick-actions-list">
+                    <a asp-controller="Libros" asp-action="Create" class="quick-action-row">
+                        <div class="action-icon">
+                            <span class="material-symbols-outlined">add_circle</span>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">Registrar nuevo libro</span>
+                            <span class="action-desc">Carga manual de ejemplares en el catálogo local</span>
+                        </div>
+                        <span class="material-symbols-outlined action-arrow">chevron_right</span>
+                    </a>
+
+                    <a asp-controller="Libros" asp-action="BuscarExterno" class="quick-action-row">
+                        <div class="action-icon">
+                            <span class="material-symbols-outlined">public</span>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">Importar de Open Library</span>
+                            <span class="action-desc">Sincronización y registro rápido desde metadatos externos</span>
+                        </div>
+                        <span class="material-symbols-outlined action-arrow">chevron_right</span>
+                    </a>
+
+                    <a asp-controller="Afiliados" asp-action="Create" class="quick-action-row">
+                        <div class="action-icon">
+                            <span class="material-symbols-outlined">person_add</span>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">Nuevo Afiliado</span>
+                            <span class="action-desc">Alta de nuevos socios para habilitar el sistema de
+                                préstamos</span>
+                            </div>
+                            <span class="material-symbols-outlined action-arrow">chevron_right</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-side-col">
+                <div class="dashboard-section">
+                    <h2 class="section-title">Últimos Libros Ingresados</h2>
+                    <div class="recent-activity-list">
+                        @if (Model.UltimosLibros != null && Model.UltimosLibros.Any())
+                        {
+                            @foreach (var libro in Model.UltimosLibros)
+                            {
+                                <a asp-controller="Libros" asp-action="Details" asp-route-id="@libro.Id" class="recent-item">
+                                    <div class="recent-info">
+                                        <span class="recent-title">@libro.Titulo</span>
+                                        <span class="recent-subtitle">@(libro.Autor != null ? $"{libro.Autor.Apellido},        {libro.Autor.Nombre}" : "Autor desconocido")</span>
+                                    </div>
+                                    <span class="material-symbols-outlined recent-arrow">chevron_right</span>
+                                </a>
+                            }
+                        }
+                        else
+                        {
+                            <p class="text-muted small mb-0 py-2">No hay libros registrados todavía.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
