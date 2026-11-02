@@ -34,7 +34,6 @@
             <span class="metric-label">Afiliados Habilitados</span>
             <span class="metric-value">@Model.TotalAfiliados</span>
         </div>
-
     </div>
 
     <div class="dashboard-grid">
@@ -70,39 +69,60 @@
                         </div>
                         <div class="action-info">
                             <span class="action-name">Nuevo Afiliado</span>
-                            <span class="action-desc">Alta de nuevos socios para habilitar el sistema de
-                                préstamos</span>
-                            </div>
-                            <span class="material-symbols-outlined action-arrow">chevron_right</span>
-                        </a>
-                    </div>
+                            <span class="action-desc">Alta de nuevos socios para habilitar el sistema de préstamos</span>
+                        </div>
+                        <span class="material-symbols-outlined action-arrow">chevron_right</span>
+                    </a>
+
+                    <a asp-controller="Afiliados" asp-action="Index" class="quick-action-row">
+                        <div class="action-icon">
+                            <span class="material-symbols-outlined">workspace_premium</span>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">Gestionar suscripciones</span>
+                            <span class="action-desc">Elegí un afiliado para crear su suscripción y registrar el pago de la cuota</span>
+                        </div>
+                        <span class="material-symbols-outlined action-arrow">chevron_right</span>
+                    </a>
+
+                    <a asp-controller="Pagos" asp-action="Index" class="quick-action-row">
+                        <div class="action-icon">
+                            <span class="material-symbols-outlined">receipt_long</span>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">Ver pagos</span>
+                            <span class="action-desc">Historial de cuotas y multas cobradas a los afiliados</span>
+                        </div>
+                        <span class="material-symbols-outlined action-arrow">chevron_right</span>
+                    </a>
                 </div>
             </div>
+        </div>
 
-            <div class="dashboard-side-col">
-                <div class="dashboard-section">
-                    <h2 class="section-title">Últimos Libros Ingresados</h2>
-                    <div class="recent-activity-list">
-                        @if (Model.UltimosLibros != null && Model.UltimosLibros.Any())
+        <div class="dashboard-side-col">
+            <div class="dashboard-section">
+                <h2 class="section-title">Últimos Libros Ingresados</h2>
+                <div class="recent-activity-list">
+                    @if (Model.UltimosLibros != null && Model.UltimosLibros.Any())
+                    {
+                        @foreach (var libro in Model.UltimosLibros)
                         {
-                            @foreach (var libro in Model.UltimosLibros)
-                            {
-                                <a asp-controller="Libros" asp-action="Details" asp-route-id="@libro.Id" class="recent-item">
-                                    <div class="recent-image"><img src="@libro.Portada" alt="Portada" class="details-cover-img-sm" /></div>
-                                    <div class="recent-info">
-                                        <span class="recent-title">@libro.Titulo</span>
-                                        <span class="recent-subtitle">@(libro.Autor != null ? $"{libro.Autor.Apellido},        {libro.Autor.Nombre}" : "Autor desconocido")</span>
-                                    </div>
-                                    <span class="material-symbols-outlined recent-arrow">chevron_right</span>
-                                </a>
-                            }
+                            <a asp-controller="Libros" asp-action="Details" asp-route-id="@libro.Id" class="recent-item">
+                                <div class="recent-image"><img src="@libro.Portada" alt="Portada" class="details-cover-img-sm" /></div>
+                                <div class="recent-info">
+                                    <span class="recent-title">@libro.Titulo</span>
+                                    <span class="recent-subtitle">@(libro.Autor != null ? $"{libro.Autor.Apellido}, {libro.Autor.Nombre}" : "Autor desconocido")</span>
+                                </div>
+                                <span class="material-symbols-outlined recent-arrow">chevron_right</span>
+                            </a>
                         }
-                        else
-                        {
-                            <p class="text-muted small mb-0 py-2">No hay libros registrados todavía.</p>
-                        }
-                    </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted small mb-0 py-2">No hay libros registrados todavía.</p>
+                    }
                 </div>
             </div>
         </div>
     </div>
+</div>
