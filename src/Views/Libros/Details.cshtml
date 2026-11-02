@@ -1,4 +1,5 @@
 @model BibliotecaPublica.Models.Libro
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
     ViewData["Title"] = "Detalle del Libro";
 }
@@ -6,40 +7,115 @@
 @section Styles {
     <link rel="stylesheet" href="~/css/site.css" />
     <link rel="stylesheet" href="~/css/formularios.css" />
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 }
 
-<div class="form-card details-card">
-    <div class="card-header-flex">
-        <h3>Detalle del Libro</h3>
-        <span class="badge badge-active">Activo en Sistema</span>
-    </div>
-
-    <div class="details-flex">
-        <div class="details-img-container">
-            @if (!string.IsNullOrEmpty(Model.Portada))
-            {
-                <img src="@Model.Portada" alt="Portada" class="details-cover-img" />
-            }
-            else
-            {
-                <div class="details-cover-placeholder">
-                    Sin Portada
-                </div>
-            }
+<div class="book-details-layout">
+    <div class="form-card details-card">
+        <div class="card-header-flex">
+            <h3>Detalle del Libro</h3>
+            <span class="badge @(Model.Activo ? "badge-active" : "badge-inactive")">
+                @(Model.Activo ? "Activo" : "Inactivo")
+            </span>
         </div>
 
-        <div class="details-info">
-            <h2 class="details-title">@Model.Titulo</h2>
-            <p><strong>Autor:</strong> @(Model.Autor != null ? $"{Model.Autor.Apellido}, {Model.Autor.Nombre}" :
-                                "Desconocido")</p>
-                <p><strong>Editorial:</strong> @(Model.Editorial != null ? Model.Editorial.Nombre : "No especificada")</p>
+        <div class="details-flex">
+            <div class="details-img-container">
+                @if (!string.IsNullOrEmpty(Model.Portada))
+                {
+                    <img src="@Model.Portada" alt="Portada de @Model.Titulo" class="details-cover-img" />
+                }
+                else
+                {
+                    <div class="details-cover-placeholder">Sin Portada</div>
+                }
+            </div>
+
+            <div class="details-info">
+                <h2 class="details-title">@Model.Titulo</h2>
+                <p><strong>Autor:</strong> @(Model.Autor is null ? "Desconocido" : $"{Model.Autor.Apellido}, {Model.Autor.Nombre}")</p>
+                <p><strong>Editorial:</strong> @(Model.Editorial?.Nombre ?? "No especificada")</p>
                 <p><strong>ISBN:</strong> @(string.IsNullOrEmpty(Model.Isbn) ? "No registrado" : Model.Isbn)</p>
-                <p><strong>Año de Publicación:</strong> @(Model.AnioPublicacion?.ToString() ?? "-")</p>
-                <p><strong>Cantidad de Páginas:</strong> @(Model.Paginas?.ToString() ?? "-")</p>
+                <p><strong>Año:</strong> @(Model.AnioPublicacion?.ToString() ?? "-")</p>
+                <p><strong>Páginas:</strong> @(Model.Paginas?.ToString() ?? "-")</p>
             </div>
         </div>
 
-        <div class="form-actions">
+        <div class="form-actions mt-4">
             <a asp-action="Index" class="btn btn-outline-secondary">Volver al Listado</a>
         </div>
     </div>
+
+    <div class="form-card ejemplares-card" id="ejemplares-app" v-cloak
+         data-id-libro="@Model.Id"
+         data-token="@Antiforgery.GetAndStoreTokens(Context).RequestToken">
+
+        <div class="card-header-flex mb-3">
+            <h3>Ejemplares</h3>
+            <button type="button" v-on:click="abrirModalCrear" class="btn btn-primary btn-sm">+ Añadir Ejemplar</button>
+        </div>
+
+        <div class="ejemplares-list">
+            <div v-if="cargando" class="text-muted text-center py-4 small">Cargando ejemplares...</div>
+
+            <div v-else-if="ejemplares.length === 0" class="text-muted text-center py-4 small">
+                No hay ejemplares registrados para este libro.
+            </div>
+
+            <template v-else>
+                <div v-for="ejemplar in ejemplares" :key="ejemplar.id" class="ejemplar-item">
+                    <div class="ejemplar-info">
+                        <span class="ejemplar-code">Cód. #{{ ejemplar.codigoInventario }}</span>
+                        <span class="badge"
+                              :class="ejemplar.estado === 'Disponible' ? 'badge-success' : 'badge-warning'">
+                            {{ ejemplar.estado }}
+                        </span>
+                    </div>
+                    <div class="ejemplar-actions">
+                        <button type="button" v-on:click="abrirModalEditar(ejemplar)" class="btn-icon" title="Editar">
+                            <span class="material-symbols-outlined">edit</span>
+                        </button>
+                        <button type="button" v-on:click="eliminarEjemplar(ejemplar.id)"
+                                class="btn-icon btn-icon-danger" title="Eliminar">
+                            <span class="material-symbols-outlined">delete</span>
+                        </button>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <div v-if="mostrarModal" class="modal-backdrop-custom"
+             v-on:click.self="cerrarModal" v-on:keydown.esc="cerrarModal">
+            <form class="modal-panel" role="dialog" aria-modal="true" v-on:submit.prevent="guardarEjemplar">
+                <h4 class="mb-3">{{ editandoId ? 'Editar Ejemplar' : 'Nuevo Ejemplar' }}</h4>
+
+                <div class="form-group mb-3">
+                    <label class="form-label" for="codigo">Código de Inventario</label>
+                    <input id="codigo" type="number" min="1" v-model.number="form.codigo"
+                           class="form-control" placeholder="Ej. 1001" required />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="form-label" for="estado">Estado</label>
+                    <select id="estado" v-model="form.estado" class="form-control">
+                        <option value="Disponible">Disponible</option>
+                        <option value="Prestado">Prestado</option>
+                    </select>
+                </div>
+
+                <p v-if="error" class="text-danger small">{{ error }}</p>
+
+                <div class="form-actions d-flex gap-2 justify-content-end mt-4">
+                    <button type="submit" class="btn btn-primary" :disabled="guardando">Guardar</button>
+                    <button type="button" v-on:click="cerrarModal" class="btn btn-outline-secondary">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js"></script>
+    <script src="~/js/ejemplares.js" asp-append-version="true"></script>
+}

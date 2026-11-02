@@ -5,8 +5,13 @@ namespace BibliotecaPublica.Repositories;
 
 public class RepositorioLibro : RepositorioBase
 {
-    public RepositorioLibro(IConfiguration configuration) : base(configuration) { }
+    private readonly RepositorioEjemplar _repoEjemplar;
 
+    public RepositorioLibro(IConfiguration configuration, RepositorioEjemplar repoEjemplar)
+        : base(configuration)
+    {
+        _repoEjemplar = repoEjemplar;
+    }
     public IList<Libro> ObtenerPaginado(string? buscar = null, int paginaNro = 1, int tamPagina = 10)
     {
         IList<Libro> listado = new List<Libro>();
@@ -39,6 +44,7 @@ public class RepositorioLibro : RepositorioBase
                     {
                         var libro = ParseLibroConAutor(reader);
                         libro.Generos = ObtenerGenerosDeLibro(libro.Id);
+                        libro.Ejemplares = _repoEjemplar.ObtenerPorLibro(libro.Id);
                         listado.Add(libro);
                     }
                 }
@@ -77,12 +83,12 @@ public class RepositorioLibro : RepositorioBase
     public Libro? ObtenerPorId(int id)
     {
         var query = @"SELECT l.*, 
-                           a.id as autor_id, a.nombre as autor_nombre, a.apellido as autor_apellido,
-                           ed.id as editorial_id, ed.nombre as editorial_nombre
-                    FROM Libro l
-                    INNER JOIN Autor a ON l.id_autor = a.id
-                    LEFT JOIN Editorial ed ON l.id_editorial = ed.id
-                    WHERE l.id = @id AND l.activo = 1";
+                             a.id as autor_id, a.nombre as autor_nombre, a.apellido as autor_apellido,
+                             ed.id as editorial_id, ed.nombre as editorial_nombre
+                      FROM Libro l
+                      INNER JOIN Autor a ON l.id_autor = a.id
+                      LEFT JOIN Editorial ed ON l.id_editorial = ed.id
+                      WHERE l.id = @id AND l.activo = 1";
 
         using MySqlConnection connection = new(connectionString);
         using MySqlCommand command = new(query, connection);
@@ -94,6 +100,7 @@ public class RepositorioLibro : RepositorioBase
         {
             var libro = ParseLibroConAutor(reader);
             libro.Generos = ObtenerGenerosDeLibro(libro.Id);
+            libro.Ejemplares = _repoEjemplar.ObtenerPorLibro(libro.Id);
             return libro;
         }
         return null;
@@ -190,9 +197,9 @@ public class RepositorioLibro : RepositorioBase
     {
         var listado = new List<Genero>();
         var query = @"SELECT g.id, g.nombre, g.activo 
-                  FROM Genero g
-                  INNER JOIN libro_genero lg ON g.id = lg.id_genero
-                  WHERE lg.id_libro = @idLibro";
+                      FROM Genero g
+                      INNER JOIN libro_genero lg ON g.id = lg.id_genero
+                      WHERE lg.id_libro = @idLibro";
 
         using MySqlConnection connection = new(connectionString);
         using MySqlCommand command = new(query, connection);
@@ -211,7 +218,6 @@ public class RepositorioLibro : RepositorioBase
         }
         return listado;
     }
-
     private static Libro ParseLibroConAutor(MySqlDataReader reader)
     {
         return new Libro

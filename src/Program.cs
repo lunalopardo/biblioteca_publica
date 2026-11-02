@@ -33,6 +33,7 @@ builder.Services.AddScoped<RepositorioNacionalidad>();
 builder.Services.AddScoped<RepositorioGenero>();
 builder.Services.AddScoped<RepositorioLibro>();
 builder.Services.AddScoped<RepositorioEditorial>();
+builder.Services.AddScoped<RepositorioEjemplar>();
 
 var app = builder.Build();
 

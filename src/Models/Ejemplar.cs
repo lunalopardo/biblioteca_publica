@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace BibliotecaPublica.Models;
 
@@ -12,22 +13,23 @@ public class Ejemplar
 {
     public int Id { get; set; }
 
-    [Required(ErrorMessage = "Debe asociar el ejemplar a un libro.")]
+    [Range(1, int.MaxValue, ErrorMessage = "Debe asociar el ejemplar a un libro.")]
     [Display(Name = "Libro")]
     public int IdLibro { get; set; }
 
-    [Required(ErrorMessage = "El código de inventario es obligatorio.")]
+    [Range(1, int.MaxValue, ErrorMessage = "El código de inventario debe ser un número positivo.")]
     [Display(Name = "Código de inventario")]
     public int CodigoInventario { get; set; }
 
     [Required(ErrorMessage = "El estado del ejemplar es obligatorio.")]
+    [RegularExpression("^(Disponible|Prestado)$", ErrorMessage = "Estado inválido.")]
     [Display(Name = "Estado")]
     public string Estado { get; set; } = EstadoEjemplar.Disponible.ToString();
 
     [Display(Name = "Activo")]
     public bool Activo { get; set; } = true;
 
-    // Objeto mapeado mediante JOIN
+    [ValidateNever]
     public Libro? Libro { get; set; }
 
     public override string ToString() => $"Código #{CodigoInventario} - {Libro?.Titulo ?? "Sin título"}";
