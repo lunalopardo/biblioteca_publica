@@ -1,0 +1,139 @@
+@using BibliotecaPublica.Models
+@model IEnumerable<BibliotecaPublica.Models.Suscripcion>
+@{
+    var afiliado = (Afiliado)ViewBag.Afiliado;
+    ViewData["Title"] = "Suscripciones";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/formularios.css" />
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <h3>Suscripciones de @afiliado.Apellido, @afiliado.Nombre</h3>
+        <a asp-action="Create" asp-route-idAfiliado="@afiliado.Id" class="btn btn-primary">
+            + Nueva suscripción
+        </a>
+    </div>
+
+    @if (TempData["Exito"] != null)
+    {
+        <div class="alert alert-success text-center">@TempData["Exito"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger text-center">@TempData["Error"]</div>
+    }
+
+    <div class="table-responsive">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>Desde</th>
+                    <th>Hasta</th>
+                    <th>Monto</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center py-3">Este afiliado todavía no tiene suscripciones.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var s in Model)
+                    {
+                        <tr>
+                            <td>@s.FechaInicio.ToString("dd/MM/yyyy")</td>
+                            <td>@s.FechaFin.ToString("dd/MM/yyyy")</td>
+                            <td>$@s.Monto.ToString("N2")</td>
+                            <td>
+                                @if (!s.Pagada)
+                                {
+                                    <span class="badge badge-warning">Pendiente de pago</span>
+                                }
+                                else if (s.Vigente)
+                                {
+                                    <span class="badge badge-active">Vigente</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-neutral">Vencida</span>
+                                }
+                            </td>
+                            <td class="actions-cell">
+                                @if (s.Pagada)
+                                {
+                                    <a asp-controller="Pagos" asp-action="Index" asp-route-idAfiliado="@afiliado.Id"
+                                       class="btn-icon" title="Ver pago">
+                                        <span class="material-symbols-outlined">receipt_long</span>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a asp-controller="Pagos" asp-action="Create" asp-route-idSuscripcion="@s.Id" class="btn-icon"
+                                       title="Registrar pago">
+                                        <span class="material-symbols-outlined">payments</span>
+                                    </a>
+                                    <button type="button" class="btn-icon btn-icon-danger" title="Anular suscripción"
+                                            data-bs-toggle="modal" data-bs-target="#modalAnular" data-id="@s.Id"
+                                            data-periodo="@s.FechaInicio.ToString("dd/MM/yyyy") al @s.FechaFin.ToString("dd/MM/yyyy")">
+                                        <span class="material-symbols-outlined">delete</span>
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="form-actions">
+        <a asp-controller="Pagos" asp-action="Index" asp-route-idAfiliado="@afiliado.Id"
+           class="btn btn-outline-secondary">Ver todos los pagos</a>
+        <a asp-controller="Afiliados" asp-action="Index" class="btn btn-outline-secondary">Volver a afiliados</a>
+    </div>
+</div>
+
+<!-- Modal de anulación -->
+<div class="modal fade" id="modalAnular" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content form-card border-0 shadow-lg modal-content-custom">
+            <h3 class="modal-title-custom text-danger">Anular suscripción</h3>
+            <p id="modalAnularTexto" class="modal-subtitle mb-3">¿Está seguro de que desea anular esta suscripción?</p>
+
+            <form asp-action="Anular" method="post">
+                <input type="hidden" id="suscripcionIdAnular" name="id" />
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-danger">Sí, anular</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var modal = document.getElementById('modalAnular');
+            if (!modal) return;
+
+            modal.addEventListener('show.bs.modal', function (event) {
+                var boton = event.relatedTarget;
+                modal.querySelector('#suscripcionIdAnular').value = boton.getAttribute('data-id');
+                modal.querySelector('#modalAnularTexto').textContent =
+                    `¿Está seguro de que desea anular la suscripción del ${boton.getAttribute('data-periodo')}?`;
+            });
+        });
+    </script>
+}

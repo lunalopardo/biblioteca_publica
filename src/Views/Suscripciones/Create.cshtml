@@ -1,0 +1,42 @@
+@using BibliotecaPublica.Models
+@model BibliotecaPublica.Models.Suscripcion
+@{
+    var afiliado = (Afiliado)ViewBag.Afiliado;
+    ViewData["Title"] = "Nueva suscripción";
+}
+
+<div class="form-card">
+    <h3>Nueva suscripción para @afiliado.Apellido, @afiliado.Nombre</h3>
+
+    <form asp-action="Create" method="post">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <input type="hidden" asp-for="IdAfiliado" />
+
+        <div class="form-group mb-3">
+            <label asp-for="FechaInicio" class="form-label"></label>
+            <input asp-for="FechaInicio" class="form-control" />
+            <span asp-validation-for="FechaInicio" class="text-danger"></span>
+        </div>
+
+        <div class="form-group mb-3">
+            <label asp-for="FechaFin" class="form-label"></label>
+            <input asp-for="FechaFin" class="form-control" />
+            <span asp-validation-for="FechaFin" class="text-danger"></span>
+        </div>
+
+        <div class="form-group mb-3">
+            <label asp-for="Monto" class="form-label"></label>
+            <input asp-for="Monto" class="form-control" />
+            <span asp-validation-for="Monto" class="text-danger"></span>
+        </div>
+
+        <div class="form-actions d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            <a asp-action="Index" asp-route-idAfiliado="@Model.IdAfiliado" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
