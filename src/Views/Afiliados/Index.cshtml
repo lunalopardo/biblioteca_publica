@@ -4,6 +4,11 @@
     string filtroActual = ViewData["FiltroActual"] as string ?? "";
     int paginaActual = (int)(ViewData["PaginaActual"] ?? 1);
     int totalPaginas = (int)(ViewData["TotalPaginas"] ?? 1);
+
+    // true si la suscripción vigente de hoy está pagada.
+    // Si el id no está en el diccionario, no tiene suscripción vigente hoy.
+    var estadoSuscripciones = ViewData["EstadoSuscripciones"] as Dictionary<int, bool>
+                              ?? new Dictionary<int, bool>();
 }
 
 @section Styles {
@@ -31,7 +36,7 @@
     <form asp-action="Index" method="get" class="search-bar">
         <input type="text" name="buscar" value="@filtroActual" class="form-control"
                placeholder="Buscar por nombre, apellido o email..." />
-        
+
         <button type="submit" class="btn btn-primary">
             <span class="material-symbols-outlined">search</span>
             <span>Buscar</span>
@@ -51,7 +56,7 @@
                     <th>Email</th>
                     <th>Teléfono</th>
                     <th>Fecha de Alta</th>
-                    <th>Estado Cuota</th>
+                    <th>Suscripción</th>
                     <th>Sanción</th>
                     <th>Acciones</th>
                 </tr>
@@ -73,13 +78,17 @@
                             <td>@(string.IsNullOrEmpty(afiliado.Telefono) ? "-" : afiliado.Telefono)</td>
                             <td>@afiliado.FechaAlta.ToString("dd/MM/yyyy")</td>
                             <td>
-                                @if (afiliado.Estado)
+                                @if (!estadoSuscripciones.TryGetValue(afiliado.Id, out bool pagada))
                                 {
-                                    <span class="badge badge-active">Al día</span>
+                                    <span class="badge badge-inactive">Sin suscripción</span>
+                                }
+                                else if (pagada)
+                                {
+                                    <span class="badge badge-active">Activa</span>
                                 }
                                 else
                                 {
-                                    <span class="badge badge-inactive">Adeuda</span>
+                                    <span class="badge badge-warning">Pendiente de pago</span>
                                 }
                             </td>
                             <td>
@@ -95,6 +104,14 @@
                             <td class="actions-cell">
                                 <a asp-action="Details" asp-route-id="@afiliado.Id" class="btn-icon" title="Ver detalle">
                                     <span class="material-symbols-outlined">visibility</span>
+                                </a>
+                                <a asp-controller="Suscripciones" asp-action="Index" asp-route-idAfiliado="@afiliado.Id"
+                                   class="btn-icon" title="Ver suscripciones">
+                                    <span class="material-symbols-outlined">workspace_premium</span>
+                                </a>
+                                <a asp-controller="Pagos" asp-action="Index" asp-route-idAfiliado="@afiliado.Id"
+                                   class="btn-icon" title="Ver pagos">
+                                    <span class="material-symbols-outlined">receipt_long</span>
                                 </a>
                                 <a asp-action="Edit" asp-route-id="@afiliado.Id" class="btn-icon" title="Editar">
                                     <span class="material-symbols-outlined">edit</span>
@@ -149,10 +166,10 @@
 <!-- Modal de Eliminación -->
 <div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content form-card border-0 shadow-lg" style="margin: 0; max-width: 100%;">
+        <div class="modal-content form-card border-0 shadow-lg modal-content-custom">
             <h3 class="modal-title-custom text-danger">Confirmar Baja</h3>
             <p id="modalTexto" class="modal-subtitle mb-3">¿Está seguro de que desea dar de baja a este afiliado?</p>
-            
+
             <form id="formEliminar" asp-action="Delete" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" id="afiliadoIdEliminar" name="id" />

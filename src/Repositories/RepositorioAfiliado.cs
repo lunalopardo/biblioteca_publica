@@ -78,7 +78,7 @@ public class RepositorioAfiliado : RepositorioBase
     }
 
     // Obtener Afiliado por ID
-    public Afiliado? GetById(int id)
+    public Afiliado? ObtenerPorId(int id)
     {
         var query = "SELECT * FROM Afiliado WHERE id = @id AND activo = 1";
         using MySqlConnection connection = new(connectionString);

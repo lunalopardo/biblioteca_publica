@@ -2,71 +2,89 @@
 
 @{
     ViewData["Title"] = "Detalles del Afiliado";
+
+    var estadoSuscripciones = ViewData["EstadoSuscripciones"] as Dictionary<int, bool>
+                              ?? new Dictionary<int, bool>();
+    bool tieneSuscripcionVigente = estadoSuscripciones.TryGetValue(Model.Id, out bool pagada);
+
+    var iniciales = ((Model.Nombre.Length > 0 ? Model.Nombre[0].ToString() : "")
+                   + (Model.Apellido.Length > 0 ? Model.Apellido[0].ToString() : "")).ToUpper();
 }
 
 @section Styles {
     <link rel="stylesheet" href="~/css/site.css" />
     <link rel="stylesheet" href="~/css/formularios.css" />
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 }
 
-<div class="form-card form-card-narrow">
+<div class="form-card form-card-medium">
     <div class="card-header-flex">
         <h2>Detalles del Afiliado</h2>
+        <a asp-controller="Suscripciones" asp-action="Index" asp-route-idAfiliado="@Model.Id"
+           class="btn btn-primary btn-sm">
+            <span class="material-symbols-outlined icon-inline">workspace_premium</span>
+            <span>Ver suscripciones</span>
+        </a>
     </div>
 
-    <div class="form-group">
-        <label class="form-label">Nombre y Apellido</label>
-        <div class="form-control-view">@Model.Apellido, @Model.Nombre</div>
-    </div>
-
-    <div class="form-group">
-        <label class="form-label">Correo Electrónico</label>
-        <div class="form-control-view">@Model.Email</div>
-    </div>
-
-    <div class="form-group">
-        <label class="form-label">Teléfono</label>
-        <div class="form-control-view">@(string.IsNullOrEmpty(Model.Telefono) ? "No especificado" : Model.Telefono)
+    <div class="profile-header">
+        <div class="avatar-placeholder-md">@iniciales</div>
+        <div>
+            <h3 class="profile-name">@Model.Apellido, @Model.Nombre</h3>
+            <span class="profile-meta">Afiliado desde el @Model.FechaAlta.ToString("dd/MM/yyyy")</span>
         </div>
     </div>
 
-    <div class="form-group">
-        <label class="form-label">Fecha de Alta</label>
-        <div class="form-control-view">@Model.FechaAlta.ToString("dd/MM/yyyy")</div>
-    </div>
-
-    <div class="form-grid-2">
-        <div class="form-group">
-            <label class="form-label">Estado de la Cuota</label>
-            <div style="margin-top: 6px;">
-                @if (Model.Estado)
-                {
-                    <span class="badge badge-active">Al día</span>
-                }
-                else
-                {
-                    <span class="badge badge-inactive">Adeuda</span>
-                }
+    <div class="detail-section">
+        <h4 class="detail-section-title">Datos de contacto</h4>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="detail-label">Correo electrónico</span>
+                <span class="detail-value">@Model.Email</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Teléfono</span>
+                <span class="detail-value">@(string.IsNullOrEmpty(Model.Telefono) ? "No especificado" :
+                                        Model.Telefono)</span>
+                </div>
             </div>
         </div>
 
-        <div class="form-group">
-            <label class="form-label">Estado de Sanción</label>
-            <div style="margin-top: 6px;">
-                @if (Model.Sancionado)
-                {
-                    <span class="badge badge-inactive">Sancionado</span>
-                }
-                else
-                {
-                    <span class="badge badge-active">Normal</span>
-                }
+        <div class="detail-section">
+            <h4 class="detail-section-title">Estado</h4>
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <span class="detail-label">Suscripción</span>
+                    @if (!tieneSuscripcionVigente)
+                    {
+                        <span class="badge badge-inactive">Sin suscripción</span>
+                    }
+                    else if (pagada)
+                    {
+                        <span class="badge badge-active">Activa</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-warning">Pendiente de pago</span>
+                    }
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Sanción</span>
+                    @if (Model.Sancionado)
+                    {
+                        <span class="badge badge-inactive">Sancionado</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-active">Normal</span>
+                    }
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="form-actions">
-        <a asp-action="Index" class="btn btn-outline-secondary">Volver al Listado</a>
-        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Editar Afiliado</a>
+        <div class="form-actions">
+            <a asp-action="Index" class="btn btn-outline-secondary">Volver al Listado</a>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Editar Afiliado</a>
+        </div>
     </div>
-</div>

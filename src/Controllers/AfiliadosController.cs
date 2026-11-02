@@ -6,7 +6,7 @@ using BibliotecaPublica.Repositories;
 namespace BibliotecaPublica.Controllers
 {
     [Authorize]
-    public class AfiliadosController(RepositorioAfiliado repo) : Controller
+    public class AfiliadosController(RepositorioAfiliado repo, RepositorioSuscripcion repoSuscripcion) : Controller
     {
         // GET: Afiliados (con paginado)
         public IActionResult Index(string buscar, int pagina = 1)
@@ -21,6 +21,9 @@ namespace BibliotecaPublica.Controllers
             ViewData["PaginaActual"] = pagina;
             ViewData["TotalPaginas"] = totalPaginas;
 
+            // clave = id del afiliado, valor = true si la suscripción de hoy está pagada
+            ViewData["EstadoSuscripciones"] = repoSuscripcion.ObtenerEstadoActual(listado.Select(a => a.Id));
+
             return View(listado);
         }
 
@@ -29,8 +32,10 @@ namespace BibliotecaPublica.Controllers
         {
             if (id == null) return NotFound();
 
-            var afiliado = repo.GetById(id.Value);
+            var afiliado = repo.ObtenerPorId(id.Value);
             if (afiliado == null) return NotFound();
+
+            ViewData["EstadoSuscripciones"] = repoSuscripcion.ObtenerEstadoActual(new[] { afiliado.Id });
 
             return View(afiliado);
         }
@@ -63,7 +68,7 @@ namespace BibliotecaPublica.Controllers
         {
             if (id == null) return NotFound();
 
-            var afiliado = repo.GetById(id.Value);
+            var afiliado = repo.ObtenerPorId(id.Value);
             if (afiliado == null) return NotFound();
 
             return View(afiliado);
@@ -97,7 +102,7 @@ namespace BibliotecaPublica.Controllers
         {
             if (id == null) return NotFound();
 
-            var afiliado = repo.GetById(id.Value);
+            var afiliado = repo.ObtenerPorId(id.Value);
             if (afiliado == null) return NotFound();
 
             return View(afiliado);
