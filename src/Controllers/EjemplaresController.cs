@@ -28,6 +28,9 @@ public class EjemplaresController : Controller
     {
         if (!ModelState.IsValid) return BadRequest(new { message = PrimerError() });
 
+        // Un ejemplar nuevo siempre empieza disponible; después lo cambian los préstamos
+        ejemplar.Estado = EstadoEjemplar.Disponible.ToString();
+
         try
         {
             var id = _repoEjemplar.Create(ejemplar);
@@ -52,6 +55,7 @@ public class EjemplaresController : Controller
 
         try
         {
+            // El repositorio solo actualiza código y ubicación; el estado no se toca
             return _repoEjemplar.Update(ejemplar) > 0
                 ? Ok(new { message = "Ejemplar actualizado exitosamente." })
                 : NotFound(new { message = "El ejemplar no existe." });
@@ -72,6 +76,15 @@ public class EjemplaresController : Controller
     {
         try
         {
+            // Un ejemplar prestado no se puede dar de baja: primero hay que registrar la devolución
+            if (_repoEjemplar.EstaPrestado(id))
+            {
+                return Conflict(new
+                {
+                    message = "No se puede eliminar: el ejemplar está prestado. Registrá primero la devolución."
+                });
+            }
+
             return _repoEjemplar.AnularLogico(id) > 0
                 ? Ok(new { message = "Ejemplar eliminado." })
                 : NotFound(new { message = "El ejemplar no existe." });

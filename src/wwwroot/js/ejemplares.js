@@ -25,8 +25,9 @@ createApp({
         const guardando = ref(false);
         const mostrarModal = ref(false);
         const editandoId = ref(null);
+        const estadoActual = ref('');
         const error = ref('');
-        const form = reactive({ codigo: null, estado: 'Disponible' });
+        const form = reactive({ codigo: null, ubicacion: '' });
 
         const cargarEjemplares = async () => {
             cargando.value = true;
@@ -42,8 +43,9 @@ createApp({
 
         const abrirModal = (ejemplar = null) => {
             editandoId.value = ejemplar?.id ?? null;
+            estadoActual.value = ejemplar?.estado ?? '';
             form.codigo = ejemplar?.codigoInventario ?? null;
-            form.estado = ejemplar?.estado ?? 'Disponible';
+            form.ubicacion = ejemplar?.ubicacion ?? '';
             error.value = '';
             mostrarModal.value = true;
         };
@@ -62,7 +64,7 @@ createApp({
                         id: editandoId.value ?? 0,
                         idLibro,
                         codigoInventario: form.codigo,
-                        estado: form.estado
+                        ubicacion: form.ubicacion?.trim() || null
                     })
                 });
                 cerrarModal();
@@ -87,7 +89,7 @@ createApp({
         onMounted(cargarEjemplares);
 
         return {
-            ejemplares, cargando, guardando, mostrarModal, editandoId, error, form,
+            ejemplares, cargando, guardando, mostrarModal, editandoId, estadoActual, error, form,
             abrirModalCrear, abrirModalEditar, cerrarModal, guardarEjemplar, eliminarEjemplar
         };
     }

@@ -26,6 +26,10 @@ public class Ejemplar
     [Display(Name = "Estado")]
     public string Estado { get; set; } = EstadoEjemplar.Disponible.ToString();
 
+    [StringLength(100, ErrorMessage = "La ubicación no puede superar los 100 caracteres.")]
+    [Display(Name = "Ubicación")]
+    public string? Ubicacion { get; set; }
+
     [Display(Name = "Activo")]
     public bool Activo { get; set; } = true;
 
