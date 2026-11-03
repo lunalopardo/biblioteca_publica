@@ -140,20 +140,11 @@ public class AutoresController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // GET: /Autores/Buscar
+    // GET: /Autores/Buscar (Select2 del formulario de libros; filtra y limita en SQL)
     [HttpGet]
     public IActionResult Buscar(string? q)
     {
-        var autores = _repositorioAutor.ObtenerTodos();
-        if (!string.IsNullOrWhiteSpace(q))
-        {
-            autores = autores.Where(a =>
-                (a.Nombre + " " + a.Apellido).Contains(q, StringComparison.OrdinalIgnoreCase) ||
-                a.Apellido.Contains(q, StringComparison.OrdinalIgnoreCase) ||
-                a.Nombre.Contains(q, StringComparison.OrdinalIgnoreCase)).ToList();
-        }
-
-        var resultado = autores.Select(a => new
+        var resultado = _repositorioAutor.ObtenerParaSelect(q).Select(a => new
         {
             id = a.Id,
             text = $"{a.Apellido}, {a.Nombre}"

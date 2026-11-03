@@ -103,17 +103,11 @@ public class EditorialesController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // GET: /Editoriales/Buscar
+    // GET: /Editoriales/Buscar (Select2 del formulario de libros; filtra y limita en SQL)
     [HttpGet]
     public IActionResult Buscar(string? q)
     {
-        var editoriales = _repositorioEditorial.ObtenerTodos();
-        if (!string.IsNullOrWhiteSpace(q))
-        {
-            editoriales = editoriales.Where(e => e.Nombre.Contains(q, StringComparison.OrdinalIgnoreCase)).ToList();
-        }
-
-        var resultado = editoriales.Select(e => new
+        var resultado = _repositorioEditorial.ObtenerParaSelect(q).Select(e => new
         {
             id = e.Id,
             text = e.Nombre

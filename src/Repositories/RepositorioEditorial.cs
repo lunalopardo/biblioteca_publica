@@ -84,6 +84,32 @@ public class RepositorioEditorial : RepositorioBase
         return reader.Read() ? ParseEditorial(reader) : null;
     }
 
+    // Listado reducido para el Select2: filtra y limita en SQL
+    public IList<Editorial> ObtenerParaSelect(string? buscar = null, int limite = 20)
+    {
+        var listado = new List<Editorial>();
+        var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
+
+        const string query = @"SELECT id, nombre, activo FROM Editorial
+                               WHERE activo = 1
+                                 AND (@buscar IS NULL OR nombre LIKE @buscar)
+                               ORDER BY nombre ASC
+                               LIMIT @limite";
+
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(query, connection);
+        command.Parameters.AddWithValue("@buscar", paramBuscar);
+        command.Parameters.AddWithValue("@limite", limite);
+
+        connection.Open();
+        using MySqlDataReader reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            listado.Add(ParseEditorial(reader));
+        }
+        return listado;
+    }
+
     // obtener por id
     public Editorial? ObtenerPorId(int id)
     {

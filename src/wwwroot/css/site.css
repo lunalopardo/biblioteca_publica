@@ -86,7 +86,8 @@ body {
   flex-direction: column;
   min-height: 100vh;
   margin: 0;
-  padding: 110px 0 0; /* espacio para la navbar flotante */
+  padding: 110px 0 0;
+  /* espacio para la navbar flotante */
   background-color: var(--bg-body);
   color: var(--text-main);
   font-family: var(--font-family);
@@ -399,7 +400,7 @@ a:hover {
 }
 
 /* Menú desplegable abierto */
-.navbar-nav .show > .nav-link {
+.navbar-nav .show>.nav-link {
   background-color: var(--color-primary) !important;
   color: #ffffff !important;
   box-shadow: 0 4px 10px rgba(189, 68, 47, 0.25);
@@ -470,6 +471,7 @@ a:hover {
     opacity: 0;
     transform: translateY(6px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -570,10 +572,11 @@ a:hover {
   color: var(--text-main);
 }
 
-.metrics-bar > :nth-child(1) .metric-value { color: var(--palette-brick); }
-.metrics-bar > :nth-child(3) .metric-value { color: var(--palette-navy); }
-.metrics-bar > :nth-child(5) .metric-value { color: var(--palette-teal); }
-.metrics-bar > :nth-child(7) .metric-value { color: var(--palette-plum); }
+.metric-value {
+  color: var(--palette-orange);
+}
+
+
 
 .metric-divider {
   width: 1px;
@@ -687,12 +690,29 @@ a:hover {
 }
 
 /* Un color de la paleta para cada acceso */
-.quick-action-row:nth-child(6n + 1) .action-icon { background-color: var(--palette-orange); }
-.quick-action-row:nth-child(6n + 2) .action-icon { background-color: var(--palette-brick); }
-.quick-action-row:nth-child(6n + 3) .action-icon { background-color: var(--palette-navy); }
-.quick-action-row:nth-child(6n + 4) .action-icon { background-color: var(--palette-plum); }
-.quick-action-row:nth-child(6n + 5) .action-icon { background-color: var(--palette-teal); }
-.quick-action-row:nth-child(6n + 6) .action-icon { background-color: var(--palette-wine); }
+.quick-action-row:nth-child(6n + 1) .action-icon {
+  background-color: var(--palette-orange);
+}
+
+.quick-action-row:nth-child(6n + 2) .action-icon {
+  background-color: var(--palette-brick);
+}
+
+.quick-action-row:nth-child(6n + 3) .action-icon {
+  background-color: var(--palette-navy);
+}
+
+.quick-action-row:nth-child(6n + 4) .action-icon {
+  background-color: var(--palette-plum);
+}
+
+.quick-action-row:nth-child(6n + 5) .action-icon {
+  background-color: var(--palette-teal);
+}
+
+.quick-action-row:nth-child(6n + 6) .action-icon {
+  background-color: var(--palette-wine);
+}
 
 .action-icon .material-symbols-outlined {
   font-size: 20px;
