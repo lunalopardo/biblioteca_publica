@@ -1,0 +1,17 @@
+@*
+    Modal de confirmación compartido (reemplaza al confirm() del navegador). Lo maneja confirmar() en site.js.
+*@
+<div class="modal fade" id="modalConfirmacion" tabindex="-1" aria-hidden="true"
+     aria-labelledby="modalConfirmacionTitulo">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content form-card border-0 shadow-lg modal-content-custom">
+            <h3 id="modalConfirmacionTitulo" class="modal-title-custom">Confirmar acción</h3>
+            <p id="modalConfirmacionTexto" class="modal-subtitle mb-3"></p>
+
+            <div class="form-actions mt-4">
+                <button type="button" id="modalConfirmacionAceptar" class="btn btn-danger">Confirmar</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>

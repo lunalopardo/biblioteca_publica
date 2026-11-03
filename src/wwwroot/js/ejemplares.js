@@ -28,6 +28,7 @@ createApp({
         const editandoId = ref(null);
         const estadoActual = ref('');
         const error = ref('');
+        const errorLista = ref('');
         const form = reactive({ codigo: null, ubicacion: '' });
 
         const cargarEjemplares = async () => {
@@ -78,19 +79,26 @@ createApp({
         };
 
         const eliminarEjemplar = async (id) => {
-            if (!confirm('¿Está seguro de eliminar este ejemplar?')) return;
+            errorLista.value = '';
+
+            const aceptado = await confirmar('¿Está seguro de eliminar este ejemplar?', {
+                titulo: 'Eliminar ejemplar',
+                textoBoton: 'Sí, eliminar'
+            });
+            if (!aceptado) return;
+
             try {
                 await request(`/Ejemplares/EliminarAjax?id=${id}`, { method: 'POST' });
                 await cargarEjemplares();
             } catch (err) {
-                alert(err.message);
+                errorLista.value = err.message;
             }
         };
 
         onMounted(cargarEjemplares);
 
         return {
-            ejemplares, cargando, guardando, mostrarModal, editandoId, estadoActual, error, form,
+            ejemplares, cargando, guardando, mostrarModal, editandoId, estadoActual, error, errorLista, form,
             abrirModalCrear, abrirModalEditar, cerrarModal, guardarEjemplar, eliminarEjemplar
         };
     }

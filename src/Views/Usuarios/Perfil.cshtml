@@ -109,7 +109,8 @@
                     <p class="action-banner-desc">Esta acción desactivará al usuario del sistema.</p>
                 </div>
                 <form asp-controller="Usuarios" asp-action="Eliminar" asp-route-id="@Model.Id" method="post"
-                      onsubmit="return confirm('¿Está seguro de que desea desactivar a este usuario?');">
+                      data-confirmar="¿Está seguro de que desea desactivar a @Model.Nombre @Model.Apellido?"
+                      data-confirmar-titulo="Dar de baja usuario" data-confirmar-boton="Sí, dar de baja">
                     <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
                 </form>
             </div>
@@ -122,7 +123,9 @@
                     <p class="action-banner-desc">Esta acción le devolverá el acceso al sistema a este usuario.</p>
                 </div>
                 <form asp-controller="Usuarios" asp-action="Reactivar" asp-route-id="@Model.Id" method="post"
-                      onsubmit="return confirm('¿Está seguro de que desea reactivar a este usuario?');">
+                      data-confirmar="¿Está seguro de que desea reactivar a @Model.Nombre @Model.Apellido?"
+                      data-confirmar-titulo="Reactivar usuario" data-confirmar-boton="Sí, reactivar"
+                      data-confirmar-tipo="success">
                     <button type="submit" class="btn btn-success btn-sm">Reactivar</button>
                 </form>
             </div>

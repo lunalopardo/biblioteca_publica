@@ -62,6 +62,8 @@
                 <button type="button" v-on:click="abrirModalCrear" class="btn btn-primary btn-sm">+ Añadir Ejemplar</button>
             </div>
 
+            <div v-if="errorLista" class="alert alert-danger">{{ errorLista }}</div>
+
             <div class="ejemplares-list">
                 <div v-if="cargando" class="text-muted text-center py-4 small">Cargando ejemplares...</div>
 
