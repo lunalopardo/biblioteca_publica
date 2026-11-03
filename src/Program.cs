@@ -67,6 +67,9 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+// Errores HTTP sin contenido muestran la página de Home/Estado
+app.UseStatusCodePagesWithReExecute("/Home/Estado", "?codigo={0}");
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 

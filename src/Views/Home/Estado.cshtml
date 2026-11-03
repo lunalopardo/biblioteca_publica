@@ -1,0 +1,34 @@
+@model int
+@{
+    bool noExiste = Model == StatusCodes.Status404NotFound;
+    ViewData["Title"] = noExiste ? "Página no encontrada" : "Error";
+}
+
+<div class="form-card form-card-narrow error-page">
+    <span class="material-symbols-outlined error-page-icon">@(noExiste ? "menu_book" : "error")</span>
+
+    <span class="error-page-code">@Model</span>
+
+    <h2 class="error-page-title">
+        @(noExiste ? "¡Oops! Lo que buscás no existe" : "¡Oops! Algo salió mal")
+    </h2>
+
+    <p class="error-page-text">
+        @if (noExiste)
+        {
+            <text>La página o el registro que intentaste abrir no está disponible. Puede que el enlace esté mal escrito o que se haya dado de baja.</text>
+        }
+        else
+        {
+            <text>No pudimos completar tu pedido. Volvé al inicio e intentá de nuevo.</text>
+        }
+    </p>
+
+    <div class="error-page-actions">
+        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">
+            <span class="material-symbols-outlined icon-inline">home</span>
+            Ir al inicio
+        </a>
+        <button type="button" class="btn btn-outline-secondary" onclick="history.back()">Volver atrás</button>
+    </div>
+</div>

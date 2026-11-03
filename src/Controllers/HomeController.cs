@@ -37,6 +37,22 @@ public class HomeController : Controller
         return View(viewModel);
     }
 
+    // Página de error HTTP (404 y otros)
+    [AllowAnonymous]
+    public IActionResult Estado(int codigo)
+    {
+        // Las llamadas AJAX esperan JSON, no una página
+        if (Request.Headers.XRequestedWith == "XMLHttpRequest")
+        {
+            string mensaje = codigo == StatusCodes.Status404NotFound
+                ? "Lo que buscás no existe."
+                : "Ocurrió un error inesperado.";
+            return Json(new { message = mensaje });
+        }
+
+        return View(codigo);
+    }
+
     // Página a la que manda UseExceptionHandler en producción
     [AllowAnonymous]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

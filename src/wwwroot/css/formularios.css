@@ -1030,3 +1030,54 @@ textarea.form-control {
     font-size: 0.85rem;
   }
 }
+
+/* Página de error (404 y otros códigos HTTP) */
+.error-page {
+  text-align: center;
+}
+
+.error-page-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 0.75rem;
+  border-radius: 50%;
+  background-color: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-size: 2.2rem;
+}
+
+.error-page-code {
+  display: block;
+  font-size: 4.5rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -2px;
+  background: linear-gradient(135deg, var(--palette-orange), var(--palette-brick));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.error-page-title {
+  margin: 1rem 0 0.5rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.error-page-text {
+  margin: 0 auto 1.75rem;
+  max-width: 34ch;
+  font-size: 0.92rem;
+  color: var(--text-muted);
+}
+
+.error-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
