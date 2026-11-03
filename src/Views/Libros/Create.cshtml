@@ -10,17 +10,15 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 }
 
-<div class="form-card" style="max-width: 750px;">
+<div class="form-card form-card-medium">
     <div class="card-header-flex">
         <h3>Nuevo Libro (Carga Manual)</h3>
     </div>
 
     <form asp-action="Create" method="post" enctype="multipart/form-data">
-        @Html.AntiForgeryToken()
-
         <div class="form-group text-center mb-4">
             <label class="form-label d-block">Portada del Libro</label>
-            
+
             <img id="imgPreview" src="#" alt="Portada" class="mb-3 is-hidden book-cover-preview" />
 
             <div id="portadaPlaceholder" class="text-muted mb-3 book-preview-placeholder">
@@ -31,8 +29,7 @@
                 <label for="PortadaFile" class="btn btn-outline-secondary btn-sm">
                     Seleccionar Portada
                 </label>
-                <input asp-for="PortadaFile" type="file" accept="image/*" class="is-hidden" id="PortadaFile"
-                       onchange="previewImage(event)" />
+                <input asp-for="PortadaFile" type="file" accept="image/*" class="is-hidden" id="PortadaFile" />
             </div>
             <span asp-validation-for="PortadaFile" class="mensaje-error"></span>
         </div>
@@ -71,15 +68,31 @@
                     }
                 }
             </select>
-            <span asp-validation-for="GenerosSeleccionados" class="text-danger"></span>
+            <span asp-validation-for="GenerosSeleccionados" class="mensaje-error"></span>
         </div>
 
-        <div class="form-grid-3">
+        <div class="form-grid-2">
             <div class="form-group">
                 <label asp-for="Isbn" class="form-label">ISBN</label>
                 <input asp-for="Isbn" class="form-control" placeholder="Ej. 978-..." />
                 <span asp-validation-for="Isbn" class="mensaje-error"></span>
             </div>
+            <div class="form-group">
+                <label asp-for="Idioma" class="form-label"></label>
+                <input asp-for="Idioma" class="form-control" list="idiomas-sugeridos" placeholder="Ej. Español" />
+                <datalist id="idiomas-sugeridos">
+                    <option value="Español"></option>
+                    <option value="Inglés"></option>
+                    <option value="Francés"></option>
+                    <option value="Portugués"></option>
+                    <option value="Italiano"></option>
+                    <option value="Alemán"></option>
+                </datalist>
+                <span asp-validation-for="Idioma" class="mensaje-error"></span>
+            </div>
+        </div>
+
+        <div class="form-grid-2">
             <div class="form-group">
                 <label asp-for="Paginas" class="form-label"></label>
                 <input asp-for="Paginas" type="number" class="form-control" placeholder="Ej. 350" />
@@ -90,6 +103,13 @@
                 <input asp-for="AnioPublicacion" type="number" class="form-control" placeholder="Ej. 2023" />
                 <span asp-validation-for="AnioPublicacion" class="mensaje-error"></span>
             </div>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Descripcion" class="form-label"></label>
+            <textarea asp-for="Descripcion" class="form-control" rows="5" maxlength="5000"
+                      placeholder="Sinopsis o breve descripción del libro..."></textarea>
+            <span asp-validation-for="Descripcion" class="mensaje-error"></span>
         </div>
 
         <div class="form-actions">
@@ -103,75 +123,7 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
-    <!-- Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/es.js"></script>
-
-    <script>
-        function previewImage(event) {
-            const input = event.target;
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const imgPreview = document.getElementById('imgPreview');
-                    const placeholder = document.getElementById('portadaPlaceholder');
-                    imgPreview.src = e.target.result;
-                    imgPreview.classList.remove('is-hidden');
-                    if (placeholder) {
-                        placeholder.classList.add('is-hidden');
-                    }
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        $(document).ready(function () {
-
-            // SELECT2 PARA AUTORES
-            $('#IdAutor').select2({
-                language: "es",
-                placeholder: "Escriba para buscar autor...",
-                minimumInputLength: 1,
-                ajax: {
-                    delay: 250,
-                    dataType: "json",
-                    url: function (params) {
-                        let q = params.term ? encodeURIComponent(params.term) : "";
-                        return `/Autores/Buscar?q=${q}`;
-                    },
-                    processResults: function (res) {
-                        return {
-                            results: res.map(i => ({ id: i.id, text: i.text }))
-                        };
-                    }
-                }
-            });
-
-            // SELECT2 PARA EDITORIALES
-            $('#IdEditorial').select2({
-                language: "es",
-                placeholder: "Escriba para buscar editorial...",
-                minimumInputLength: 1,
-                ajax: {
-                    delay: 250,
-                    dataType: "json",
-                    url: function (params) {
-                        let q = params.term ? encodeURIComponent(params.term) : "";
-                        return `/Editoriales/Buscar?q=${q}`;
-                    },
-                    processResults: function (res) {
-                        return {
-                            results: res.map(i => ({ id: i.id, text: i.text }))
-                        };
-                    }
-                }
-            });
-
-            // SELECT2 PARA GÉNEROS
-            $('#GenerosSeleccionados').select2({
-                language: "es",
-                placeholder: "Busque o seleccione los géneros..."
-            });
-        });
-    </script>
+    <script src="~/js/libros-form.js" asp-append-version="true"></script>
 }

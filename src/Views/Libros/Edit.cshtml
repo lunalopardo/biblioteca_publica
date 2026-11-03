@@ -10,19 +10,18 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 }
 
-<div class="form-card" style="max-width: 750px;">
+<div class="form-card form-card-medium">
     <div class="card-header-flex">
         <h3>Editar Libro</h3>
     </div>
 
     <form asp-action="Edit" method="post" enctype="multipart/form-data">
-        @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
-        <input type="hidden" asp-for="Portada" />
+        <input type="hidden" asp-for="EliminarPortada" id="EliminarPortada" />
 
         <div class="form-group text-center mb-4">
             <label class="form-label d-block">Portada del Libro</label>
-            
+
             <img id="imgPreview" src="@(string.IsNullOrEmpty(Model.Portada) ? "#" : Model.Portada)" alt="Portada"
                  class="mb-3 book-cover-preview @(string.IsNullOrEmpty(Model.Portada) ? "is-hidden" : "")" />
 
@@ -31,12 +30,18 @@
                 Sin portada registrada
             </div>
 
-            <div>
+            <div class="d-flex gap-2 justify-content-center">
                 <label for="PortadaFile" class="btn btn-outline-secondary btn-sm">
                     Cambiar Portada
                 </label>
-                <input asp-for="PortadaFile" type="file" accept="image/*" class="is-hidden" id="PortadaFile"
-                       onchange="previewImage(event)" />
+                <input asp-for="PortadaFile" type="file" accept="image/*" class="is-hidden" id="PortadaFile" />
+
+                @if (!string.IsNullOrEmpty(Model.Portada))
+                {
+                    <button type="button" id="btnQuitarPortada" class="btn btn-outline-danger btn-sm">
+                        Quitar Portada
+                    </button>
+                }
             </div>
             <span asp-validation-for="PortadaFile" class="mensaje-error"></span>
         </div>
@@ -79,20 +84,36 @@
                     foreach (var genero in (List<Genero>)ViewBag.Generos)
                     {
                         bool seleccionado = Model.GenerosSeleccionados != null &&
-                Model.GenerosSeleccionados.Contains(genero.Id);
+                                            Model.GenerosSeleccionados.Contains(genero.Id);
                         <option value="@genero.Id" selected="@seleccionado">@genero.Nombre</option>
                     }
                 }
             </select>
-            <span asp-validation-for="GenerosSeleccionados" class="text-danger"></span>
+            <span asp-validation-for="GenerosSeleccionados" class="mensaje-error"></span>
         </div>
 
-        <div class="form-grid-3">
+        <div class="form-grid-2">
             <div class="form-group">
                 <label asp-for="Isbn" class="form-label">ISBN</label>
                 <input asp-for="Isbn" class="form-control" />
                 <span asp-validation-for="Isbn" class="mensaje-error"></span>
             </div>
+            <div class="form-group">
+                <label asp-for="Idioma" class="form-label"></label>
+                <input asp-for="Idioma" class="form-control" list="idiomas-sugeridos" placeholder="Ej. Español" />
+                <datalist id="idiomas-sugeridos">
+                    <option value="Español"></option>
+                    <option value="Inglés"></option>
+                    <option value="Francés"></option>
+                    <option value="Portugués"></option>
+                    <option value="Italiano"></option>
+                    <option value="Alemán"></option>
+                </datalist>
+                <span asp-validation-for="Idioma" class="mensaje-error"></span>
+            </div>
+        </div>
+
+        <div class="form-grid-2">
             <div class="form-group">
                 <label asp-for="Paginas" class="form-label"></label>
                 <input asp-for="Paginas" type="number" class="form-control" />
@@ -103,6 +124,13 @@
                 <input asp-for="AnioPublicacion" type="number" class="form-control" />
                 <span asp-validation-for="AnioPublicacion" class="mensaje-error"></span>
             </div>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Descripcion" class="form-label"></label>
+            <textarea asp-for="Descripcion" class="form-control" rows="5" maxlength="5000"
+                      placeholder="Sinopsis o breve descripción del libro..."></textarea>
+            <span asp-validation-for="Descripcion" class="mensaje-error"></span>
         </div>
 
         <div class="form-actions">
@@ -116,75 +144,7 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
-    <!-- Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/es.js"></script>
-
-    <script>
-        function previewImage(event) {
-            const input = event.target;
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const imgPreview = document.getElementById('imgPreview');
-                    const placeholder = document.getElementById('portadaPlaceholder');
-                    imgPreview.src = e.target.result;
-                    imgPreview.classList.remove('is-hidden');
-                    if (placeholder) {
-                        placeholder.classList.add('is-hidden');
-                    }
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        $(document).ready(function () {
-
-            // SELECT2 PARA AUTORES
-            $('#IdAutor').select2({
-                language: "es",
-                placeholder: "Escriba para buscar autor...",
-                minimumInputLength: 1,
-                ajax: {
-                    delay: 250,
-                    dataType: "json",
-                    url: function (params) {
-                        let q = params.term ? encodeURIComponent(params.term) : "";
-                        return `/Autores/Buscar?q=${q}`;
-                    },
-                    processResults: function (res) {
-                        return {
-                            results: res.map(i => ({ id: i.id, text: i.text }))
-                        };
-                    }
-                }
-            });
-
-            // SELECT2 PARA EDITORIALES
-            $('#IdEditorial').select2({
-                language: "es",
-                placeholder: "Escriba para buscar editorial...",
-                minimumInputLength: 1,
-                ajax: {
-                    delay: 250,
-                    dataType: "json",
-                    url: function (params) {
-                        let q = params.term ? encodeURIComponent(params.term) : "";
-                        return `/Editoriales/Buscar?q=${q}`;
-                    },
-                    processResults: function (res) {
-                        return {
-                            results: res.map(i => ({ id: i.id, text: i.text }))
-                        };
-                    }
-                }
-            });
-
-            // SELECT2 PARA GÉNEROS (MÚLTIPLE)
-            $('#GenerosSeleccionados').select2({
-                language: "es",
-                placeholder: "Seleccione o busque los géneros..."
-            });
-        });
-    </script>
+    <script src="~/js/libros-form.js" asp-append-version="true"></script>
 }

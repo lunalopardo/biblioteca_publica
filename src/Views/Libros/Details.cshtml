@@ -34,88 +34,105 @@
 
             <div class="details-info">
                 <h2 class="details-title">@Model.Titulo</h2>
-                <p><strong>Autor:</strong> @(Model.Autor is null ? "Desconocido" : $"{Model.Autor.Apellido}, {Model.Autor.Nombre}")</p>
+                <p><strong>Autor:</strong> @(Model.Autor is null ? "Desconocido" : $"{Model.Autor.Apellido},        {Model.Autor.Nombre}")</p>
                 <p><strong>Editorial:</strong> @(Model.Editorial?.Nombre ?? "No especificada")</p>
-                <p><strong>ISBN:</strong> @(string.IsNullOrEmpty(Model.Isbn) ? "No registrado" : Model.Isbn)</p>
-                <p><strong>Año:</strong> @(Model.AnioPublicacion?.ToString() ?? "-")</p>
-                <p><strong>Páginas:</strong> @(Model.Paginas?.ToString() ?? "-")</p>
+                <p><strong>Idioma:</strong> @(string.IsNullOrWhiteSpace(Model.Idioma) ? "No especificado" :
+                                        Model.Idioma)</p>
+                    <p><strong>ISBN:</strong> @(string.IsNullOrEmpty(Model.Isbn) ? "No registrado" : Model.Isbn)</p>
+                    <p><strong>Año:</strong> @(Model.AnioPublicacion?.ToString() ?? "-")</p>
+                    <p><strong>Páginas:</strong> @(Model.Paginas?.ToString() ?? "-")</p>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.Descripcion))
+            {
+                <div class="details-description-box">
+                    <h4 class="detail-section-title">Descripción</h4>
+                    <p class="details-description">@Model.Descripcion</p>
+                </div>
+            }
+
+            <div class="form-actions mt-4">
+                <a asp-action="Index" class="btn btn-outline-secondary">Volver al Listado</a>
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Editar Libro</a>
             </div>
         </div>
 
-        <div class="form-actions mt-4">
-            <a asp-action="Index" class="btn btn-outline-secondary">Volver al Listado</a>
-        </div>
-    </div>
+        <div class="form-card ejemplares-card" id="ejemplares-app" v-cloak data-id-libro="@Model.Id"
+             data-token="@Antiforgery.GetAndStoreTokens(Context).RequestToken">
 
-    <div class="form-card ejemplares-card" id="ejemplares-app" v-cloak
-         data-id-libro="@Model.Id"
-         data-token="@Antiforgery.GetAndStoreTokens(Context).RequestToken">
-
-        <div class="card-header-flex mb-3">
-            <h3>Ejemplares</h3>
-            <button type="button" v-on:click="abrirModalCrear" class="btn btn-primary btn-sm">+ Añadir Ejemplar</button>
-        </div>
-
-        <div class="ejemplares-list">
-            <div v-if="cargando" class="text-muted text-center py-4 small">Cargando ejemplares...</div>
-
-            <div v-else-if="ejemplares.length === 0" class="text-muted text-center py-4 small">
-                No hay ejemplares registrados para este libro.
+            <div class="card-header-flex mb-3">
+                <h3>Ejemplares</h3>
+                <button type="button" v-on:click="abrirModalCrear" class="btn btn-primary btn-sm">+ Añadir Ejemplar</button>
             </div>
 
-            <template v-else>
-                <div v-for="ejemplar in ejemplares" :key="ejemplar.id" class="ejemplar-item">
-                    <div class="ejemplar-info">
-                        <span class="ejemplar-code">Cód. #{{ ejemplar.codigoInventario }}</span>
-                        <span class="badge"
-                              :class="ejemplar.estado === 'Disponible' ? 'badge-success' : 'badge-warning'">
-                            {{ ejemplar.estado }}
-                        </span>
+            <div class="ejemplares-list">
+                <div v-if="cargando" class="text-muted text-center py-4 small">Cargando ejemplares...</div>
+
+                <div v-else-if="ejemplares.length === 0" class="text-muted text-center py-4 small">
+                    No hay ejemplares registrados para este libro.
+                </div>
+
+                <template v-else>
+                    <div v-for="ejemplar in ejemplares" :key="ejemplar.id" class="ejemplar-item">
+                        <div class="ejemplar-info">
+                            <span class="ejemplar-code">Cód. #{{ ejemplar.codigoInventario }}</span>
+                            <span class="badge"
+                                  :class="ejemplar.estado === 'Disponible' ? 'badge-success' : 'badge-warning'">
+                                {{ ejemplar.estado }}
+                            </span>
+                            <span v-if="ejemplar.ubicacion" class="ejemplar-ubicacion">
+                                <span class="material-symbols-outlined icon-inline">location_on</span>
+                                {{ ejemplar.ubicacion }}
+                            </span>
+                        </div>
+                        <div class="ejemplar-actions">
+                            <button type="button" v-on:click="abrirModalEditar(ejemplar)" class="btn-icon" title="Editar">
+                                <span class="material-symbols-outlined">edit</span>
+                            </button>
+                            <button type="button" v-on:click="eliminarEjemplar(ejemplar.id)"
+                                    class="btn-icon btn-icon-danger" title="Eliminar">
+                                <span class="material-symbols-outlined">delete</span>
+                            </button>
+                        </div>
                     </div>
-                    <div class="ejemplar-actions">
-                        <button type="button" v-on:click="abrirModalEditar(ejemplar)" class="btn-icon" title="Editar">
-                            <span class="material-symbols-outlined">edit</span>
-                        </button>
-                        <button type="button" v-on:click="eliminarEjemplar(ejemplar.id)"
-                                class="btn-icon btn-icon-danger" title="Eliminar">
-                            <span class="material-symbols-outlined">delete</span>
-                        </button>
+                </template>
+            </div>
+
+            <div v-if="mostrarModal" class="modal-backdrop-custom" v-on:click.self="cerrarModal"
+                 v-on:keydown.esc="cerrarModal">
+                <form class="modal-panel" role="dialog" aria-modal="true" v-on:submit.prevent="guardarEjemplar">
+                    <h4 class="mb-3">{{ editandoId ? 'Editar Ejemplar' : 'Nuevo Ejemplar' }}</h4>
+
+                    <div class="form-group mb-3">
+                        <label class="form-label" for="codigo">Código de Inventario</label>
+                        <input id="codigo" type="number" min="1" v-model.number="form.codigo" class="form-control"
+                               placeholder="Ej. 1001" required />
                     </div>
-                </div>
-            </template>
-        </div>
 
-        <div v-if="mostrarModal" class="modal-backdrop-custom"
-             v-on:click.self="cerrarModal" v-on:keydown.esc="cerrarModal">
-            <form class="modal-panel" role="dialog" aria-modal="true" v-on:submit.prevent="guardarEjemplar">
-                <h4 class="mb-3">{{ editandoId ? 'Editar Ejemplar' : 'Nuevo Ejemplar' }}</h4>
+                    <div class="form-group mb-3">
+                        <label class="form-label" for="ubicacion">Ubicación</label>
+                        <input id="ubicacion" type="text" maxlength="100" v-model="form.ubicacion" class="form-control"
+                               placeholder="Ej. Estante B-3" />
+                    </div>
 
-                <div class="form-group mb-3">
-                    <label class="form-label" for="codigo">Código de Inventario</label>
-                    <input id="codigo" type="number" min="1" v-model.number="form.codigo"
-                           class="form-control" placeholder="Ej. 1001" required />
-                </div>
+                    <p v-if="editandoId" class="form-hint">
+                        Estado actual: <strong>{{ estadoActual }}</strong>.
+                        El estado cambia solo al registrar préstamos y devoluciones.
+                    </p>
 
-                <div class="form-group mb-3">
-                    <label class="form-label" for="estado">Estado</label>
-                    <select id="estado" v-model="form.estado" class="form-control">
-                        <option value="Disponible">Disponible</option>
-                        <option value="Prestado">Prestado</option>
-                    </select>
-                </div>
+                    <p v-if="error" class="text-danger small">{{ error }}</p>
 
-                <p v-if="error" class="text-danger small">{{ error }}</p>
-
-                <div class="form-actions d-flex gap-2 justify-content-end mt-4">
-                    <button type="submit" class="btn btn-primary" :disabled="guardando">Guardar</button>
-                    <button type="button" v-on:click="cerrarModal" class="btn btn-outline-secondary">Cancelar</button>
-                </div>
-            </form>
+                    <div class="form-actions d-flex gap-2 justify-content-end mt-4">
+                        <button type="submit" class="btn btn-primary" :disabled="guardando">Guardar</button>
+                        <button type="button" v-on:click="cerrarModal" class="btn btn-outline-secondary">Cancelar</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 
-@section Scripts {
-    <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js"></script>
-    <script src="~/js/ejemplares.js" asp-append-version="true"></script>
-}
+    @section Scripts {
+        <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js"></script>
+        <script src="~/js/ejemplares.js" asp-append-version="true"></script>
+    }

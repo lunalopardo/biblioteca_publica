@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace BibliotecaPublica.Models;
 
@@ -12,11 +13,12 @@ public class Libro
     [Display(Name = "Título")]
     public string Titulo { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Debe seleccionar un autor.")]
+    [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar un autor.")]
     [Display(Name = "Autor")]
     public int IdAutor { get; set; }
 
     [StringLength(20, ErrorMessage = "El ISBN no puede superar los 20 caracteres.")]
+    [Display(Name = "ISBN")]
     public string? Isbn { get; set; }
 
     [Range(1, 10000, ErrorMessage = "La cantidad de páginas debe ser un valor positivo.")]
@@ -27,15 +29,23 @@ public class Libro
     [Display(Name = "Año de publicación")]
     public int? AnioPublicacion { get; set; }
 
+    [StringLength(50, ErrorMessage = "El idioma no puede superar los 50 caracteres.")]
+    [Display(Name = "Idioma")]
+    public string? Idioma { get; set; }
+
+    [StringLength(5000, ErrorMessage = "La descripción no puede superar los 5000 caracteres.")]
+    [Display(Name = "Descripción")]
+    public string? Descripcion { get; set; }
+
     public string? Portada { get; set; }
 
     [Display(Name = "Imagen de portada")]
     public IFormFile? PortadaFile { get; set; }
 
+    public bool EliminarPortada { get; set; }
+
     [Display(Name = "Editorial")]
     public int? IdEditorial { get; set; }
-
-    public Editorial? Editorial { get; set; }
 
     [Display(Name = "Activo")]
     public bool Activo { get; set; } = true;
@@ -43,10 +53,11 @@ public class Libro
     [Display(Name = "Géneros")]
     public List<int> GenerosSeleccionados { get; set; } = new();
 
-    // Propiedades mapeadas mediante JOINs
-    public Autor? Autor { get; set; }
-    public List<Genero>? Generos { get; set; }
-    public List<Ejemplar>? Ejemplares { get; set; }
+    // Objetos mapeados mediante JOINs
+    [ValidateNever] public Editorial? Editorial { get; set; }
+    [ValidateNever] public Autor? Autor { get; set; }
+    [ValidateNever] public List<Genero>? Generos { get; set; }
+    [ValidateNever] public List<Ejemplar>? Ejemplares { get; set; }
 
     public override string ToString() => Titulo;
 }

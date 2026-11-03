@@ -12,153 +12,149 @@ public class RepositorioLibro : RepositorioBase
     {
         _repoEjemplar = repoEjemplar;
     }
+
+    // SELECT común: lo usan ObtenerPaginado y ObtenerPorId
+    private const string SelectConAutor = @"
+        SELECT l.*,
+               a.id AS autor_id, a.nombre AS autor_nombre, a.apellido AS autor_apellido,
+               ed.id AS editorial_id, ed.nombre AS editorial_nombre
+        FROM Libro l
+        INNER JOIN Autor a ON l.id_autor = a.id
+        LEFT JOIN Editorial ed ON l.id_editorial = ed.id ";
+
     public IList<Libro> ObtenerPaginado(string? buscar = null, int paginaNro = 1, int tamPagina = 10)
     {
-        IList<Libro> listado = new List<Libro>();
+        var listado = new List<Libro>();
         int offset = Math.Max(0, (paginaNro - 1) * tamPagina);
         var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
 
-        using (MySqlConnection connection = new MySqlConnection(connectionString))
+        const string query = SelectConAutor + @"
+            WHERE l.activo = 1
+              AND (@buscar IS NULL OR l.titulo LIKE @buscar OR a.nombre LIKE @buscar OR a.apellido LIKE @buscar)
+            ORDER BY l.id DESC
+            LIMIT @limit OFFSET @offset";
+
+        using (MySqlConnection connection = new(connectionString))
+        using (MySqlCommand command = new(query, connection))
         {
-            string query = @"SELECT l.*, 
-                                    a.id as autor_id, a.nombre as autor_nombre, a.apellido as autor_apellido,
-                                    ed.id as editorial_id, ed.nombre as editorial_nombre
-                             FROM Libro l
-                             INNER JOIN Autor a ON l.id_autor = a.id
-                             LEFT JOIN Editorial ed ON l.id_editorial = ed.id
-                             WHERE l.activo = 1
-                             AND (@buscar IS NULL OR l.titulo LIKE @buscar OR a.nombre LIKE @buscar OR a.apellido LIKE @buscar)
-                             ORDER BY l.id DESC
-                             LIMIT @limit OFFSET @offset";
+            command.Parameters.AddWithValue("@buscar", paramBuscar);
+            command.Parameters.AddWithValue("@limit", tamPagina);
+            command.Parameters.AddWithValue("@offset", offset);
 
-            using (MySqlCommand command = new MySqlCommand(query, connection))
+            connection.Open();
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
             {
-                command.Parameters.AddWithValue("@buscar", paramBuscar);
-                command.Parameters.AddWithValue("@limit", tamPagina);
-                command.Parameters.AddWithValue("@offset", offset);
-
-                connection.Open();
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        var libro = ParseLibroConAutor(reader);
-                        libro.Generos = ObtenerGenerosDeLibro(libro.Id);
-                        libro.Ejemplares = _repoEjemplar.ObtenerPorLibro(libro.Id);
-                        listado.Add(libro);
-                    }
-                }
+                listado.Add(ParseLibroConAutor(reader));
             }
+        }
+        foreach (var libro in listado)
+        {
+            libro.Generos = ObtenerGenerosDeLibro(libro.Id);
+            libro.Ejemplares = _repoEjemplar.ObtenerPorLibro(libro.Id);
         }
         return listado;
     }
 
     public int ObtenerCantidad(string? buscar = null)
     {
-        int total = 0;
         var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
 
-        using (MySqlConnection connection = new MySqlConnection(connectionString))
-        {
-            string query = @"SELECT COUNT(l.id)
-                             FROM Libro l
-                             INNER JOIN Autor a ON l.id_autor = a.id
-                             WHERE l.activo = 1
-                             AND (@buscar IS NULL OR l.titulo LIKE @buscar OR a.nombre LIKE @buscar OR a.apellido LIKE @buscar)";
+        const string query = @"SELECT COUNT(l.id)
+                               FROM Libro l
+                               INNER JOIN Autor a ON l.id_autor = a.id
+                               WHERE l.activo = 1
+                                 AND (@buscar IS NULL OR l.titulo LIKE @buscar OR a.nombre LIKE @buscar OR a.apellido LIKE @buscar)";
 
-            using (MySqlCommand command = new MySqlCommand(query, connection))
-            {
-                command.Parameters.AddWithValue("@buscar", paramBuscar);
-                connection.Open();
-                var result = command.ExecuteScalar();
-                if (result != null && result != DBNull.Value)
-                {
-                    total = Convert.ToInt32(result);
-                }
-            }
-        }
-        return total;
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(query, connection);
+        command.Parameters.AddWithValue("@buscar", paramBuscar);
+
+        connection.Open();
+        return Convert.ToInt32(command.ExecuteScalar());
     }
 
     public Libro? ObtenerPorId(int id)
     {
-        var query = @"SELECT l.*, 
-                             a.id as autor_id, a.nombre as autor_nombre, a.apellido as autor_apellido,
-                             ed.id as editorial_id, ed.nombre as editorial_nombre
-                      FROM Libro l
-                      INNER JOIN Autor a ON l.id_autor = a.id
-                      LEFT JOIN Editorial ed ON l.id_editorial = ed.id
-                      WHERE l.id = @id AND l.activo = 1";
+        Libro? libro;
 
-        using MySqlConnection connection = new(connectionString);
-        using MySqlCommand command = new(query, connection);
-        command.Parameters.AddWithValue("@id", id);
+        const string query = SelectConAutor + " WHERE l.id = @id AND l.activo = 1";
 
-        connection.Open();
-        using MySqlDataReader reader = command.ExecuteReader();
-        if (reader.Read())
+        using (MySqlConnection connection = new(connectionString))
+        using (MySqlCommand command = new(query, connection))
         {
-            var libro = ParseLibroConAutor(reader);
-            libro.Generos = ObtenerGenerosDeLibro(libro.Id);
-            libro.Ejemplares = _repoEjemplar.ObtenerPorLibro(libro.Id);
-            return libro;
+            command.Parameters.AddWithValue("@id", id);
+
+            connection.Open();
+            using var reader = command.ExecuteReader();
+            libro = reader.Read() ? ParseLibroConAutor(reader) : null;
         }
-        return null;
+
+        if (libro == null) return null;
+
+        libro.Generos = ObtenerGenerosDeLibro(libro.Id);
+        libro.Ejemplares = _repoEjemplar.ObtenerPorLibro(libro.Id);
+        return libro;
     }
 
     public int Create(Libro libro)
     {
-        var query = @"INSERT INTO Libro (titulo, id_autor, isbn, paginas, anio_publicacion, portada, id_editorial, activo)
-                      VALUES (@titulo, @id_autor, @isbn, @paginas, @anio_publicacion, @portada, @id_editorial, 1);
-                      SELECT LAST_INSERT_ID();";
+        const string query = @"INSERT INTO Libro
+                                 (titulo, id_autor, isbn, paginas, anio_publicacion, idioma, descripcion,
+                                  portada, id_editorial, activo)
+                               VALUES
+                                 (@titulo, @id_autor, @isbn, @paginas, @anio_publicacion, @idioma, @descripcion,
+                                  @portada, @id_editorial, 1);
+                               SELECT LAST_INSERT_ID();";
 
         using MySqlConnection connection = new(connectionString);
         using MySqlCommand command = new(query, connection);
-
-        command.Parameters.AddWithValue("@titulo", libro.Titulo);
-        command.Parameters.AddWithValue("@id_autor", libro.IdAutor);
-        command.Parameters.AddWithValue("@isbn", (object?)libro.Isbn ?? DBNull.Value);
-        command.Parameters.AddWithValue("@paginas", (object?)libro.Paginas ?? DBNull.Value);
-        command.Parameters.AddWithValue("@anio_publicacion", (object?)libro.AnioPublicacion ?? DBNull.Value);
-        command.Parameters.AddWithValue("@portada", (object?)libro.Portada ?? DBNull.Value);
-        command.Parameters.AddWithValue("@id_editorial", (object?)libro.IdEditorial ?? DBNull.Value);
+        AgregarParametros(command, libro);
 
         connection.Open();
-        var id = Convert.ToInt32(command.ExecuteScalar());
-        return id;
+        return Convert.ToInt32(command.ExecuteScalar());
     }
 
     public int Update(Libro libro)
     {
-        var query = @"UPDATE Libro SET 
-                        titulo = @titulo, 
-                        id_autor = @id_autor, 
-                        isbn = @isbn, 
-                        paginas = @paginas, 
-                        anio_publicacion = @anio_publicacion, 
-                        portada = @portada, 
-                        id_editorial = @id_editorial
-                      WHERE id = @id";
+        const string query = @"UPDATE Libro SET
+                                 titulo = @titulo,
+                                 id_autor = @id_autor,
+                                 isbn = @isbn,
+                                 paginas = @paginas,
+                                 anio_publicacion = @anio_publicacion,
+                                 idioma = @idioma,
+                                 descripcion = @descripcion,
+                                 portada = @portada,
+                                 id_editorial = @id_editorial
+                               WHERE id = @id";
 
         using MySqlConnection connection = new(connectionString);
         using MySqlCommand command = new(query, connection);
-
+        AgregarParametros(command, libro);
         command.Parameters.AddWithValue("@id", libro.Id);
-        command.Parameters.AddWithValue("@titulo", libro.Titulo);
-        command.Parameters.AddWithValue("@id_autor", libro.IdAutor);
-        command.Parameters.AddWithValue("@isbn", (object?)libro.Isbn ?? DBNull.Value);
-        command.Parameters.AddWithValue("@paginas", (object?)libro.Paginas ?? DBNull.Value);
-        command.Parameters.AddWithValue("@anio_publicacion", (object?)libro.AnioPublicacion ?? DBNull.Value);
-        command.Parameters.AddWithValue("@portada", (object?)libro.Portada ?? DBNull.Value);
-        command.Parameters.AddWithValue("@id_editorial", (object?)libro.IdEditorial ?? DBNull.Value);
 
         connection.Open();
         return command.ExecuteNonQuery();
     }
 
+    // Los parámetros que comparten Create y Update
+    private static void AgregarParametros(MySqlCommand command, Libro libro)
+    {
+        command.Parameters.AddWithValue("@titulo", libro.Titulo);
+        command.Parameters.AddWithValue("@id_autor", libro.IdAutor);
+        command.Parameters.AddWithValue("@isbn", (object?)libro.Isbn ?? DBNull.Value);
+        command.Parameters.AddWithValue("@paginas", (object?)libro.Paginas ?? DBNull.Value);
+        command.Parameters.AddWithValue("@anio_publicacion", (object?)libro.AnioPublicacion ?? DBNull.Value);
+        command.Parameters.AddWithValue("@idioma", (object?)libro.Idioma ?? DBNull.Value);
+        command.Parameters.AddWithValue("@descripcion", (object?)libro.Descripcion ?? DBNull.Value);
+        command.Parameters.AddWithValue("@portada", (object?)libro.Portada ?? DBNull.Value);
+        command.Parameters.AddWithValue("@id_editorial", (object?)libro.IdEditorial ?? DBNull.Value);
+    }
+
     public int AnularLogico(int id)
     {
-        var query = "UPDATE Libro SET activo = 0 WHERE id = @id";
+        const string query = "UPDATE Libro SET activo = 0 WHERE id = @id";
         using MySqlConnection connection = new(connectionString);
         using MySqlCommand command = new(query, connection);
         command.Parameters.AddWithValue("@id", id);
@@ -166,40 +162,42 @@ public class RepositorioLibro : RepositorioBase
         return command.ExecuteNonQuery();
     }
 
+    // Reemplaza los géneros del libro.
     public void GuardarGeneros(int idLibro, List<int> idsGeneros)
     {
         using MySqlConnection connection = new(connectionString);
         connection.Open();
+        using MySqlTransaction tx = connection.BeginTransaction();
 
-        var deleteQuery = "DELETE FROM libro_genero WHERE id_libro = @idLibro";
-        using (var cmd = new MySqlCommand(deleteQuery, connection))
+        using (var borrar = new MySqlCommand("DELETE FROM libro_genero WHERE id_libro = @idLibro", connection, tx))
         {
-            cmd.Parameters.AddWithValue("@idLibro", idLibro);
-            cmd.ExecuteNonQuery();
+            borrar.Parameters.AddWithValue("@idLibro", idLibro);
+            borrar.ExecuteNonQuery();
         }
 
-        if (idsGeneros != null && idsGeneros.Any())
+        if (idsGeneros != null && idsGeneros.Count > 0)
         {
-            foreach (var idGenero in idsGeneros)
+            using var insertar = new MySqlCommand(
+                "INSERT INTO libro_genero (id_libro, id_genero) VALUES (@idLibro, @idGenero)", connection, tx);
+            insertar.Parameters.AddWithValue("@idLibro", idLibro);
+            var parametroGenero = insertar.Parameters.Add("@idGenero", MySqlDbType.Int32);
+
+            foreach (var idGenero in idsGeneros.Distinct())
             {
-                var insertQuery = "INSERT INTO libro_genero (id_libro, id_genero) VALUES (@idLibro, @idGenero)";
-                using (var cmd = new MySqlCommand(insertQuery, connection))
-                {
-                    cmd.Parameters.AddWithValue("@idLibro", idLibro);
-                    cmd.Parameters.AddWithValue("@idGenero", idGenero);
-                    cmd.ExecuteNonQuery();
-                }
+                parametroGenero.Value = idGenero;
+                insertar.ExecuteNonQuery();
             }
         }
+
+        tx.Commit();
     }
 
     public List<Genero> ObtenerGenerosDeLibro(int idLibro)
     {
-        var listado = new List<Genero>();
-        var query = @"SELECT g.id, g.nombre, g.activo 
-                      FROM Genero g
-                      INNER JOIN libro_genero lg ON g.id = lg.id_genero
-                      WHERE lg.id_libro = @idLibro";
+        const string query = @"SELECT g.id, g.nombre, g.activo
+                               FROM Genero g
+                               INNER JOIN libro_genero lg ON g.id = lg.id_genero
+                               WHERE lg.id_libro = @idLibro";
 
         using MySqlConnection connection = new(connectionString);
         using MySqlCommand command = new(query, connection);
@@ -207,6 +205,8 @@ public class RepositorioLibro : RepositorioBase
         connection.Open();
 
         using MySqlDataReader reader = command.ExecuteReader();
+
+        var listado = new List<Genero>();
         while (reader.Read())
         {
             listado.Add(new Genero
@@ -218,6 +218,25 @@ public class RepositorioLibro : RepositorioBase
         }
         return listado;
     }
+
+    // ver si un ejemplar de este libro está prestado ahora mismo (préstamo activo sin devolver)
+    public bool TienePrestamosEnCurso(int idLibro)
+    {
+        const string query = @"SELECT COUNT(pr.id)
+                               FROM prestamo pr
+                               INNER JOIN ejemplar e ON pr.id_ejemplar = e.id
+                               WHERE e.id_libro = @idLibro
+                                 AND pr.activo = 1
+                                 AND pr.fecha_devolucion_real IS NULL";
+
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(query, connection);
+        command.Parameters.AddWithValue("@idLibro", idLibro);
+
+        connection.Open();
+        return Convert.ToInt32(command.ExecuteScalar()) > 0;
+    }
+
     private static Libro ParseLibroConAutor(MySqlDataReader reader)
     {
         return new Libro
@@ -229,6 +248,8 @@ public class RepositorioLibro : RepositorioBase
             Isbn = reader.IsDBNull(reader.GetOrdinal("isbn")) ? null : reader.GetString("isbn"),
             Paginas = reader.IsDBNull(reader.GetOrdinal("paginas")) ? null : reader.GetInt32("paginas"),
             AnioPublicacion = reader.IsDBNull(reader.GetOrdinal("anio_publicacion")) ? null : reader.GetInt32("anio_publicacion"),
+            Idioma = reader.IsDBNull(reader.GetOrdinal("idioma")) ? null : reader.GetString("idioma"),
+            Descripcion = reader.IsDBNull(reader.GetOrdinal("descripcion")) ? null : reader.GetString("descripcion"),
             Portada = reader.IsDBNull(reader.GetOrdinal("portada")) ? null : reader.GetString("portada"),
             Editorial = reader.IsDBNull(reader.GetOrdinal("editorial_id")) ? null : new Editorial
             {
