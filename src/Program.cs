@@ -13,6 +13,16 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.LoginPath = "/Usuarios/Login";
         options.LogoutPath = "/Usuarios/Logout";
         options.AccessDeniedPath = "/Usuarios/Restringido";
+
+        options.Events.OnRedirectToLogin = context =>
+            EsAjax(context.Request)
+                ? ResponderJson(context.Response, StatusCodes.Status401Unauthorized, "Tu sesión expiró. Volvé a iniciar sesión.")
+                : RedirigirA(context);
+
+        options.Events.OnRedirectToAccessDenied = context =>
+            EsAjax(context.Request)
+                ? ResponderJson(context.Response, StatusCodes.Status403Forbidden, "Solo un administrador puede realizar esta acción.")
+                : RedirigirA(context);
     });
 
 builder.Services.AddAuthorization(options =>
@@ -70,3 +80,20 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
+
+// jQuery (Select2) manda este header solo; los fetch de Vue lo agregan en su función request
+static bool EsAjax(HttpRequest request) =>
+    request.Headers.XRequestedWith == "XMLHttpRequest";
+
+static Task ResponderJson(HttpResponse response, int statusCode, string mensaje)
+{
+    response.StatusCode = statusCode;
+    return response.WriteAsJsonAsync(new { message = mensaje });
+}
+
+// Comportamiento normal de la cookie para las páginas
+static Task RedirigirA(Microsoft.AspNetCore.Authentication.RedirectContext<CookieAuthenticationOptions> context)
+{
+    context.Response.Redirect(context.RedirectUri);
+    return Task.CompletedTask;
+}

@@ -86,10 +86,13 @@
                             <button type="button" v-on:click="abrirModalEditar(ejemplar)" class="btn-icon" title="Editar">
                                 <span class="material-symbols-outlined">edit</span>
                             </button>
-                            <button type="button" v-on:click="eliminarEjemplar(ejemplar.id)"
-                                    class="btn-icon btn-icon-danger" title="Eliminar">
-                                <span class="material-symbols-outlined">delete</span>
-                            </button>
+                            @if (User.EsAdministrador())
+                            {
+                                <button type="button" v-on:click="eliminarEjemplar(ejemplar.id)"
+                                        class="btn-icon btn-icon-danger" title="Eliminar">
+                                    <span class="material-symbols-outlined">delete</span>
+                                </button>
+                            }
                         </div>
                     </div>
                 </template>

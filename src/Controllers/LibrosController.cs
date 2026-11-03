@@ -166,8 +166,9 @@ public class LibrosController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // POST: /Libros/Delete/5
+    // POST: /Libros/Delete/5 (solo administradores)
     [HttpPost]
+    [Authorize(Policy = UsuarioActual.PolicyAdministrador)]
     public IActionResult Delete(int id)
     {
         if (_repositorioLibro.TienePrestamosEnCurso(id))

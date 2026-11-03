@@ -10,6 +10,7 @@ async function request(url, options = {}) {
         headers: {
             'Content-Type': 'application/json',
             'RequestVerificationToken': token,
+            'X-Requested-With': 'XMLHttpRequest',
             ...options.headers
         }
     });

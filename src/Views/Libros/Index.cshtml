@@ -106,10 +106,13 @@
                                 <a asp-action="Edit" asp-route-id="@libro.Id" class="btn-icon" title="Editar">
                                     <span class="material-symbols-outlined">edit</span>
                                 </a>
-                                <button type="button" class="btn-icon btn-icon-danger" title="Eliminar" data-bs-toggle="modal"
-                                        data-bs-target="#modalEliminar" data-id="@libro.Id" data-titulo="@libro.Titulo">
-                                    <span class="material-symbols-outlined">delete</span>
-                                </button>
+                                @if (User.EsAdministrador())
+                                {
+                                    <button type="button" class="btn-icon btn-icon-danger" title="Eliminar" data-bs-toggle="modal"
+                                            data-bs-target="#modalEliminar" data-id="@libro.Id" data-titulo="@libro.Titulo">
+                                        <span class="material-symbols-outlined">delete</span>
+                                    </button>
+                                }
                             </td>
                         </tr>
                     }

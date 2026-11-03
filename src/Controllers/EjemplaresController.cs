@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MySqlConnector;
+using BibliotecaPublica.Helpers;
 using BibliotecaPublica.Models;
 using BibliotecaPublica.Repositories;
 
@@ -71,7 +72,9 @@ public class EjemplaresController : Controller
         }
     }
 
+    // Solo administradores
     [HttpPost]
+    [Authorize(Policy = UsuarioActual.PolicyAdministrador)]
     public IActionResult EliminarAjax(int id)
     {
         try

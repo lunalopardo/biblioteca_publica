@@ -270,6 +270,22 @@ a:hover {
   color: var(--color-success);
 }
 
+.alert ul,
+.validation-summary-errors ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.alert li + li,
+.validation-summary-errors li + li {
+  margin-top: 0.25rem;
+}
+
+.validation-summary-valid {
+  display: none;
+}
+
 /* Oculta alertas vacías */
 .alert:empty,
 .alert-danger:empty {
