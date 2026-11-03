@@ -7,6 +7,14 @@ public class RepositorioAfiliado : RepositorioBase
 {
     public RepositorioAfiliado(IConfiguration configuration) : base(configuration) { }
 
+    // un afiliado está sancionado mientras tenga préstamos vencidos sin devolver (las multas se cobran al registrar la devolución)
+    private const string SancionCalculada = @"
+        EXISTS(SELECT 1 FROM prestamo p
+               WHERE p.id_afiliado = Afiliado.id
+                 AND p.activo = 1
+                 AND p.fecha_devolucion_real IS NULL
+                 AND p.fecha_devolucion_pactada < CURDATE()) AS sancion_calculada";
+
     // Listado paginado con búsqueda general
     public IList<Afiliado> ObtenerPaginado(string? buscar = null, int paginaNro = 1, int tamPagina = 5)
     {
@@ -15,7 +23,8 @@ public class RepositorioAfiliado : RepositorioBase
         var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
 
         string sql = @"
-            SELECT * FROM Afiliado
+            SELECT *, " + SancionCalculada + @"
+            FROM Afiliado
             WHERE activo = 1
               AND (@buscar IS NULL OR nombre LIKE @buscar
               OR apellido LIKE @buscar
@@ -64,7 +73,7 @@ public class RepositorioAfiliado : RepositorioBase
     // Obtener Afiliado por ID
     public Afiliado? ObtenerPorId(int id)
     {
-        var query = "SELECT * FROM Afiliado WHERE id = @id AND activo = 1";
+        var query = "SELECT *, " + SancionCalculada + " FROM Afiliado WHERE id = @id AND activo = 1";
         using MySqlConnection connection = new(connectionString);
         using MySqlCommand command = new(query, connection);
         command.Parameters.AddWithValue("@id", id);
@@ -120,7 +129,7 @@ public class RepositorioAfiliado : RepositorioBase
     {
         var query = @"UPDATE Afiliado
                       SET nombre = @nombre, apellido = @apellido, email = @email, telefono = @telefono,
-                          fecha_alta = @fechaAlta, estado = @estado, sancionado = @sancionado
+                          fecha_alta = @fechaAlta
                       WHERE id = @id";
 
         using MySqlConnection connection = new(connectionString);
@@ -131,8 +140,6 @@ public class RepositorioAfiliado : RepositorioBase
         command.Parameters.AddWithValue("@email", afiliado.Email);
         command.Parameters.AddWithValue("@telefono", (object?)afiliado.Telefono ?? DBNull.Value);
         command.Parameters.AddWithValue("@fechaAlta", afiliado.FechaAlta);
-        command.Parameters.AddWithValue("@estado", afiliado.Estado);
-        command.Parameters.AddWithValue("@sancionado", afiliado.Sancionado);
 
         connection.Open();
         return command.ExecuteNonQuery();
@@ -156,7 +163,7 @@ public class RepositorioAfiliado : RepositorioBase
         var listado = new List<Afiliado>();
 
         string sql = @"
-            SELECT id, nombre, apellido, email, estado, sancionado
+            SELECT id, nombre, apellido, email, estado, " + SancionCalculada + @"
             FROM Afiliado
             WHERE activo = 1";
 
@@ -186,7 +193,7 @@ public class RepositorioAfiliado : RepositorioBase
                 Apellido = reader.GetString("apellido"),
                 Email = reader.GetString("email"),
                 Estado = reader.GetBoolean("estado"),
-                Sancionado = reader.GetBoolean("sancionado")
+                Sancionado = Convert.ToInt32(reader["sancion_calculada"]) == 1
             });
         }
 
@@ -205,7 +212,7 @@ public class RepositorioAfiliado : RepositorioBase
             Telefono = reader.IsDBNull(reader.GetOrdinal("telefono")) ? string.Empty : reader.GetString("telefono"),
             FechaAlta = reader.GetDateTime("fecha_alta"),
             Estado = reader.GetBoolean("estado"),
-            Sancionado = reader.GetBoolean("sancionado"),
+            Sancionado = Convert.ToInt32(reader["sancion_calculada"]) == 1,
             Activo = reader.GetBoolean("activo")
         };
     }
