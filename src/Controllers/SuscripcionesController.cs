@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using BibliotecaPublica.Helpers;
 using BibliotecaPublica.Models;
 using BibliotecaPublica.Repositories;
 
@@ -10,6 +11,8 @@ namespace BibliotecaPublica.Controllers;
 [AutoValidateAntiforgeryToken]
 public class SuscripcionesController : Controller
 {
+    private const int TamPagina = 10;
+
     private readonly RepositorioSuscripcion _repositorioSuscripcion;
     private readonly RepositorioPago _repositorioPago;
     private readonly RepositorioAfiliado _repositorioAfiliado;
@@ -25,6 +28,15 @@ public class SuscripcionesController : Controller
         _repositorioPago = repositorioPago;
         _repositorioAfiliado = repositorioAfiliado;
         _logger = logger;
+    }
+
+    // GET: /Suscripciones/Activas (todas las que no terminaron, de todos los afiliados)
+    public IActionResult Activas(string? buscar, int pagina = 1)
+    {
+        var listado = _repositorioSuscripcion.ObtenerActivasPaginado(buscar, pagina, TamPagina);
+        this.CargarPaginado(buscar, pagina, _repositorioSuscripcion.ObtenerCantidadActivas(buscar), TamPagina);
+
+        return View(listado);
     }
 
     // GET: /Suscripciones/Index?idAfiliado=3

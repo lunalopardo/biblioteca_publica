@@ -1,0 +1,104 @@
+@model IEnumerable<BibliotecaPublica.Models.Suscripcion>
+@{
+    ViewData["Title"] = "Suscripciones activas";
+    string filtroActual = ViewData["FiltroActual"] as string ?? "";
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <h3>Suscripciones activas</h3>
+        <a asp-action="Create" class="btn btn-primary">
+            + Nueva suscripción
+        </a>
+    </div>
+
+    <p class="text-muted small">
+        Se muestran las suscripciones vigentes y las que empiezan más adelante.
+        Las vencidas se ven en el historial de cada afiliado.
+    </p>
+
+    <partial name="_Alertas" />
+
+    <form asp-action="Activas" method="get" class="search-bar">
+        <input type="text" name="buscar" value="@filtroActual" class="form-control"
+               placeholder="Buscar por afiliado o email..." />
+
+        <button type="submit" class="btn btn-primary">
+            <span class="material-symbols-outlined icon-inline">search</span>
+            <span>Buscar</span>
+        </button>
+
+        @if (!string.IsNullOrEmpty(filtroActual))
+        {
+            <a asp-action="Activas" class="btn btn-outline-secondary">Limpiar</a>
+        }
+    </form>
+
+    <div class="table-responsive">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>Afiliado</th>
+                    <th>Desde</th>
+                    <th>Hasta</th>
+                    <th>Monto</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-3">No hay suscripciones activas.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var s in Model)
+                    {
+                        <tr>
+                            <td class="text-start">
+                                <span class="fw-bold">@s.Afiliado?.Apellido, @s.Afiliado?.Nombre</span>
+                                <br />
+                                <span class="text-muted small">@s.Afiliado?.Email</span>
+                            </td>
+                            <td>@s.FechaInicio.ToString("dd/MM/yyyy")</td>
+                            <td>@s.FechaFin.ToString("dd/MM/yyyy")</td>
+                            <td>$@s.Monto.ToString("N2")</td>
+                            <td>
+                                @if (!s.Pagada)
+                                {
+                                    <span class="badge badge-warning">Pendiente de pago</span>
+                                }
+                                else if (s.FechaInicio.Date > DateTime.Today)
+                                {
+                                    <span class="badge badge-neutral">Programada</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-active">Vigente</span>
+                                }
+                            </td>
+                            <td class="actions-cell">
+                                @if (!s.Pagada)
+                                {
+                                    <a asp-controller="Pagos" asp-action="Create" asp-route-idSuscripcion="@s.Id"
+                                       class="btn-icon" title="Registrar pago">
+                                        <span class="material-symbols-outlined">payments</span>
+                                    </a>
+                                }
+                                <a asp-action="Index" asp-route-idAfiliado="@s.IdAfiliado" class="btn-icon"
+                                   title="Ver suscripciones del afiliado">
+                                    <span class="material-symbols-outlined">history</span>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <partial name="_Paginacion" />
+</div>

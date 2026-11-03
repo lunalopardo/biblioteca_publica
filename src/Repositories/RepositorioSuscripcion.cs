@@ -34,6 +34,72 @@ public class RepositorioSuscripcion : RepositorioBase
         return listado;
     }
 
+    // Activas = no anuladas y que no terminaron (vigentes hoy o que empiezan más adelante).
+    // Las vencidas se ven desde el detalle de cada afiliado.
+    private const string FiltroActivas = @"
+        FROM suscripcion s
+        INNER JOIN afiliado a ON s.id_afiliado = a.id
+        WHERE s.activo = 1
+          AND a.activo = 1
+          AND s.fecha_fin >= CURDATE()
+          AND (@buscar IS NULL
+               OR a.nombre LIKE @buscar OR a.apellido LIKE @buscar
+               OR CONCAT(a.nombre, ' ', a.apellido) LIKE @buscar
+               OR a.email LIKE @buscar)";
+
+    public List<Suscripcion> ObtenerActivasPaginado(string? buscar = null, int paginaNro = 1, int tamPagina = 10)
+    {
+        int offset = Math.Max(0, (paginaNro - 1) * tamPagina);
+        var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
+
+        const string query = @"
+            SELECT s.id, s.id_afiliado, s.fecha_inicio, s.fecha_fin, s.monto, s.activo,
+                   EXISTS(SELECT 1 FROM pago p
+                          WHERE p.id_suscripcion = s.id AND p.activo = 1) AS pagada,
+                   a.nombre AS afiliado_nombre, a.apellido AS afiliado_apellido, a.email AS afiliado_email"
+            + FiltroActivas + @"
+            ORDER BY s.fecha_fin ASC, a.apellido, a.nombre
+            LIMIT @limit OFFSET @offset";
+
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(query, connection);
+        command.Parameters.AddWithValue("@buscar", paramBuscar);
+        command.Parameters.AddWithValue("@limit", tamPagina);
+        command.Parameters.AddWithValue("@offset", offset);
+
+        connection.Open();
+        using MySqlDataReader reader = command.ExecuteReader();
+
+        var listado = new List<Suscripcion>();
+        while (reader.Read())
+        {
+            var suscripcion = Parse(reader);
+            suscripcion.Afiliado = new Afiliado
+            {
+                Id = suscripcion.IdAfiliado,
+                Nombre = reader.GetString("afiliado_nombre"),
+                Apellido = reader.GetString("afiliado_apellido"),
+                Email = reader.GetString("afiliado_email")
+            };
+            listado.Add(suscripcion);
+        }
+        return listado;
+    }
+
+    public int ObtenerCantidadActivas(string? buscar = null)
+    {
+        var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
+
+        const string query = "SELECT COUNT(s.id)" + FiltroActivas;
+
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(query, connection);
+        command.Parameters.AddWithValue("@buscar", paramBuscar);
+
+        connection.Open();
+        return Convert.ToInt32(command.ExecuteScalar());
+    }
+
     public Suscripcion? ObtenerPorId(int id)
     {
         const string query = SelectBase + @"
