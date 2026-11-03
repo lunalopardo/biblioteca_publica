@@ -147,6 +147,23 @@ textarea.form-control {
 }
 
 /* Tablas */
+.page-container-wide {
+  width: fit-content;
+  min-width: min(1100px, 100%);
+  max-width: 100%;
+}
+
+.page-container-wide .table-custom th,
+.page-container-wide .table-custom td {
+  padding-left: 0.6rem;
+  padding-right: 0.6rem;
+}
+
+/* Los encabezados pueden partirse en dos líneas, los datos no */
+.page-container-wide .table-custom td {
+  white-space: nowrap;
+}
+
 .table-responsive {
   overflow-x: auto;
 }

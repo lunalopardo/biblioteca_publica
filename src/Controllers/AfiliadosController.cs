@@ -10,7 +10,7 @@ namespace BibliotecaPublica.Controllers;
 [AutoValidateAntiforgeryToken]
 public class AfiliadosController : Controller
 {
-    private const int TamPagina = 5;
+    private const int TamPagina = 10;
 
     private readonly RepositorioAfiliado _repositorioAfiliado;
     private readonly RepositorioSuscripcion _repositorioSuscripcion;

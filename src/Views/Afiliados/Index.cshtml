@@ -9,7 +9,7 @@
                               ?? new Dictionary<int, bool>();
 }
 
-<div class="page-container">
+<div class="page-container page-container-wide">
     <div class="page-header">
         <h3>Listado de Afiliados</h3>
         <a asp-action="Create" class="btn btn-primary">
@@ -59,7 +59,7 @@
                     @foreach (var afiliado in Model)
                     {
                         <tr>
-                            <td class="fw-bold">@afiliado.Apellido, @afiliado.Nombre</td>
+                            <td class="fw-bold text-nowrap">@afiliado.Apellido, @afiliado.Nombre</td>
                             <td>@afiliado.Email</td>
                             <td>@(string.IsNullOrEmpty(afiliado.Telefono) ? "-" : afiliado.Telefono)</td>
                             <td>@afiliado.FechaAlta.ToString("dd/MM/yyyy")</td>
