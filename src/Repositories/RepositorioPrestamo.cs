@@ -67,6 +67,19 @@ public class RepositorioPrestamo : RepositorioBase
         return Convert.ToInt32(command.ExecuteScalar());
     }
 
+    // Préstamos que todavía no se devolvieron (para el panel de inicio)
+    public int ObtenerCantidadVigentes()
+    {
+        const string query = @"SELECT COUNT(id) FROM prestamo
+                               WHERE activo = 1 AND fecha_devolucion_real IS NULL";
+
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(query, connection);
+
+        connection.Open();
+        return Convert.ToInt32(command.ExecuteScalar());
+    }
+
     public Prestamo? ObtenerPorId(int id)
     {
         const string query = SelectBase + FromConJoins + " WHERE pr.id = @id AND pr.activo = 1";

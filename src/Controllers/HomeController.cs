@@ -11,30 +11,27 @@ public class HomeController : Controller
 {
     private readonly RepositorioLibro _repositorioLibro;
     private readonly RepositorioAfiliado _repositorioAfiliado;
-
     private readonly RepositorioAutor _repositorioAutor;
+    private readonly RepositorioPrestamo _repositorioPrestamo;
 
-    public HomeController(RepositorioLibro repositorioLibro, RepositorioAfiliado repositorioAfiliado, RepositorioAutor repositorioAutor)
+    public HomeController(RepositorioLibro repositorioLibro, RepositorioAfiliado repositorioAfiliado,
+        RepositorioAutor repositorioAutor, RepositorioPrestamo repositorioPrestamo)
     {
         _repositorioLibro = repositorioLibro;
         _repositorioAfiliado = repositorioAfiliado;
         _repositorioAutor = repositorioAutor;
+        _repositorioPrestamo = repositorioPrestamo;
     }
 
     public IActionResult Index()
     {
-        var totalLibros = _repositorioLibro.ObtenerCantidad();
-        var totalAfiliados = _repositorioAfiliado.ObtenerCantidad();
-        var totalAutores = _repositorioAutor.ObtenerCantidad();
-        
-        var ultimosLibros = _repositorioLibro.ObtenerPaginado(null, 1, 5);
-
         var viewModel = new HomeViewModel
         {
-            TotalLibros = totalLibros,
-            TotalAfiliados = totalAfiliados,
-            UltimosLibros = ultimosLibros,
-            TotalAutores = totalAutores
+            TotalLibros = _repositorioLibro.ObtenerCantidad(),
+            TotalAfiliados = _repositorioAfiliado.ObtenerCantidad(),
+            TotalAutores = _repositorioAutor.ObtenerCantidad(),
+            TotalPrestamosVigentes = _repositorioPrestamo.ObtenerCantidadVigentes(),
+            UltimosLibros = _repositorioLibro.ObtenerPaginado(null, 1, 5)
         };
 
         return View(viewModel);
