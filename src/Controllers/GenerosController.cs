@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using BibliotecaPublica.Helpers;
 using BibliotecaPublica.Models;
 using BibliotecaPublica.Repositories;
 
@@ -11,26 +12,22 @@ namespace BibliotecaPublica.Controllers;
 [AutoValidateAntiforgeryToken]
 public class GenerosController : Controller
 {
+    private const int TamPagina = 10;
+
     private readonly RepositorioGenero _repositorioGenero;
     private readonly ILogger<GenerosController> _logger;
 
-    public GenerosController(RepositorioGenero repoGenero, ILogger<GenerosController> logger)
+    public GenerosController(RepositorioGenero repositorioGenero, ILogger<GenerosController> logger)
     {
-        _repositorioGenero = repoGenero;
+        _repositorioGenero = repositorioGenero;
         _logger = logger;
     }
 
     // GET: Generos/Index
     public IActionResult Index(string? buscar, int pagina = 1)
     {
-        int registrosPorPagina = 10;
-        var listado = _repositorioGenero.ObtenerPaginado(buscar, pagina, registrosPorPagina);
-        int totalRegistros = _repositorioGenero.ObtenerCantidad(buscar);
-        int totalPaginas = (int)Math.Ceiling((double)totalRegistros / registrosPorPagina);
-
-        ViewData["FiltroActual"] = buscar;
-        ViewData["PaginaActual"] = pagina;
-        ViewData["TotalPaginas"] = totalPaginas == 0 ? 1 : totalPaginas;
+        var listado = _repositorioGenero.ObtenerPaginado(buscar, pagina, TamPagina);
+        this.CargarPaginado(buscar, pagina, _repositorioGenero.ObtenerCantidad(buscar), TamPagina);
 
         return View(listado);
     }
@@ -47,7 +44,7 @@ public class GenerosController : Controller
 
         try
         {
-            _repositorioGenero.Create(genero);
+            _repositorioGenero.Crear(genero);
             TempData["Mensaje"] = "Género creado exitosamente.";
         }
         catch (Exception ex)
@@ -76,7 +73,7 @@ public class GenerosController : Controller
 
         try
         {
-            _repositorioGenero.Update(genero);
+            _repositorioGenero.Actualizar(genero);
             TempData["Mensaje"] = "Género actualizado exitosamente.";
         }
         catch (Exception ex)
@@ -94,7 +91,7 @@ public class GenerosController : Controller
     {
         try
         {
-            _repositorioGenero.DeleteLogico(id);
+            _repositorioGenero.BajaLogica(id);
             TempData["Mensaje"] = "Género eliminado exitosamente.";
         }
         catch (Exception ex)

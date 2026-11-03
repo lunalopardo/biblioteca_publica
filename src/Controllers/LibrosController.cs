@@ -11,8 +11,10 @@ namespace BibliotecaPublica.Controllers;
 [AutoValidateAntiforgeryToken]
 public class LibrosController : Controller
 {
-    private const int RegistrosPorPagina = 10;
+    private const int TamPagina = 10;
     private const int ResultadosExternosPorPagina = 10;
+    private const int MaxPaginasExternas = 20;
+    private const string CarpetaPortadas = "libros";
 
     private readonly RepositorioLibro _repositorioLibro;
     private readonly RepositorioAutor _repositorioAutor;
@@ -42,21 +44,14 @@ public class LibrosController : Controller
 
     // Autores y editoriales se buscan por AJAX (Select2), así que acá solo
     // hace falta la lista de géneros, que es una tabla chica.
-    private void CargarGeneros() => ViewBag.Generos = _repositorioGenero.ObtenerActivos();
+    private void CargarGeneros() => ViewBag.Generos = _repositorioGenero.ObtenerTodos();
 
     private void CargarRelacionesElegidas(Libro libro)
     {
-        libro.Autor = libro.IdAutor > 0 ? _repositorioAutor.GetById(libro.IdAutor) : null;
+        libro.Autor = libro.IdAutor > 0 ? _repositorioAutor.ObtenerPorId(libro.IdAutor) : null;
         libro.Editorial = libro.IdEditorial.HasValue
             ? _repositorioEditorial.ObtenerPorId(libro.IdEditorial.Value)
             : null;
-    }
-
-    // Solo se borran archivos que están en este servidor, no portadas que son un link externo
-    private void BorrarPortadaLocal(string? portada)
-    {
-        if (string.IsNullOrEmpty(portada) || portada.StartsWith("http", StringComparison.OrdinalIgnoreCase)) return;
-        ImagenesController.BorrarArchivoFisico(portada, _environment);
     }
 
     private static string Recortar(string texto, int maximo) =>
@@ -65,14 +60,8 @@ public class LibrosController : Controller
     // GET: /Libros
     public IActionResult Index(string? buscar, int pagina = 1)
     {
-        pagina = Math.Max(1, pagina);
-        var listado = _repositorioLibro.ObtenerPaginado(buscar, pagina, RegistrosPorPagina);
-        int totalRegistros = _repositorioLibro.ObtenerCantidad(buscar);
-        int totalPaginas = (int)Math.Ceiling((double)totalRegistros / RegistrosPorPagina);
-
-        ViewData["FiltroActual"] = buscar;
-        ViewData["PaginaActual"] = pagina;
-        ViewData["TotalPaginas"] = Math.Max(1, totalPaginas);
+        var listado = _repositorioLibro.ObtenerPaginado(buscar, pagina, TamPagina);
+        this.CargarPaginado(buscar, pagina, _repositorioLibro.ObtenerCantidad(buscar), TamPagina);
 
         return View(listado);
     }
@@ -104,10 +93,10 @@ public class LibrosController : Controller
 
         if (libro.PortadaFile != null && libro.PortadaFile.Length > 0)
         {
-            libro.Portada = await ImagenesController.GuardarArchivoAsync(libro.PortadaFile, _environment, "libros");
+            libro.Portada = await Archivos.GuardarImagenAsync(libro.PortadaFile, _environment, CarpetaPortadas);
         }
 
-        int idLibroCreado = _repositorioLibro.Create(libro);
+        int idLibroCreado = _repositorioLibro.Crear(libro);
 
         if (idLibroCreado > 0 && libro.GenerosSeleccionados.Count > 0)
         {
@@ -153,7 +142,7 @@ public class LibrosController : Controller
 
         if (libro.PortadaFile != null && libro.PortadaFile.Length > 0)
         {
-            libro.Portada = await ImagenesController.GuardarArchivoAsync(libro.PortadaFile, _environment, "libros");
+            libro.Portada = await Archivos.GuardarImagenAsync(libro.PortadaFile, _environment, CarpetaPortadas);
         }
         else if (libro.EliminarPortada)
         {
@@ -164,13 +153,13 @@ public class LibrosController : Controller
             libro.Portada = portadaAnterior;
         }
 
-        _repositorioLibro.Update(libro);
+        _repositorioLibro.Actualizar(libro);
         _repositorioLibro.GuardarGeneros(libro.Id, libro.GenerosSeleccionados);
 
         // El archivo viejo se borra recién cuando la base ya quedó actualizada
         if (libro.Portada != portadaAnterior)
         {
-            BorrarPortadaLocal(portadaAnterior);
+            Archivos.Borrar(portadaAnterior, _environment);
         }
 
         TempData["Mensaje"] = "Libro actualizado correctamente.";
@@ -187,12 +176,12 @@ public class LibrosController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        _repositorioLibro.AnularLogico(id);
+        _repositorioLibro.BajaLogica(id);
         TempData["Mensaje"] = "Libro eliminado correctamente.";
         return RedirectToAction(nameof(Index));
     }
 
-    // Open Library 
+    // Open Library
 
     private HttpClient CrearClienteOpenLibrary()
     {
@@ -205,16 +194,17 @@ public class LibrosController : Controller
 
     // GET: /Libros/BuscarExterno
     [HttpGet]
-    public async Task<IActionResult> BuscarExterno(string? q, int pagina = 1)
+    public async Task<IActionResult> BuscarExterno(string? buscar, int pagina = 1)
     {
-        if (string.IsNullOrWhiteSpace(q))
+        if (string.IsNullOrWhiteSpace(buscar))
         {
             return View(new List<LibroExterno>());
         }
 
+        // Se normaliza acá porque la página se manda a la API de Open Library
         pagina = Math.Max(1, pagina);
         var client = CrearClienteOpenLibrary();
-        string url = $"{OpenLibrary.UrlBase}/search.json?q={Uri.EscapeDataString(q)}" +
+        string url = $"{OpenLibrary.UrlBase}/search.json?q={Uri.EscapeDataString(buscar)}" +
                      $"&page={pagina}&limit={ResultadosExternosPorPagina}&fields={OpenLibrary.CamposBusqueda}";
 
         try
@@ -227,17 +217,15 @@ public class LibrosController : Controller
                 .Select(OpenLibrary.Parsear)
                 .ToList() ?? new List<LibroExterno>();
 
-            int totalPaginas = (int)Math.Ceiling((double)numFound / ResultadosExternosPorPagina);
-
-            ViewData["FiltroExterno"] = q;
-            ViewData["PaginaActual"] = pagina;
-            ViewData["TotalPaginas"] = Math.Min(totalPaginas, 20);
+            // Open Library puede devolver miles de resultados: se muestran como mucho MaxPaginasExternas páginas
+            int totalMostrable = Math.Min(numFound, MaxPaginasExternas * ResultadosExternosPorPagina);
+            this.CargarPaginado(buscar, pagina, totalMostrable, ResultadosExternosPorPagina);
 
             return View(resultados);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al consultar Open Library con la búsqueda {Busqueda}", q);
+            _logger.LogError(ex, "Error al consultar Open Library con la búsqueda {Busqueda}", buscar);
             TempData["Error"] = "No se pudo establecer conexión con Open Library.";
             return View(new List<LibroExterno>());
         }
@@ -277,7 +265,7 @@ public class LibrosController : Controller
             Portada = portada
         };
 
-        _repositorioLibro.Create(nuevoLibro);
+        _repositorioLibro.Crear(nuevoLibro);
         TempData["Mensaje"] = $"¡Libro '{nuevoLibro.Titulo}' importado correctamente!";
         return RedirectToAction(nameof(Index));
     }
@@ -301,7 +289,7 @@ public class LibrosController : Controller
         var existente = _repositorioAutor.ObtenerPorNombre(nombre, apellido);
         if (existente != null) return existente.Id;
 
-        return _repositorioAutor.Create(new Autor
+        return _repositorioAutor.Crear(new Autor
         {
             Nombre = nombre,
             Apellido = apellido,
@@ -319,7 +307,7 @@ public class LibrosController : Controller
         var existente = _repositorioEditorial.ObtenerPorNombre(nombre);
         if (existente != null) return existente.Id;
 
-        return _repositorioEditorial.Create(new Editorial { Nombre = nombre });
+        return _repositorioEditorial.Crear(new Editorial { Nombre = nombre });
     }
 
     // La búsqueda de Open Library no trae la descripción: hay que pedirla a la página de la obra.

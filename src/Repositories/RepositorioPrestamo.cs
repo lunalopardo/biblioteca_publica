@@ -99,7 +99,7 @@ public class RepositorioPrestamo : RepositorioBase
 
     // Crea el préstamo y marca el ejemplar como Prestado.
     // Devuelve el id nuevo, o 0 si el ejemplar ya no estaba disponible.
-    public int Create(Prestamo prestamo)
+    public int Crear(Prestamo prestamo)
     {
         using MySqlConnection connection = new(connectionString);
         connection.Open();
@@ -108,11 +108,9 @@ public class RepositorioPrestamo : RepositorioBase
         // Marcar el ejemplar como Prestado SOLO si sigue disponible.
         const string marcarEjemplar = @"UPDATE ejemplar SET estado = 'Prestado'
                                         WHERE id = @id AND estado = 'Disponible' AND activo = 1";
-        using (var cmd = new MySqlCommand(marcarEjemplar, connection, tx))
-        {
-            cmd.Parameters.AddWithValue("@id", prestamo.IdEjemplar);
-            if (cmd.ExecuteNonQuery() == 0) return 0;
-        }
+        using var cmdMarcar = new MySqlCommand(marcarEjemplar, connection, tx);
+        cmdMarcar.Parameters.AddWithValue("@id", prestamo.IdEjemplar);
+        if (cmdMarcar.ExecuteNonQuery() == 0) return 0;
 
         const string insertar = @"INSERT INTO prestamo
                                     (id_afiliado, id_ejemplar, creado_por_user_id, fecha_prestamo,
@@ -121,17 +119,14 @@ public class RepositorioPrestamo : RepositorioBase
                                     (@id_afiliado, @id_ejemplar, @creado_por, @fecha_prestamo,
                                      @fecha_pactada, @estado, 1);
                                   SELECT LAST_INSERT_ID();";
-        int id;
-        using (var cmd = new MySqlCommand(insertar, connection, tx))
-        {
-            cmd.Parameters.AddWithValue("@id_afiliado", prestamo.IdAfiliado);
-            cmd.Parameters.AddWithValue("@id_ejemplar", prestamo.IdEjemplar);
-            cmd.Parameters.AddWithValue("@creado_por", prestamo.CreadoPorUserId);
-            cmd.Parameters.AddWithValue("@fecha_prestamo", prestamo.FechaPrestamo.Date);
-            cmd.Parameters.AddWithValue("@fecha_pactada", prestamo.FechaDevolucionPactada.Date);
-            cmd.Parameters.AddWithValue("@estado", Prestamo.EstadoEnProgreso);
-            id = Convert.ToInt32(cmd.ExecuteScalar());
-        }
+        using var cmdInsertar = new MySqlCommand(insertar, connection, tx);
+        cmdInsertar.Parameters.AddWithValue("@id_afiliado", prestamo.IdAfiliado);
+        cmdInsertar.Parameters.AddWithValue("@id_ejemplar", prestamo.IdEjemplar);
+        cmdInsertar.Parameters.AddWithValue("@creado_por", prestamo.CreadoPorUserId);
+        cmdInsertar.Parameters.AddWithValue("@fecha_prestamo", prestamo.FechaPrestamo.Date);
+        cmdInsertar.Parameters.AddWithValue("@fecha_pactada", prestamo.FechaDevolucionPactada.Date);
+        cmdInsertar.Parameters.AddWithValue("@estado", Prestamo.EstadoEnProgreso);
+        int id = Convert.ToInt32(cmdInsertar.ExecuteScalar());
 
         tx.Commit();
         return id;
@@ -147,23 +142,19 @@ public class RepositorioPrestamo : RepositorioBase
         const string actualizarPrestamo = @"UPDATE prestamo
                                             SET fecha_devolucion_real = @fecha, estado = @estado
                                             WHERE id = @id AND activo = 1 AND fecha_devolucion_real IS NULL";
-        using (var cmd = new MySqlCommand(actualizarPrestamo, connection, tx))
-        {
-            cmd.Parameters.AddWithValue("@id", id);
-            cmd.Parameters.AddWithValue("@fecha", fechaReal.Date);
-            cmd.Parameters.AddWithValue("@estado", Prestamo.EstadoDevuelto);
-            if (cmd.ExecuteNonQuery() == 0) return false;
-        }
+        using var cmdActualizar = new MySqlCommand(actualizarPrestamo, connection, tx);
+        cmdActualizar.Parameters.AddWithValue("@id", id);
+        cmdActualizar.Parameters.AddWithValue("@fecha", fechaReal.Date);
+        cmdActualizar.Parameters.AddWithValue("@estado", Prestamo.EstadoDevuelto);
+        if (cmdActualizar.ExecuteNonQuery() == 0) return false;
 
         const string liberarEjemplar = @"UPDATE ejemplar e
                                          INNER JOIN prestamo pr ON pr.id_ejemplar = e.id
                                          SET e.estado = 'Disponible'
                                          WHERE pr.id = @id";
-        using (var cmd = new MySqlCommand(liberarEjemplar, connection, tx))
-        {
-            cmd.Parameters.AddWithValue("@id", id);
-            cmd.ExecuteNonQuery();
-        }
+        using var cmdLiberar = new MySqlCommand(liberarEjemplar, connection, tx);
+        cmdLiberar.Parameters.AddWithValue("@id", id);
+        cmdLiberar.ExecuteNonQuery();
 
         if (multa != null)
         {
@@ -173,16 +164,16 @@ public class RepositorioPrestamo : RepositorioBase
                                            VALUES
                                              (@id_afiliado, @creado_por, @tipo, @id_prestamo,
                                               @fecha_pago, @monto, @concepto, @saldado, 1)";
-            using var cmd = new MySqlCommand(insertarMulta, connection, tx);
-            cmd.Parameters.AddWithValue("@id_afiliado", multa.IdAfiliado);
-            cmd.Parameters.AddWithValue("@creado_por", multa.CreadoPorUserId);
-            cmd.Parameters.AddWithValue("@tipo", multa.Tipo.ToString());
-            cmd.Parameters.AddWithValue("@id_prestamo", id);
-            cmd.Parameters.AddWithValue("@fecha_pago", multa.FechaPago.Date);
-            cmd.Parameters.AddWithValue("@monto", multa.Monto);
-            cmd.Parameters.AddWithValue("@concepto", multa.Concepto);
-            cmd.Parameters.AddWithValue("@saldado", multa.Saldado);
-            cmd.ExecuteNonQuery();
+            using var cmdMulta = new MySqlCommand(insertarMulta, connection, tx);
+            cmdMulta.Parameters.AddWithValue("@id_afiliado", multa.IdAfiliado);
+            cmdMulta.Parameters.AddWithValue("@creado_por", multa.CreadoPorUserId);
+            cmdMulta.Parameters.AddWithValue("@tipo", multa.Tipo.ToString());
+            cmdMulta.Parameters.AddWithValue("@id_prestamo", id);
+            cmdMulta.Parameters.AddWithValue("@fecha_pago", multa.FechaPago.Date);
+            cmdMulta.Parameters.AddWithValue("@monto", multa.Monto);
+            cmdMulta.Parameters.AddWithValue("@concepto", multa.Concepto);
+            cmdMulta.Parameters.AddWithValue("@saldado", multa.Saldado);
+            cmdMulta.ExecuteNonQuery();
         }
 
         tx.Commit();
@@ -199,22 +190,18 @@ public class RepositorioPrestamo : RepositorioBase
         const string anular = @"UPDATE prestamo
                                 SET activo = 0, anulado_por_user_id = @user
                                 WHERE id = @id AND activo = 1 AND fecha_devolucion_real IS NULL";
-        using (var cmd = new MySqlCommand(anular, connection, tx))
-        {
-            cmd.Parameters.AddWithValue("@id", id);
-            cmd.Parameters.AddWithValue("@user", anuladoPorUserId);
-            if (cmd.ExecuteNonQuery() == 0) return false;
-        }
+        using var cmdAnular = new MySqlCommand(anular, connection, tx);
+        cmdAnular.Parameters.AddWithValue("@id", id);
+        cmdAnular.Parameters.AddWithValue("@user", anuladoPorUserId);
+        if (cmdAnular.ExecuteNonQuery() == 0) return false;
 
         const string liberarEjemplar = @"UPDATE ejemplar e
                                          INNER JOIN prestamo pr ON pr.id_ejemplar = e.id
                                          SET e.estado = 'Disponible'
                                          WHERE pr.id = @id";
-        using (var cmd = new MySqlCommand(liberarEjemplar, connection, tx))
-        {
-            cmd.Parameters.AddWithValue("@id", id);
-            cmd.ExecuteNonQuery();
-        }
+        using var cmdLiberar = new MySqlCommand(liberarEjemplar, connection, tx);
+        cmdLiberar.Parameters.AddWithValue("@id", id);
+        cmdLiberar.ExecuteNonQuery();
 
         tx.Commit();
         return true;

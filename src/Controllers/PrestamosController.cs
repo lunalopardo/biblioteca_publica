@@ -13,23 +13,23 @@ public class PrestamosController : Controller
     private const int TamPagina = 10;
     private const decimal MultaPorDia = 100m; // $ por cada día de atraso
 
-    private readonly RepositorioPrestamo _repoPrestamo;
-    private readonly RepositorioAfiliado _repoAfiliado;
-    private readonly RepositorioSuscripcion _repoSuscripcion;
-    private readonly RepositorioEjemplar _repoEjemplar;
+    private readonly RepositorioPrestamo _repositorioPrestamo;
+    private readonly RepositorioAfiliado _repositorioAfiliado;
+    private readonly RepositorioSuscripcion _repositorioSuscripcion;
+    private readonly RepositorioEjemplar _repositorioEjemplar;
     private readonly ILogger<PrestamosController> _logger;
 
     public PrestamosController(
-        RepositorioPrestamo repoPrestamo,
-        RepositorioAfiliado repoAfiliado,
-        RepositorioSuscripcion repoSuscripcion,
-        RepositorioEjemplar repoEjemplar,
+        RepositorioPrestamo repositorioPrestamo,
+        RepositorioAfiliado repositorioAfiliado,
+        RepositorioSuscripcion repositorioSuscripcion,
+        RepositorioEjemplar repositorioEjemplar,
         ILogger<PrestamosController> logger)
     {
-        _repoPrestamo = repoPrestamo;
-        _repoAfiliado = repoAfiliado;
-        _repoSuscripcion = repoSuscripcion;
-        _repoEjemplar = repoEjemplar;
+        _repositorioPrestamo = repositorioPrestamo;
+        _repositorioAfiliado = repositorioAfiliado;
+        _repositorioSuscripcion = repositorioSuscripcion;
+        _repositorioEjemplar = repositorioEjemplar;
         _logger = logger;
     }
 
@@ -44,11 +44,11 @@ public class PrestamosController : Controller
     public IActionResult Listar(string? buscar, int pagina = 1)
     {
         pagina = Math.Max(1, pagina);
-        int total = _repoPrestamo.ObtenerCantidad(buscar);
+        int total = _repositorioPrestamo.ObtenerCantidad(buscar);
 
         return Json(new
         {
-            items = _repoPrestamo.ObtenerPaginado(buscar, pagina, TamPagina),
+            items = _repositorioPrestamo.ObtenerPaginado(buscar, pagina, TamPagina),
             pagina,
             totalPaginas = Math.Max(1, (int)Math.Ceiling(total / (double)TamPagina))
         });
@@ -58,7 +58,7 @@ public class PrestamosController : Controller
     [HttpGet]
     public IActionResult BuscarEjemplares(string? term)
     {
-        var resultado = _repoEjemplar.ObtenerDisponibles(term, 10)
+        var resultado = _repositorioEjemplar.ObtenerDisponibles(term, 10)
             .Select(e => new { id = e.Id, text = $"{e.Libro?.Titulo} - Cód. #{e.CodigoInventario}" });
         return Json(resultado);
     }
@@ -85,22 +85,22 @@ public class PrestamosController : Controller
         }
         if (!ModelState.IsValid) return BadRequest(new { message = PrimerError() });
 
-        var afiliado = _repoAfiliado.ObtenerPorId(prestamo.IdAfiliado);
+        var afiliado = _repositorioAfiliado.ObtenerPorId(prestamo.IdAfiliado);
         if (afiliado == null)
             return BadRequest(new { message = "El afiliado no existe." });
 
         if (afiliado.Sancionado)
             return BadRequest(new { message = "El afiliado está sancionado." });
 
-        if (_repoSuscripcion.ObtenerVigente(afiliado.Id) == null)
+        if (_repositorioSuscripcion.ObtenerVigente(afiliado.Id) == null)
             return BadRequest(new { message = "El afiliado no tiene una suscripción vigente y pagada." });
 
-        if (_repoPrestamo.TieneVencidos(afiliado.Id))
+        if (_repositorioPrestamo.TieneVencidos(afiliado.Id))
             return BadRequest(new { message = "El afiliado tiene préstamos vencidos sin devolver." });
 
         try
         {
-            int id = _repoPrestamo.Create(prestamo);
+            int id = _repositorioPrestamo.Crear(prestamo);
             if (id == 0)
                 return Conflict(new { message = "El ejemplar ya no está disponible." });
 
@@ -117,7 +117,7 @@ public class PrestamosController : Controller
     [HttpPost]
     public IActionResult Devolver(int id)
     {
-        var prestamo = _repoPrestamo.ObtenerPorId(id);
+        var prestamo = _repositorioPrestamo.ObtenerPorId(id);
         if (prestamo == null)
             return NotFound(new { message = "El préstamo no existe." });
 
@@ -146,7 +146,7 @@ public class PrestamosController : Controller
 
         try
         {
-            if (!_repoPrestamo.Devolver(id, hoy, multa))
+            if (!_repositorioPrestamo.Devolver(id, hoy, multa))
                 return Conflict(new { message = "El préstamo ya fue devuelto." });
 
             var mensaje = multa == null
@@ -167,7 +167,7 @@ public class PrestamosController : Controller
     {
         try
         {
-            return _repoPrestamo.Anular(id, UserId)
+            return _repositorioPrestamo.Anular(id, UserId)
                 ? Ok(new { message = "Préstamo anulado." })
                 : Conflict(new { message = "Solo se pueden anular préstamos que todavía no se devolvieron." });
         }

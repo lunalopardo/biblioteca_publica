@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using BibliotecaPublica.Helpers;
 using BibliotecaPublica.Models;
 using BibliotecaPublica.Repositories;
 
@@ -11,26 +12,22 @@ namespace BibliotecaPublica.Controllers;
 [AutoValidateAntiforgeryToken]
 public class NacionalidadesController : Controller
 {
-    private readonly RepositorioNacionalidad _repoNacionalidad;
+    private const int TamPagina = 10;
+
+    private readonly RepositorioNacionalidad _repositorioNacionalidad;
     private readonly ILogger<NacionalidadesController> _logger;
 
-    public NacionalidadesController(RepositorioNacionalidad repoNacionalidad, ILogger<NacionalidadesController> logger)
+    public NacionalidadesController(RepositorioNacionalidad repositorioNacionalidad, ILogger<NacionalidadesController> logger)
     {
-        _repoNacionalidad = repoNacionalidad;
+        _repositorioNacionalidad = repositorioNacionalidad;
         _logger = logger;
     }
 
     // GET: Nacionalidades/Index
     public IActionResult Index(string? buscar, int pagina = 1)
     {
-        int registrosPorPagina = 10;
-        var listado = _repoNacionalidad.ObtenerPaginado(buscar, pagina, registrosPorPagina);
-        int totalRegistros = _repoNacionalidad.ObtenerCantidad(buscar);
-        int totalPaginas = (int)Math.Ceiling((double)totalRegistros / registrosPorPagina);
-
-        ViewData["FiltroActual"] = buscar;
-        ViewData["PaginaActual"] = pagina;
-        ViewData["TotalPaginas"] = totalPaginas == 0 ? 1 : totalPaginas;
+        var listado = _repositorioNacionalidad.ObtenerPaginado(buscar, pagina, TamPagina);
+        this.CargarPaginado(buscar, pagina, _repositorioNacionalidad.ObtenerCantidad(buscar), TamPagina);
 
         return View(listado);
     }
@@ -47,7 +44,7 @@ public class NacionalidadesController : Controller
 
         try
         {
-            _repoNacionalidad.Create(nacionalidad);
+            _repositorioNacionalidad.Crear(nacionalidad);
             TempData["Mensaje"] = "Nacionalidad creada exitosamente.";
         }
         catch (Exception ex)
@@ -76,7 +73,7 @@ public class NacionalidadesController : Controller
 
         try
         {
-            _repoNacionalidad.Update(nacionalidad);
+            _repositorioNacionalidad.Actualizar(nacionalidad);
             TempData["Mensaje"] = "Nacionalidad actualizada exitosamente.";
         }
         catch (Exception ex)
@@ -94,7 +91,7 @@ public class NacionalidadesController : Controller
     {
         try
         {
-            _repoNacionalidad.DeleteLogico(id);
+            _repositorioNacionalidad.BajaLogica(id);
             TempData["Mensaje"] = "Nacionalidad eliminada exitosamente.";
         }
         catch (Exception ex)

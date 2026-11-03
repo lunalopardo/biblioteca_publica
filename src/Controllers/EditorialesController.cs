@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using BibliotecaPublica.Helpers;
 using BibliotecaPublica.Models;
 using BibliotecaPublica.Repositories;
 
@@ -11,26 +12,22 @@ namespace BibliotecaPublica.Controllers;
 [AutoValidateAntiforgeryToken]
 public class EditorialesController : Controller
 {
+    private const int TamPagina = 10;
+
     private readonly RepositorioEditorial _repositorioEditorial;
     private readonly ILogger<EditorialesController> _logger;
 
-    public EditorialesController(RepositorioEditorial repoEditorial, ILogger<EditorialesController> logger)
+    public EditorialesController(RepositorioEditorial repositorioEditorial, ILogger<EditorialesController> logger)
     {
-        _repositorioEditorial = repoEditorial;
+        _repositorioEditorial = repositorioEditorial;
         _logger = logger;
     }
 
     // GET: Editoriales/Index
     public IActionResult Index(string? buscar, int pagina = 1)
     {
-        int registrosPorPagina = 10;
-        var listado = _repositorioEditorial.ObtenerPaginado(buscar, pagina, registrosPorPagina);
-        int totalRegistros = _repositorioEditorial.ObtenerCantidad(buscar);
-        int totalPaginas = (int)Math.Ceiling((double)totalRegistros / registrosPorPagina);
-
-        ViewData["FiltroActual"] = buscar;
-        ViewData["PaginaActual"] = pagina;
-        ViewData["TotalPaginas"] = totalPaginas == 0 ? 1 : totalPaginas;
+        var listado = _repositorioEditorial.ObtenerPaginado(buscar, pagina, TamPagina);
+        this.CargarPaginado(buscar, pagina, _repositorioEditorial.ObtenerCantidad(buscar), TamPagina);
 
         return View(listado);
     }
@@ -47,7 +44,7 @@ public class EditorialesController : Controller
 
         try
         {
-            _repositorioEditorial.Create(editorial);
+            _repositorioEditorial.Crear(editorial);
             TempData["Mensaje"] = "Editorial creada exitosamente.";
         }
         catch (Exception ex)
@@ -76,7 +73,7 @@ public class EditorialesController : Controller
 
         try
         {
-            _repositorioEditorial.Update(editorial);
+            _repositorioEditorial.Actualizar(editorial);
             TempData["Mensaje"] = "Editorial actualizada exitosamente.";
         }
         catch (Exception ex)
@@ -94,7 +91,7 @@ public class EditorialesController : Controller
     {
         try
         {
-            _repositorioEditorial.DeleteLogico(id);
+            _repositorioEditorial.BajaLogica(id);
             TempData["Mensaje"] = "Editorial eliminada exitosamente.";
         }
         catch (Exception ex)
@@ -110,7 +107,7 @@ public class EditorialesController : Controller
     [HttpGet]
     public IActionResult Buscar(string? q)
     {
-        var editoriales = _repositorioEditorial.ObtenerTodas();
+        var editoriales = _repositorioEditorial.ObtenerTodos();
         if (!string.IsNullOrWhiteSpace(q))
         {
             editoriales = editoriales.Where(e => e.Nombre.Contains(q, StringComparison.OrdinalIgnoreCase)).ToList();

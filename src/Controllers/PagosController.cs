@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using BibliotecaPublica.Helpers;
 using BibliotecaPublica.Models;
 using BibliotecaPublica.Repositories;
 
@@ -12,20 +13,20 @@ public class PagosController : Controller
 {
     private const int TamPagina = 10;
 
-    private readonly RepositorioPago _repoPago;
-    private readonly RepositorioSuscripcion _repoSuscripcion;
-    private readonly RepositorioAfiliado _repoAfiliado;
+    private readonly RepositorioPago _repositorioPago;
+    private readonly RepositorioSuscripcion _repositorioSuscripcion;
+    private readonly RepositorioAfiliado _repositorioAfiliado;
     private readonly ILogger<PagosController> _logger;
 
     public PagosController(
-        RepositorioPago repoPago,
-        RepositorioSuscripcion repoSuscripcion,
-        RepositorioAfiliado repoAfiliado,
+        RepositorioPago repositorioPago,
+        RepositorioSuscripcion repositorioSuscripcion,
+        RepositorioAfiliado repositorioAfiliado,
         ILogger<PagosController> logger)
     {
-        _repoPago = repoPago;
-        _repoSuscripcion = repoSuscripcion;
-        _repoAfiliado = repoAfiliado;
+        _repositorioPago = repositorioPago;
+        _repositorioSuscripcion = repositorioSuscripcion;
+        _repositorioAfiliado = repositorioAfiliado;
         _logger = logger;
     }
 
@@ -37,29 +38,25 @@ public class PagosController : Controller
     {
         if (idAfiliado.HasValue)
         {
-            var afiliado = _repoAfiliado.ObtenerPorId(idAfiliado.Value);
+            var afiliado = _repositorioAfiliado.ObtenerPorId(idAfiliado.Value);
             if (afiliado == null) return NotFound();
             ViewBag.Afiliado = afiliado;
         }
 
-        pagina = Math.Max(1, pagina);
-        int total = _repoPago.ObtenerCantidad(idAfiliado, buscar);
-
+        var listado = _repositorioPago.ObtenerPaginado(idAfiliado, buscar, pagina, TamPagina);
+        this.CargarPaginado(buscar, pagina, _repositorioPago.ObtenerCantidad(idAfiliado, buscar), TamPagina);
         ViewBag.IdAfiliado = idAfiliado;
-        ViewBag.Buscar = buscar;
-        ViewBag.Pagina = pagina;
-        ViewBag.TotalPaginas = Math.Max(1, (int)Math.Ceiling(total / (double)TamPagina));
 
-        return View(_repoPago.ObtenerPaginado(idAfiliado, buscar, pagina, TamPagina));
+        return View(listado);
     }
 
     // GET: /Pagos/Create?idSuscripcion=5
     public IActionResult Create(int idSuscripcion)
     {
-        var suscripcion = _repoSuscripcion.ObtenerPorId(idSuscripcion);
+        var suscripcion = _repositorioSuscripcion.ObtenerPorId(idSuscripcion);
         if (suscripcion == null) return NotFound();
 
-        if (_repoPago.ExisteCuotaActiva(idSuscripcion))
+        if (_repositorioPago.ExisteCuotaActiva(idSuscripcion))
         {
             TempData["Error"] = "Esta suscripción ya tiene un pago registrado.";
             return RedirectToAction("Index", "Suscripciones", new { idAfiliado = suscripcion.IdAfiliado });
@@ -80,7 +77,7 @@ public class PagosController : Controller
     public IActionResult Create(Pago pago)
     {
         var suscripcion = pago.IdSuscripcion.HasValue
-            ? _repoSuscripcion.ObtenerPorId(pago.IdSuscripcion.Value)
+            ? _repositorioSuscripcion.ObtenerPorId(pago.IdSuscripcion.Value)
             : null;
         if (suscripcion == null) return NotFound();
 
@@ -95,7 +92,7 @@ public class PagosController : Controller
         ModelState.Clear();
         TryValidateModel(pago);
 
-        if (_repoPago.ExisteCuotaActiva(suscripcion.Id))
+        if (_repositorioPago.ExisteCuotaActiva(suscripcion.Id))
         {
             ModelState.AddModelError("", "Esta suscripción ya tiene un pago registrado.");
         }
@@ -108,8 +105,8 @@ public class PagosController : Controller
 
         try
         {
-            _repoPago.Create(pago);
-            TempData["Exito"] = "Pago registrado correctamente.";
+            _repositorioPago.Crear(pago);
+            TempData["Mensaje"] = "Pago registrado correctamente.";
             return RedirectToAction("Index", "Suscripciones", new { idAfiliado = suscripcion.IdAfiliado });
         }
         catch (Exception ex)
@@ -124,15 +121,15 @@ public class PagosController : Controller
     [HttpPost]
     public IActionResult Anular(int id)
     {
-        var pago = _repoPago.ObtenerPorId(id);
+        var pago = _repositorioPago.ObtenerPorId(id);
         if (pago == null)
         {
             TempData["Error"] = "El pago no existe o ya estaba anulado.";
             return RedirectToAction(nameof(Index));
         }
 
-        if (_repoPago.Anular(id, UserId) > 0)
-            TempData["Exito"] = "Pago anulado.";
+        if (_repositorioPago.Anular(id, UserId) > 0)
+            TempData["Mensaje"] = "Pago anulado.";
         else
             TempData["Error"] = "No se pudo anular el pago.";
 
@@ -142,7 +139,7 @@ public class PagosController : Controller
 
     private void CargarDatosVista(Suscripcion suscripcion)
     {
-        ViewBag.Afiliado = _repoAfiliado.ObtenerPorId(suscripcion.IdAfiliado);
+        ViewBag.Afiliado = _repositorioAfiliado.ObtenerPorId(suscripcion.IdAfiliado);
         ViewBag.Suscripcion = suscripcion;
     }
 }

@@ -90,7 +90,7 @@ public class RepositorioSuscripcion : RepositorioBase
         return Convert.ToInt32(command.ExecuteScalar()) > 0;
     }
 
-    public int Create(Suscripcion s)
+    public int Crear(Suscripcion s)
     {
         const string query = @"INSERT INTO suscripcion (id_afiliado, fecha_inicio, fecha_fin, monto, activo)
                                VALUES (@id_afiliado, @fecha_inicio, @fecha_fin, @monto, 1);
@@ -107,7 +107,7 @@ public class RepositorioSuscripcion : RepositorioBase
         return Convert.ToInt32(command.ExecuteScalar());
     }
 
-    public int Update(Suscripcion s)
+    public int Actualizar(Suscripcion s)
     {
         const string query = @"UPDATE suscripcion SET
                                  fecha_inicio = @fecha_inicio,
@@ -126,7 +126,7 @@ public class RepositorioSuscripcion : RepositorioBase
         return command.ExecuteNonQuery();
     }
 
-    public int AnularLogico(int id)
+    public int BajaLogica(int id)
     {
         const string query = "UPDATE suscripcion SET activo = 0 WHERE id = @id";
         using MySqlConnection connection = new(connectionString);

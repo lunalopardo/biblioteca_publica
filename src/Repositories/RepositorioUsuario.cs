@@ -12,8 +12,8 @@ public class RepositorioUsuario : RepositorioBase
     public Usuario? ValidarLogin(string login, string password, IPasswordHasher<Usuario> passwordHasher)
     {
         string sql = @"
-                SELECT * FROM usuario 
-                WHERE (nombre_usuario = @login OR email = @login) 
+                SELECT * FROM usuario
+                WHERE (nombre_usuario = @login OR email = @login)
                 AND activo = 1";
 
         using MySqlConnection connection = new(connectionString);
@@ -21,20 +21,18 @@ public class RepositorioUsuario : RepositorioBase
         command.Parameters.AddWithValue("@login", login);
 
         connection.Open();
-        using (MySqlDataReader reader = command.ExecuteReader())
+        using MySqlDataReader reader = command.ExecuteReader();
+        if (reader.Read())
         {
-            if (reader.Read())
+            var usuario = ParseUsuario(reader);
+
+            // Verificamos si la contraseña tipeada coincide con el hash guardado
+            var resultado = passwordHasher.VerifyHashedPassword(usuario, usuario.Password, password);
+
+            if (resultado == PasswordVerificationResult.Success ||
+                resultado == PasswordVerificationResult.SuccessRehashNeeded)
             {
-                var usuario = ParseUsuario(reader);
-
-                // Verificamos si la contraseña tipeada coincide con el hash guardado
-                var resultado = passwordHasher.VerifyHashedPassword(usuario, usuario.Password, password);
-
-                if (resultado == PasswordVerificationResult.Success ||
-                    resultado == PasswordVerificationResult.SuccessRehashNeeded)
-                {
-                    return usuario;
-                }
+                return usuario;
             }
         }
         return null;
@@ -43,68 +41,53 @@ public class RepositorioUsuario : RepositorioBase
     // Listado de usuarios (empleados) paginado
     public IList<Usuario> ObtenerPaginado(string? buscar = null, int paginaNro = 1, int tamPagina = 10)
     {
-        IList<Usuario> listado = new List<Usuario>();
+        var listado = new List<Usuario>();
         int offset = Math.Max(0, (paginaNro - 1) * tamPagina);
         var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
 
-        using (MySqlConnection connection = new(connectionString))
+        string sql = @"
+            SELECT * FROM usuario
+            WHERE (@buscar IS NULL OR nombre_usuario LIKE @buscar
+                                   OR nombre LIKE @buscar
+                                   OR apellido LIKE @buscar
+                                   OR CONCAT(Nombre, ' ', Apellido) LIKE @buscar
+                                   OR email LIKE @buscar)
+            ORDER BY id DESC
+            LIMIT @limit OFFSET @offset";
+
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(sql, connection);
+        command.Parameters.AddWithValue("@buscar", paramBuscar);
+        command.Parameters.AddWithValue("@limit", tamPagina);
+        command.Parameters.AddWithValue("@offset", offset);
+
+        connection.Open();
+        using MySqlDataReader reader = command.ExecuteReader();
+        while (reader.Read())
         {
-            string sql = @"
-                SELECT * FROM usuario
-                WHERE (@buscar IS NULL OR nombre_usuario LIKE @buscar 
-                                       OR nombre LIKE @buscar 
-                                       OR apellido LIKE @buscar
-                                       OR CONCAT(Nombre, ' ', Apellido) LIKE @buscar 
-                                       OR email LIKE @buscar)
-                ORDER BY id DESC
-                LIMIT @limit OFFSET @offset";
-
-            using (MySqlCommand command = new(sql, connection))
-            {
-                command.Parameters.AddWithValue("@buscar", paramBuscar);
-                command.Parameters.AddWithValue("@limit", tamPagina);
-                command.Parameters.AddWithValue("@offset", offset);
-
-                connection.Open();
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        listado.Add(ParseUsuario(reader));
-                    }
-                }
-            }
+            listado.Add(ParseUsuario(reader));
         }
         return listado;
     }
 
     public int ObtenerCantidad(string? buscar = null)
     {
-        int total = 0;
         var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
 
-        using (MySqlConnection connection = new(connectionString))
-        {
-            string sql = @"
-                SELECT COUNT(id) FROM usuario
-                WHERE (@buscar IS NULL OR nombre_usuario LIKE @buscar 
-                                       OR nombre LIKE @buscar 
-                                       OR apellido LIKE @buscar 
-                                       OR CONCAT(Nombre, ' ', Apellido) LIKE @buscar
-                                       OR email LIKE @buscar)";
+        string sql = @"
+            SELECT COUNT(id) FROM usuario
+            WHERE (@buscar IS NULL OR nombre_usuario LIKE @buscar
+                                   OR nombre LIKE @buscar
+                                   OR apellido LIKE @buscar
+                                   OR CONCAT(Nombre, ' ', Apellido) LIKE @buscar
+                                   OR email LIKE @buscar)";
 
-            using (MySqlCommand command = new(sql, connection))
-            {
-                command.Parameters.AddWithValue("@buscar", paramBuscar);
-                connection.Open();
-                var result = command.ExecuteScalar();
-                if (result != null && result != DBNull.Value)
-                {
-                    total = Convert.ToInt32(result);
-                }
-            }
-        }
-        return total;
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(sql, connection);
+        command.Parameters.AddWithValue("@buscar", paramBuscar);
+
+        connection.Open();
+        return Convert.ToInt32(command.ExecuteScalar());
     }
 
     // Traer un usuario por id
@@ -117,27 +100,25 @@ public class RepositorioUsuario : RepositorioBase
         command.Parameters.AddWithValue("@id", id);
 
         connection.Open();
-        using (MySqlDataReader reader = command.ExecuteReader())
+        using MySqlDataReader reader = command.ExecuteReader();
+        if (reader.Read())
         {
-            if (reader.Read())
-            {
-                return ParseUsuario(reader);
-            }
+            return ParseUsuario(reader);
         }
         return null;
     }
 
     // Crear usuario (no usamos registro)
-    public int Create(Usuario usuario, IPasswordHasher<Usuario>? passwordHasher = null)
+    public int Crear(Usuario usuario, IPasswordHasher<Usuario>? passwordHasher = null)
     {
         if (passwordHasher != null && !string.IsNullOrEmpty(usuario.Password))
         {
             usuario.Password = passwordHasher.HashPassword(usuario, usuario.Password);
         }
 
-        string sql = @"INSERT INTO usuario 
-                      (nombre_usuario, nombre, apellido, email, password, avatar, rol, activo) 
-                      VALUES 
+        string sql = @"INSERT INTO usuario
+                      (nombre_usuario, nombre, apellido, email, password, avatar, rol, activo)
+                      VALUES
                       (@nombreUsuario, @nombre, @apellido, @email, @password, @avatar, @rol, 1)";
 
         using MySqlConnection connection = new(connectionString);
@@ -156,9 +137,9 @@ public class RepositorioUsuario : RepositorioBase
     }
 
     // Actualizar perfil
-    public int UpdatePerfil(Usuario usuario)
+    public int ActualizarPerfil(Usuario usuario)
     {
-        string sql = @"UPDATE usuario SET 
+        string sql = @"UPDATE usuario SET
                       nombre = @nombre,
                       apellido = @apellido,
                       email = @email,
@@ -181,9 +162,9 @@ public class RepositorioUsuario : RepositorioBase
     }
 
     // Actualización solo para admin
-    public int UpdateCompleto(Usuario usuario)
+    public int ActualizarCompleto(Usuario usuario)
     {
-        string sql = @"UPDATE usuario SET 
+        string sql = @"UPDATE usuario SET
                   nombre = @nombre,
                   apellido = @apellido,
                   email = @email,
@@ -210,7 +191,7 @@ public class RepositorioUsuario : RepositorioBase
     }
 
     // Borrado por si hace falta
-    public int Delete(int id)
+    public int Eliminar(int id)
     {
         string sql = "DELETE FROM usuario WHERE id = @id";
         using MySqlConnection connection = new(connectionString);
@@ -221,7 +202,7 @@ public class RepositorioUsuario : RepositorioBase
     }
 
     // Borrado lógico
-    public int AnularLogico(int id)
+    public int BajaLogica(int id)
     {
         string sql = "UPDATE usuario SET activo = 0 WHERE id = @id";
         using MySqlConnection connection = new(connectionString);

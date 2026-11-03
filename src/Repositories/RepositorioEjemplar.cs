@@ -9,72 +9,57 @@ public class RepositorioEjemplar : RepositorioBase
 
     public IList<Ejemplar> ObtenerPaginado(string? buscar = null, int paginaNro = 1, int tamPagina = 10)
     {
-        IList<Ejemplar> listado = new List<Ejemplar>();
+        var listado = new List<Ejemplar>();
         int offset = Math.Max(0, (paginaNro - 1) * tamPagina);
         var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
 
-        using (MySqlConnection connection = new MySqlConnection(connectionString))
+        string query = @"SELECT e.*,
+                                l.id as libro_id, l.titulo as libro_titulo, l.portada as libro_portada,
+                                a.id as autor_id, a.nombre as autor_nombre, a.apellido as autor_apellido
+                         FROM Ejemplar e
+                         INNER JOIN Libro l ON e.id_libro = l.id
+                         INNER JOIN Autor a ON l.id_autor = a.id
+                         WHERE e.activo = 1
+                         AND (@buscar IS NULL OR e.codigo_inventario LIKE @buscar OR l.titulo LIKE @buscar)
+                         ORDER BY e.id DESC
+                         LIMIT @limit OFFSET @offset";
+
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(query, connection);
+        command.Parameters.AddWithValue("@buscar", paramBuscar);
+        command.Parameters.AddWithValue("@limit", tamPagina);
+        command.Parameters.AddWithValue("@offset", offset);
+
+        connection.Open();
+        using MySqlDataReader reader = command.ExecuteReader();
+        while (reader.Read())
         {
-            string query = @"SELECT e.*, 
-                                    l.id as libro_id, l.titulo as libro_titulo, l.portada as libro_portada,
-                                    a.id as autor_id, a.nombre as autor_nombre, a.apellido as autor_apellido
-                             FROM Ejemplar e
-                             INNER JOIN Libro l ON e.id_libro = l.id
-                             INNER JOIN Autor a ON l.id_autor = a.id
-                             WHERE e.activo = 1
-                             AND (@buscar IS NULL OR e.codigo_inventario LIKE @buscar OR l.titulo LIKE @buscar)
-                             ORDER BY e.id DESC
-                             LIMIT @limit OFFSET @offset";
-
-            using (MySqlCommand command = new MySqlCommand(query, connection))
-            {
-                command.Parameters.AddWithValue("@buscar", paramBuscar);
-                command.Parameters.AddWithValue("@limit", tamPagina);
-                command.Parameters.AddWithValue("@offset", offset);
-
-                connection.Open();
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        listado.Add(ParseEjemplarConLibro(reader));
-                    }
-                }
-            }
+            listado.Add(ParseEjemplarConLibro(reader));
         }
         return listado;
     }
 
     public int ObtenerCantidad(string? buscar = null)
     {
-        int total = 0;
         var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
 
-        using (MySqlConnection connection = new MySqlConnection(connectionString))
-        {
-            string query = @"SELECT COUNT(e.id)
-                             FROM Ejemplar e
-                             INNER JOIN Libro l ON e.id_libro = l.id
-                             WHERE e.activo = 1
-                             AND (@buscar IS NULL OR e.codigo_inventario LIKE @buscar OR l.titulo LIKE @buscar)";
+        string query = @"SELECT COUNT(e.id)
+                         FROM Ejemplar e
+                         INNER JOIN Libro l ON e.id_libro = l.id
+                         WHERE e.activo = 1
+                         AND (@buscar IS NULL OR e.codigo_inventario LIKE @buscar OR l.titulo LIKE @buscar)";
 
-            using (MySqlCommand command = new MySqlCommand(query, connection))
-            {
-                command.Parameters.AddWithValue("@buscar", paramBuscar);
-                connection.Open();
-                var result = command.ExecuteScalar();
-                if (result != null && result != DBNull.Value)
-                {
-                    total = Convert.ToInt32(result);
-                }
-            }
-        }
-        return total;
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(query, connection);
+        command.Parameters.AddWithValue("@buscar", paramBuscar);
+
+        connection.Open();
+        return Convert.ToInt32(command.ExecuteScalar());
     }
 
     public Ejemplar? ObtenerPorId(int id)
     {
-        var query = @"SELECT e.*, 
+        var query = @"SELECT e.*,
                              l.id as libro_id, l.titulo as libro_titulo, l.portada as libro_portada,
                              a.id as autor_id, a.nombre as autor_nombre, a.apellido as autor_apellido
                       FROM Ejemplar e
@@ -161,7 +146,7 @@ public class RepositorioEjemplar : RepositorioBase
         return Convert.ToInt32(command.ExecuteScalar());
     }
 
-    public int Create(Ejemplar ejemplar)
+    public int Crear(Ejemplar ejemplar)
     {
         const string query = @"INSERT INTO Ejemplar (id_libro, codigo_inventario, estado, ubicacion, activo)
                                VALUES (@id_libro, @codigo_inventario, @estado, @ubicacion, 1);
@@ -178,7 +163,7 @@ public class RepositorioEjemplar : RepositorioBase
         return Convert.ToInt32(command.ExecuteScalar());
     }
 
-    public int Update(Ejemplar ejemplar)
+    public int Actualizar(Ejemplar ejemplar)
     {
         const string query = @"UPDATE Ejemplar SET
                                  codigo_inventario = @codigo_inventario,
@@ -195,7 +180,7 @@ public class RepositorioEjemplar : RepositorioBase
         return command.ExecuteNonQuery();
     }
 
-    public int AnularLogico(int id)
+    public int BajaLogica(int id)
     {
         const string query = "UPDATE Ejemplar SET activo = 0 WHERE id = @id";
         using MySqlConnection connection = new(connectionString);

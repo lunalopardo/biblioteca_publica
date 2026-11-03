@@ -92,7 +92,7 @@ public class RepositorioPago : RepositorioBase
         return Convert.ToInt32(command.ExecuteScalar()) > 0;
     }
 
-    public int Create(Pago pago)
+    public int Crear(Pago pago)
     {
         const string query = @"INSERT INTO pago
                                  (id_afiliado, creado_por_user_id, tipo, id_suscripcion, id_prestamo,

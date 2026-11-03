@@ -10,71 +10,55 @@ public class RepositorioAfiliado : RepositorioBase
     // Listado paginado con búsqueda general
     public IList<Afiliado> ObtenerPaginado(string? buscar = null, int paginaNro = 1, int tamPagina = 5)
     {
-        IList<Afiliado> res = new List<Afiliado>();
+        var listado = new List<Afiliado>();
         int offset = Math.Max(0, (paginaNro - 1) * tamPagina);
         var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
 
-        using (MySqlConnection connection = new MySqlConnection(connectionString))
+        string sql = @"
+            SELECT * FROM Afiliado
+            WHERE activo = 1
+              AND (@buscar IS NULL OR nombre LIKE @buscar
+              OR apellido LIKE @buscar
+              OR CONCAT(nombre, ' ', apellido) LIKE @buscar
+              OR email LIKE @buscar)
+            ORDER BY id
+            LIMIT @limit OFFSET @offset";
+
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(sql, connection);
+        command.Parameters.AddWithValue("@buscar", paramBuscar);
+        command.Parameters.AddWithValue("@limit", tamPagina);
+        command.Parameters.AddWithValue("@offset", offset);
+
+        connection.Open();
+        using MySqlDataReader reader = command.ExecuteReader();
+        while (reader.Read())
         {
-            string sql = @"
-                SELECT * FROM Afiliado 
-                WHERE activo = 1 
-                  AND (@buscar IS NULL OR nombre LIKE @buscar 
-                  OR apellido LIKE @buscar 
-                  OR CONCAT(nombre, ' ', apellido) LIKE @buscar
-                  OR email LIKE @buscar)
-                ORDER BY id
-                LIMIT @limit OFFSET @offset";
-
-            using (MySqlCommand command = new MySqlCommand(sql, connection))
-            {
-                command.Parameters.AddWithValue("@buscar", paramBuscar);
-                command.Parameters.AddWithValue("@limit", tamPagina);
-                command.Parameters.AddWithValue("@offset", offset);
-
-                connection.Open();
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        res.Add(ParseAfiliado(reader));
-                    }
-                }
-            }
+            listado.Add(ParseAfiliado(reader));
         }
-        return res;
+        return listado;
     }
 
     // Obtener la cantidad total de registros activos filtrados (para la paginación)
     public int ObtenerCantidad(string? buscar = null)
     {
-        int total = 0;
         var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
 
-        using (MySqlConnection connection = new MySqlConnection(connectionString))
-        {
-            string sql = @"
-                SELECT COUNT(id) 
-                FROM Afiliado 
-                WHERE activo = 1 
-                  AND (@buscar IS NULL OR nombre LIKE @buscar 
-                  OR apellido LIKE @buscar
-                  OR CONCAT(nombre, ' ', apellido) LIKE @buscar
-                  OR email LIKE @buscar)";
+        string sql = @"
+            SELECT COUNT(id)
+            FROM Afiliado
+            WHERE activo = 1
+              AND (@buscar IS NULL OR nombre LIKE @buscar
+              OR apellido LIKE @buscar
+              OR CONCAT(nombre, ' ', apellido) LIKE @buscar
+              OR email LIKE @buscar)";
 
-            using (MySqlCommand command = new MySqlCommand(sql, connection))
-            {
-                command.Parameters.AddWithValue("@buscar", paramBuscar);
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(sql, connection);
+        command.Parameters.AddWithValue("@buscar", paramBuscar);
 
-                connection.Open();
-                var result = command.ExecuteScalar();
-                if (result != null && result != DBNull.Value)
-                {
-                    total = Convert.ToInt32(result);
-                }
-            }
-        }
-        return total;
+        connection.Open();
+        return Convert.ToInt32(command.ExecuteScalar());
     }
 
     // Obtener Afiliado por ID
@@ -96,10 +80,10 @@ public class RepositorioAfiliado : RepositorioBase
     }
 
     // Validar si el email ya existe en la BD (excluyendo el propio ID si se está editando)
-    public bool ExistsEmail(string email, int? idExcluir = null)
+    public bool ExisteEmail(string email, int? idExcluir = null)
     {
-        var query = @"SELECT COUNT(*) FROM Afiliado 
-                      WHERE email = @email 
+        var query = @"SELECT COUNT(*) FROM Afiliado
+                      WHERE email = @email
                       AND (@idExcluir IS NULL OR id != @idExcluir)";
 
         using MySqlConnection connection = new(connectionString);
@@ -112,9 +96,9 @@ public class RepositorioAfiliado : RepositorioBase
     }
 
     // Crear Afiliado
-    public int Create(Afiliado afiliado)
+    public int Crear(Afiliado afiliado)
     {
-        var query = @"INSERT INTO Afiliado (nombre, apellido, email, telefono, fecha_alta, estado, sancionado, activo) 
+        var query = @"INSERT INTO Afiliado (nombre, apellido, email, telefono, fecha_alta, estado, sancionado, activo)
                       VALUES (@nombre, @apellido, @email, @telefono, @fechaAlta, @estado, @sancionado, 1)";
 
         using MySqlConnection connection = new(connectionString);
@@ -132,11 +116,11 @@ public class RepositorioAfiliado : RepositorioBase
     }
 
     // Editar Afiliado
-    public int Update(Afiliado afiliado)
+    public int Actualizar(Afiliado afiliado)
     {
-        var query = @"UPDATE Afiliado 
-                      SET nombre = @nombre, apellido = @apellido, email = @email, telefono = @telefono, 
-                          fecha_alta = @fechaAlta, estado = @estado, sancionado = @sancionado 
+        var query = @"UPDATE Afiliado
+                      SET nombre = @nombre, apellido = @apellido, email = @email, telefono = @telefono,
+                          fecha_alta = @fechaAlta, estado = @estado, sancionado = @sancionado
                       WHERE id = @id";
 
         using MySqlConnection connection = new(connectionString);
@@ -155,7 +139,7 @@ public class RepositorioAfiliado : RepositorioBase
     }
 
     // Borrado lógico (activo = 0)
-    public int DeleteLogico(int id)
+    public int BajaLogica(int id)
     {
         var query = "UPDATE Afiliado SET activo = 0 WHERE id = @id";
         using MySqlConnection connection = new(connectionString);
@@ -167,13 +151,13 @@ public class RepositorioAfiliado : RepositorioBase
     }
 
     // Obtener listado reducido para selects / búsquedas asíncronas AJAX
-    public IList<Afiliado> GetParaSelect(string? buscar = null, int limite = 20)
+    public IList<Afiliado> ObtenerParaSelect(string? buscar = null, int limite = 20)
     {
         var listado = new List<Afiliado>();
 
         string sql = @"
-            SELECT id, nombre, apellido, email, estado, sancionado 
-            FROM Afiliado 
+            SELECT id, nombre, apellido, email, estado, sancionado
+            FROM Afiliado
             WHERE activo = 1";
 
         if (!string.IsNullOrWhiteSpace(buscar))
@@ -183,33 +167,27 @@ public class RepositorioAfiliado : RepositorioBase
 
         sql += " ORDER BY apellido, nombre ASC LIMIT @limite";
 
-        using (MySqlConnection connection = new MySqlConnection(connectionString))
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(sql, connection);
+        if (!string.IsNullOrWhiteSpace(buscar))
         {
-            using (MySqlCommand command = new MySqlCommand(sql, connection))
-            {
-                if (!string.IsNullOrWhiteSpace(buscar))
-                {
-                    command.Parameters.AddWithValue("@buscar", $"%{buscar.Trim()}%");
-                }
-                command.Parameters.AddWithValue("@limite", limite);
+            command.Parameters.AddWithValue("@buscar", $"%{buscar.Trim()}%");
+        }
+        command.Parameters.AddWithValue("@limite", limite);
 
-                connection.Open();
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        listado.Add(new Afiliado
-                        {
-                            Id = reader.GetInt32("id"),
-                            Nombre = reader.GetString("nombre"),
-                            Apellido = reader.GetString("apellido"),
-                            Email = reader.GetString("email"),
-                            Estado = reader.GetBoolean("estado"),
-                            Sancionado = reader.GetBoolean("sancionado")
-                        });
-                    }
-                }
-            }
+        connection.Open();
+        using MySqlDataReader reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            listado.Add(new Afiliado
+            {
+                Id = reader.GetInt32("id"),
+                Nombre = reader.GetString("nombre"),
+                Apellido = reader.GetString("apellido"),
+                Email = reader.GetString("email"),
+                Estado = reader.GetBoolean("estado"),
+                Sancionado = reader.GetBoolean("sancionado")
+            });
         }
 
         return listado;

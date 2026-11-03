@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using BibliotecaPublica.Helpers;
 using BibliotecaPublica.Models;
 using BibliotecaPublica.Repositories;
 
@@ -13,6 +14,9 @@ namespace BibliotecaPublica.Controllers;
 [AutoValidateAntiforgeryToken]
 public class UsuariosController : Controller
 {
+    private const int TamPagina = 10;
+    private const string CarpetaAvatares = "avatars";
+
     private readonly RepositorioUsuario _repositorioUsuario;
     private readonly IWebHostEnvironment _environment;
     private readonly IPasswordHasher<Usuario> _passwordHasher;
@@ -131,25 +135,23 @@ public class UsuariosController : Controller
         var usuarioExistente = _repositorioUsuario.ObtenerPorId(id);
         if (usuarioExistente == null) return NotFound();
 
+        // La imagen se valida con [ImagenValida]; si no es válida no se guarda nada
+        string? errorAvatar = ModelState[nameof(Usuario.AvatarFile)]?.Errors.FirstOrDefault()?.ErrorMessage;
+        if (errorAvatar != null)
+        {
+            TempData["Error"] = errorAvatar;
+            return RedirectToAction(nameof(Perfil), new { id });
+        }
+
         // Preservar avatar si no se cargó uno nuevo
+        string? avatarAnterior = usuarioExistente.Avatar;
         if (modelo.AvatarFile != null && modelo.AvatarFile.Length > 0)
         {
-            string uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "avatars");
-            Directory.CreateDirectory(uploadsFolder);
-
-            string uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(modelo.AvatarFile.FileName)}";
-            string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-            using (var fileStream = new FileStream(filePath, FileMode.Create))
-            {
-                await modelo.AvatarFile.CopyToAsync(fileStream);
-            }
-
-            modelo.Avatar = $"/uploads/avatars/{uniqueFileName}";
+            modelo.Avatar = await Archivos.GuardarImagenAsync(modelo.AvatarFile, _environment, CarpetaAvatares);
         }
         else
         {
-            modelo.Avatar = usuarioExistente.Avatar;
+            modelo.Avatar = avatarAnterior;
         }
 
         // Manejo de la Contraseña
@@ -168,12 +170,18 @@ public class UsuariosController : Controller
 
         if (esAdmin)
         {
-            _repositorioUsuario.UpdateCompleto(modelo);
+            _repositorioUsuario.ActualizarCompleto(modelo);
         }
         else
         {
             modelo.Activo = usuarioExistente.Activo;
-            _repositorioUsuario.UpdatePerfil(modelo);
+            _repositorioUsuario.ActualizarPerfil(modelo);
+        }
+
+        // El archivo viejo se borra recién cuando la base ya quedó actualizada
+        if (modelo.Avatar != avatarAnterior)
+        {
+            Archivos.Borrar(avatarAnterior, _environment);
         }
 
         var usuarioActualizado = _repositorioUsuario.ObtenerPorId(id);
@@ -193,10 +201,8 @@ public class UsuariosController : Controller
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
         }
 
-        ViewBag.Mensaje = "Perfil actualizado correctamente.";
-        if (usuarioActualizado != null) usuarioActualizado.Password = string.Empty;
-
-        return View(usuarioActualizado ?? modelo);
+        TempData["Mensaje"] = "Perfil actualizado correctamente.";
+        return RedirectToAction(nameof(Perfil), new { id });
     }
 
     // GET: /Usuarios/Index
@@ -204,15 +210,8 @@ public class UsuariosController : Controller
     [Authorize(Roles = "Administrador")]
     public IActionResult Index(string? buscar = null, int pagina = 1)
     {
-        int cantidadPorPagina = 10;
-
-        int totalRegistros = _repositorioUsuario.ObtenerCantidad(buscar);
-
-        var usuarios = _repositorioUsuario.ObtenerPaginado(buscar, pagina, cantidadPorPagina);
-
-        ViewData["FiltroActual"] = buscar;
-        ViewData["PaginaActual"] = pagina;
-        ViewData["TotalPaginas"] = (int)Math.Ceiling((double)totalRegistros / cantidadPorPagina);
+        var usuarios = _repositorioUsuario.ObtenerPaginado(buscar, pagina, TamPagina);
+        this.CargarPaginado(buscar, pagina, _repositorioUsuario.ObtenerCantidad(buscar), TamPagina);
 
         return View(usuarios);
     }
@@ -221,48 +220,9 @@ public class UsuariosController : Controller
     [Authorize(Roles = "Administrador")]
     public IActionResult Eliminar(int id)
     {
-        _repositorioUsuario.AnularLogico(id);
+        _repositorioUsuario.BajaLogica(id);
         TempData["Mensaje"] = "Usuario eliminado correctamente.";
         return RedirectToAction("Index");
-    }
-
-    [HttpPost]
-    [Authorize(Roles = "Administrador")]
-    public async Task<IActionResult> Edit(
-        Usuario usuario,
-        IFormFile? avatarFile,
-        [FromServices] IWebHostEnvironment environment)
-    {
-        if (ModelState.IsValid)
-        {
-            var usuarioExistente = _repositorioUsuario.ObtenerPorId(usuario.Id);
-            if (usuarioExistente == null) return NotFound();
-
-            if (avatarFile != null && avatarFile.Length > 0)
-            {
-                ImagenesController.BorrarArchivoFisico(usuarioExistente.Avatar, environment);
-                usuario.Avatar = await ImagenesController.GuardarArchivoAsync(avatarFile, environment, "Avatares");
-            }
-            else
-            {
-                usuario.Avatar = usuarioExistente.Avatar;
-            }
-            usuario.Rol = usuarioExistente.Rol;
-
-            // Si cambió la contraseña, la hasheamos
-            if (!string.IsNullOrWhiteSpace(usuario.Password))
-            {
-                usuario.Password = _passwordHasher.HashPassword(usuario, usuario.Password);
-            }
-            else
-            {
-                usuario.Password = usuarioExistente.Password;
-            }
-
-            _repositorioUsuario.UpdateCompleto(usuario);
-            return RedirectToAction(nameof(Index));
-        }
-        return View(usuario);
     }
 
     [HttpPost]
@@ -323,18 +283,7 @@ public class UsuariosController : Controller
         // Procesar el avatar si subieron uno
         if (usuario.AvatarFile != null && usuario.AvatarFile.Length > 0)
         {
-            string uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "avatars");
-            Directory.CreateDirectory(uploadsFolder);
-
-            string uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(usuario.AvatarFile.FileName)}";
-            string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-            using (var fileStream = new FileStream(filePath, FileMode.Create))
-            {
-                await usuario.AvatarFile.CopyToAsync(fileStream);
-            }
-
-            usuario.Avatar = $"/uploads/avatars/{uniqueFileName}";
+            usuario.Avatar = await Archivos.GuardarImagenAsync(usuario.AvatarFile, _environment, CarpetaAvatares);
         }
 
         if (usuario.Rol == 0)
@@ -343,7 +292,7 @@ public class UsuariosController : Controller
         }
         usuario.Activo = true;
 
-        int resultado = _repositorioUsuario.Create(usuario, _passwordHasher);
+        int resultado = _repositorioUsuario.Crear(usuario, _passwordHasher);
 
         if (resultado > 0)
         {

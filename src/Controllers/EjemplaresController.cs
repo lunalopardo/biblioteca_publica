@@ -11,17 +11,17 @@ namespace BibliotecaPublica.Controllers;
 [Route("Ejemplares/[action]")]
 public class EjemplaresController : Controller
 {
-    private readonly RepositorioEjemplar _repoEjemplar;
+    private readonly RepositorioEjemplar _repositorioEjemplar;
     private readonly ILogger<EjemplaresController> _logger;
 
-    public EjemplaresController(RepositorioEjemplar repoEjemplar, ILogger<EjemplaresController> logger)
+    public EjemplaresController(RepositorioEjemplar repositorioEjemplar, ILogger<EjemplaresController> logger)
     {
-        _repoEjemplar = repoEjemplar;
+        _repositorioEjemplar = repositorioEjemplar;
         _logger = logger;
     }
 
     [HttpGet]
-    public IActionResult ObtenerPorLibro(int idLibro) => Json(_repoEjemplar.ObtenerPorLibro(idLibro));
+    public IActionResult ObtenerPorLibro(int idLibro) => Json(_repositorioEjemplar.ObtenerPorLibro(idLibro));
 
     [HttpPost]
     public IActionResult CrearAjax([FromBody] Ejemplar ejemplar)
@@ -33,7 +33,7 @@ public class EjemplaresController : Controller
 
         try
         {
-            var id = _repoEjemplar.Create(ejemplar);
+            var id = _repositorioEjemplar.Crear(ejemplar);
             return Ok(new { id, message = "Ejemplar creado exitosamente." });
         }
         catch (MySqlException ex) when (ex.ErrorCode == MySqlErrorCode.DuplicateKeyEntry)
@@ -56,7 +56,7 @@ public class EjemplaresController : Controller
         try
         {
             // El repositorio solo actualiza código y ubicación; el estado no se toca
-            return _repoEjemplar.Update(ejemplar) > 0
+            return _repositorioEjemplar.Actualizar(ejemplar) > 0
                 ? Ok(new { message = "Ejemplar actualizado exitosamente." })
                 : NotFound(new { message = "El ejemplar no existe." });
         }
@@ -77,7 +77,7 @@ public class EjemplaresController : Controller
         try
         {
             // Un ejemplar prestado no se puede dar de baja: primero hay que registrar la devolución
-            if (_repoEjemplar.EstaPrestado(id))
+            if (_repositorioEjemplar.EstaPrestado(id))
             {
                 return Conflict(new
                 {
@@ -85,7 +85,7 @@ public class EjemplaresController : Controller
                 });
             }
 
-            return _repoEjemplar.AnularLogico(id) > 0
+            return _repositorioEjemplar.BajaLogica(id) > 0
                 ? Ok(new { message = "Ejemplar eliminado." })
                 : NotFound(new { message = "El ejemplar no existe." });
         }

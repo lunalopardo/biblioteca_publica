@@ -5,12 +5,12 @@ namespace BibliotecaPublica.Repositories;
 
 public class RepositorioLibro : RepositorioBase
 {
-    private readonly RepositorioEjemplar _repoEjemplar;
+    private readonly RepositorioEjemplar _repositorioEjemplar;
 
-    public RepositorioLibro(IConfiguration configuration, RepositorioEjemplar repoEjemplar)
+    public RepositorioLibro(IConfiguration configuration, RepositorioEjemplar repositorioEjemplar)
         : base(configuration)
     {
-        _repoEjemplar = repoEjemplar;
+        _repositorioEjemplar = repositorioEjemplar;
     }
 
     // SELECT común: lo usan ObtenerPaginado y ObtenerPorId
@@ -34,24 +34,26 @@ public class RepositorioLibro : RepositorioBase
             ORDER BY l.id DESC
             LIMIT @limit OFFSET @offset";
 
+        // Bloque using: la conexión se cierra antes de cargar géneros y ejemplares de cada libro
         using (MySqlConnection connection = new(connectionString))
-        using (MySqlCommand command = new(query, connection))
         {
+            using MySqlCommand command = new(query, connection);
             command.Parameters.AddWithValue("@buscar", paramBuscar);
             command.Parameters.AddWithValue("@limit", tamPagina);
             command.Parameters.AddWithValue("@offset", offset);
 
             connection.Open();
-            using var reader = command.ExecuteReader();
+            using MySqlDataReader reader = command.ExecuteReader();
             while (reader.Read())
             {
                 listado.Add(ParseLibroConAutor(reader));
             }
         }
+
         foreach (var libro in listado)
         {
             libro.Generos = ObtenerGenerosDeLibro(libro.Id);
-            libro.Ejemplares = _repoEjemplar.ObtenerPorLibro(libro.Id);
+            libro.Ejemplares = _repositorioEjemplar.ObtenerPorLibro(libro.Id);
         }
         return listado;
     }
@@ -81,23 +83,23 @@ public class RepositorioLibro : RepositorioBase
         const string query = SelectConAutor + " WHERE l.id = @id AND l.activo = 1";
 
         using (MySqlConnection connection = new(connectionString))
-        using (MySqlCommand command = new(query, connection))
         {
+            using MySqlCommand command = new(query, connection);
             command.Parameters.AddWithValue("@id", id);
 
             connection.Open();
-            using var reader = command.ExecuteReader();
+            using MySqlDataReader reader = command.ExecuteReader();
             libro = reader.Read() ? ParseLibroConAutor(reader) : null;
         }
 
         if (libro == null) return null;
 
         libro.Generos = ObtenerGenerosDeLibro(libro.Id);
-        libro.Ejemplares = _repoEjemplar.ObtenerPorLibro(libro.Id);
+        libro.Ejemplares = _repositorioEjemplar.ObtenerPorLibro(libro.Id);
         return libro;
     }
 
-    public int Create(Libro libro)
+    public int Crear(Libro libro)
     {
         const string query = @"INSERT INTO Libro
                                  (titulo, id_autor, isbn, paginas, anio_publicacion, idioma, descripcion,
@@ -115,7 +117,7 @@ public class RepositorioLibro : RepositorioBase
         return Convert.ToInt32(command.ExecuteScalar());
     }
 
-    public int Update(Libro libro)
+    public int Actualizar(Libro libro)
     {
         const string query = @"UPDATE Libro SET
                                  titulo = @titulo,
@@ -138,7 +140,7 @@ public class RepositorioLibro : RepositorioBase
         return command.ExecuteNonQuery();
     }
 
-    // Los parámetros que comparten Create y Update
+    // Los parámetros que comparten Crear y Actualizar
     private static void AgregarParametros(MySqlCommand command, Libro libro)
     {
         command.Parameters.AddWithValue("@titulo", libro.Titulo);
@@ -152,7 +154,7 @@ public class RepositorioLibro : RepositorioBase
         command.Parameters.AddWithValue("@id_editorial", (object?)libro.IdEditorial ?? DBNull.Value);
     }
 
-    public int AnularLogico(int id)
+    public int BajaLogica(int id)
     {
         const string query = "UPDATE Libro SET activo = 0 WHERE id = @id";
         using MySqlConnection connection = new(connectionString);
@@ -169,11 +171,9 @@ public class RepositorioLibro : RepositorioBase
         connection.Open();
         using MySqlTransaction tx = connection.BeginTransaction();
 
-        using (var borrar = new MySqlCommand("DELETE FROM libro_genero WHERE id_libro = @idLibro", connection, tx))
-        {
-            borrar.Parameters.AddWithValue("@idLibro", idLibro);
-            borrar.ExecuteNonQuery();
-        }
+        using var borrar = new MySqlCommand("DELETE FROM libro_genero WHERE id_libro = @idLibro", connection, tx);
+        borrar.Parameters.AddWithValue("@idLibro", idLibro);
+        borrar.ExecuteNonQuery();
 
         if (idsGeneros != null && idsGeneros.Count > 0)
         {

@@ -10,37 +10,37 @@ namespace BibliotecaPublica.Controllers;
 [AutoValidateAntiforgeryToken]
 public class SuscripcionesController : Controller
 {
-    private readonly RepositorioSuscripcion _repoSuscripcion;
-    private readonly RepositorioPago _repoPago;
-    private readonly RepositorioAfiliado _repoAfiliado;
+    private readonly RepositorioSuscripcion _repositorioSuscripcion;
+    private readonly RepositorioPago _repositorioPago;
+    private readonly RepositorioAfiliado _repositorioAfiliado;
     private readonly ILogger<SuscripcionesController> _logger;
 
     public SuscripcionesController(
-        RepositorioSuscripcion repoSuscripcion,
-        RepositorioPago repoPago,
-        RepositorioAfiliado repoAfiliado,
+        RepositorioSuscripcion repositorioSuscripcion,
+        RepositorioPago repositorioPago,
+        RepositorioAfiliado repositorioAfiliado,
         ILogger<SuscripcionesController> logger)
     {
-        _repoSuscripcion = repoSuscripcion;
-        _repoPago = repoPago;
-        _repoAfiliado = repoAfiliado;
+        _repositorioSuscripcion = repositorioSuscripcion;
+        _repositorioPago = repositorioPago;
+        _repositorioAfiliado = repositorioAfiliado;
         _logger = logger;
     }
 
     // GET: /Suscripciones/Index?idAfiliado=3
     public IActionResult Index(int idAfiliado)
     {
-        var afiliado = _repoAfiliado.ObtenerPorId(idAfiliado);
+        var afiliado = _repositorioAfiliado.ObtenerPorId(idAfiliado);
         if (afiliado == null) return NotFound();
 
         ViewBag.Afiliado = afiliado;
-        return View(_repoSuscripcion.ObtenerPorAfiliado(idAfiliado));
+        return View(_repositorioSuscripcion.ObtenerPorAfiliado(idAfiliado));
     }
 
     // GET: /Suscripciones/Create?idAfiliado=3
     public IActionResult Create(int idAfiliado)
     {
-        var afiliado = _repoAfiliado.ObtenerPorId(idAfiliado);
+        var afiliado = _repositorioAfiliado.ObtenerPorId(idAfiliado);
         if (afiliado == null) return NotFound();
 
         ViewBag.Afiliado = afiliado;
@@ -55,7 +55,7 @@ public class SuscripcionesController : Controller
             ModelState.AddModelError(nameof(suscripcion.FechaFin),
                 "La fecha de fin debe ser posterior a la de inicio.");
         }
-        else if (_repoSuscripcion.ExisteSuperposicion(
+        else if (_repositorioSuscripcion.ExisteSuperposicion(
                      suscripcion.IdAfiliado, suscripcion.FechaInicio, suscripcion.FechaFin))
         {
             ModelState.AddModelError("", "Ya existe una suscripción que se superpone con esas fechas.");
@@ -63,21 +63,21 @@ public class SuscripcionesController : Controller
 
         if (!ModelState.IsValid)
         {
-            ViewBag.Afiliado = _repoAfiliado.ObtenerPorId(suscripcion.IdAfiliado);
+            ViewBag.Afiliado = _repositorioAfiliado.ObtenerPorId(suscripcion.IdAfiliado);
             return View(suscripcion);
         }
 
         try
         {
-            _repoSuscripcion.Create(suscripcion);
-            TempData["Exito"] = "Suscripción creada. Ahora podés registrar el pago.";
+            _repositorioSuscripcion.Crear(suscripcion);
+            TempData["Mensaje"] = "Suscripción creada. Ahora podés registrar el pago.";
             return RedirectToAction(nameof(Index), new { idAfiliado = suscripcion.IdAfiliado });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al crear suscripción del afiliado {IdAfiliado}", suscripcion.IdAfiliado);
             ModelState.AddModelError("", "No se pudo crear la suscripción.");
-            ViewBag.Afiliado = _repoAfiliado.ObtenerPorId(suscripcion.IdAfiliado);
+            ViewBag.Afiliado = _repositorioAfiliado.ObtenerPorId(suscripcion.IdAfiliado);
             return View(suscripcion);
         }
     }
@@ -85,18 +85,18 @@ public class SuscripcionesController : Controller
     [HttpPost]
     public IActionResult Anular(int id)
     {
-        var suscripcion = _repoSuscripcion.ObtenerPorId(id);
+        var suscripcion = _repositorioSuscripcion.ObtenerPorId(id);
         if (suscripcion == null) return NotFound();
 
         // No se puede anular una suscripción que ya tiene un pago registrado
-        if (_repoPago.ExisteCuotaActiva(id))
+        if (_repositorioPago.ExisteCuotaActiva(id))
         {
             TempData["Error"] = "No se puede anular: tiene un pago registrado. Anulá primero el pago.";
         }
         else
         {
-            _repoSuscripcion.AnularLogico(id);
-            TempData["Exito"] = "Suscripción anulada.";
+            _repositorioSuscripcion.BajaLogica(id);
+            TempData["Mensaje"] = "Suscripción anulada.";
         }
 
         return RedirectToAction(nameof(Index), new { idAfiliado = suscripcion.IdAfiliado });

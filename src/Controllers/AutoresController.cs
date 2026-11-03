@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using BibliotecaPublica.Helpers;
 using BibliotecaPublica.Models;
 using BibliotecaPublica.Repositories;
 
@@ -9,6 +10,9 @@ namespace BibliotecaPublica.Controllers;
 [AutoValidateAntiforgeryToken]
 public class AutoresController : Controller
 {
+    private const int TamPagina = 5;
+    private const string CarpetaFotos = "autores";
+
     private readonly RepositorioAutor _repositorioAutor;
     private readonly RepositorioNacionalidad _repositorioNacionalidad;
     private readonly IWebHostEnvironment _environment;
@@ -26,15 +30,8 @@ public class AutoresController : Controller
     // GET: Autores (con paginado)
     public IActionResult Index(string? buscar = null, int pagina = 1)
     {
-        int registrosPorPagina = 5;
-
-        var listado = _repositorioAutor.ObtenerPaginado(buscar, pagina, registrosPorPagina);
-        int totalRegistros = _repositorioAutor.ObtenerCantidad(buscar);
-        int totalPaginas = (int)Math.Ceiling((double)totalRegistros / registrosPorPagina);
-
-        ViewData["FiltroActual"] = buscar;
-        ViewData["PaginaActual"] = pagina;
-        ViewData["TotalPaginas"] = totalPaginas;
+        var listado = _repositorioAutor.ObtenerPaginado(buscar, pagina, TamPagina);
+        this.CargarPaginado(buscar, pagina, _repositorioAutor.ObtenerCantidad(buscar), TamPagina);
 
         return View(listado);
     }
@@ -44,7 +41,7 @@ public class AutoresController : Controller
     {
         if (id == null) return NotFound();
 
-        var autor = _repositorioAutor.GetById(id.Value);
+        var autor = _repositorioAutor.ObtenerPorId(id.Value);
         if (autor == null) return NotFound();
 
         return View(autor);
@@ -53,7 +50,7 @@ public class AutoresController : Controller
     // GET: Autores/Create
     public IActionResult Create()
     {
-        ViewBag.Nacionalidades = _repositorioNacionalidad.ObtenerTodas();
+        ViewBag.Nacionalidades = _repositorioNacionalidad.ObtenerTodos();
         return View();
     }
 
@@ -65,28 +62,17 @@ public class AutoresController : Controller
 
         if (!ModelState.IsValid)
         {
-            ViewBag.Nacionalidades = _repositorioNacionalidad.ObtenerTodas();
+            ViewBag.Nacionalidades = _repositorioNacionalidad.ObtenerTodos();
             return View(autor);
         }
 
         if (autor.FotoFile != null && autor.FotoFile.Length > 0)
         {
-            string uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "autores");
-            Directory.CreateDirectory(uploadsFolder);
-
-            string uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(autor.FotoFile.FileName)}";
-            string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-            using (var fileStream = new FileStream(filePath, FileMode.Create))
-            {
-                await autor.FotoFile.CopyToAsync(fileStream);
-            }
-
-            autor.Foto = $"/uploads/autores/{uniqueFileName}";
+            autor.Foto = await Archivos.GuardarImagenAsync(autor.FotoFile, _environment, CarpetaFotos);
         }
 
         autor.Activo = true;
-        _repositorioAutor.Create(autor);
+        _repositorioAutor.Crear(autor);
         TempData["Mensaje"] = "Autor registrado con éxito.";
         return RedirectToAction(nameof(Index));
     }
@@ -96,10 +82,10 @@ public class AutoresController : Controller
     {
         if (id == null) return NotFound();
 
-        var autor = _repositorioAutor.GetById(id.Value);
+        var autor = _repositorioAutor.ObtenerPorId(id.Value);
         if (autor == null) return NotFound();
 
-        ViewBag.Nacionalidades = _repositorioNacionalidad.ObtenerTodas();
+        ViewBag.Nacionalidades = _repositorioNacionalidad.ObtenerTodos();
         return View(autor);
     }
 
@@ -113,38 +99,33 @@ public class AutoresController : Controller
 
         if (!ModelState.IsValid)
         {
-            ViewBag.Nacionalidades = _repositorioNacionalidad.ObtenerTodas();
+            ViewBag.Nacionalidades = _repositorioNacionalidad.ObtenerTodos();
             return View(autor);
         }
 
-        var autorExistente = _repositorioAutor.GetById(id);
+        var autorExistente = _repositorioAutor.ObtenerPorId(id);
         if (autorExistente == null) return NotFound();
+
+        string? fotoAnterior = autorExistente.Foto;
 
         if (autor.FotoFile != null && autor.FotoFile.Length > 0)
         {
-            // Borrar foto anterior si existía
-            ImagenesController.BorrarArchivoFisico(autorExistente.Foto, _environment);
-
-            string uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "autores");
-            Directory.CreateDirectory(uploadsFolder);
-
-            string uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(autor.FotoFile.FileName)}";
-            string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-            using (var fileStream = new FileStream(filePath, FileMode.Create))
-            {
-                await autor.FotoFile.CopyToAsync(fileStream);
-            }
-
-            autor.Foto = $"/uploads/autores/{uniqueFileName}";
+            autor.Foto = await Archivos.GuardarImagenAsync(autor.FotoFile, _environment, CarpetaFotos);
         }
         else
         {
-            autor.Foto = autorExistente.Foto;
+            autor.Foto = fotoAnterior;
         }
 
         autor.Activo = autorExistente.Activo;
-        _repositorioAutor.Update(autor);
+        _repositorioAutor.Actualizar(autor);
+
+        // El archivo viejo se borra recién cuando la base ya quedó actualizada
+        if (autor.Foto != fotoAnterior)
+        {
+            Archivos.Borrar(fotoAnterior, _environment);
+        }
+
         TempData["Mensaje"] = "Autor actualizado con éxito.";
         return RedirectToAction(nameof(Index));
     }
@@ -154,7 +135,7 @@ public class AutoresController : Controller
     [Authorize(Roles = "Administrador")]
     public IActionResult Delete(int id)
     {
-        _repositorioAutor.DeleteLogico(id);
+        _repositorioAutor.BajaLogica(id);
         TempData["Mensaje"] = "Autor dado de baja correctamente.";
         return RedirectToAction(nameof(Index));
     }
@@ -180,5 +161,4 @@ public class AutoresController : Controller
 
         return Json(resultado);
     }
-
 }

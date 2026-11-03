@@ -12,25 +12,20 @@ public class RepositorioAutor : RepositorioBase
     {
         var listado = new List<Autor>();
         string sql = @"
-            SELECT a.id, a.nombre, a.apellido, a.id_nacionalidad, n.nombre AS nacionalidad_nombre, a.biografia, a.foto, a.activo 
+            SELECT a.id, a.nombre, a.apellido, a.id_nacionalidad, n.nombre AS nacionalidad_nombre, a.biografia, a.foto, a.activo
             FROM autor a
             LEFT JOIN nacionalidad n ON a.id_nacionalidad = n.id
             WHERE a.activo = 1
             ORDER BY a.apellido, a.nombre ASC";
 
-        using (MySqlConnection connection = new MySqlConnection(connectionString))
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(sql, connection);
+
+        connection.Open();
+        using MySqlDataReader reader = command.ExecuteReader();
+        while (reader.Read())
         {
-            connection.Open();
-            using (MySqlCommand command = new MySqlCommand(sql, connection))
-            {
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        listado.Add(ParseAutor(reader));
-                    }
-                }
-            }
+            listado.Add(ParseAutor(reader));
         }
         return listado;
     }
@@ -38,78 +33,62 @@ public class RepositorioAutor : RepositorioBase
     // Listado paginado
     public IList<Autor> ObtenerPaginado(string? buscar = null, int paginaNro = 1, int tamPagina = 5)
     {
-        IList<Autor> res = new List<Autor>();
+        var listado = new List<Autor>();
         int offset = Math.Max(0, (paginaNro - 1) * tamPagina);
         var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
 
         string sql = @"
-            SELECT a.id, a.nombre, a.apellido, a.id_nacionalidad, n.nombre AS nacionalidad_nombre, a.biografia, a.foto, a.activo 
+            SELECT a.id, a.nombre, a.apellido, a.id_nacionalidad, n.nombre AS nacionalidad_nombre, a.biografia, a.foto, a.activo
             FROM autor a
             LEFT JOIN nacionalidad n ON a.id_nacionalidad = n.id
-            WHERE a.activo = 1 
-              AND (@buscar IS NULL OR a.nombre LIKE @buscar 
-              OR a.apellido LIKE @buscar 
+            WHERE a.activo = 1
+              AND (@buscar IS NULL OR a.nombre LIKE @buscar
+              OR a.apellido LIKE @buscar
               OR CONCAT(a.nombre, ' ', a.apellido) LIKE @buscar)
             ORDER BY a.id
             LIMIT @limit OFFSET @offset";
 
-        using (MySqlConnection connection = new MySqlConnection(connectionString))
-        {
-            connection.Open();
-            using (MySqlCommand command = new MySqlCommand(sql, connection))
-            {
-                command.Parameters.AddWithValue("@buscar", paramBuscar);
-                command.Parameters.AddWithValue("@limit", tamPagina);
-                command.Parameters.AddWithValue("@offset", offset);
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(sql, connection);
+        command.Parameters.AddWithValue("@buscar", paramBuscar);
+        command.Parameters.AddWithValue("@limit", tamPagina);
+        command.Parameters.AddWithValue("@offset", offset);
 
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        res.Add(ParseAutor(reader));
-                    }
-                }
-            }
+        connection.Open();
+        using MySqlDataReader reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            listado.Add(ParseAutor(reader));
         }
-        return res;
+        return listado;
     }
 
     // Obtener la cantidad total de registros activos filtrados (para la paginación)
     public int ObtenerCantidad(string? buscar = null)
     {
-        int total = 0;
         var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
 
-        using (MySqlConnection connection = new MySqlConnection(connectionString))
-        {
-            string sql = @"
-                SELECT COUNT(id) 
-                FROM autor 
-                WHERE activo = 1 
-                  AND (@buscar IS NULL OR nombre LIKE @buscar 
-                  OR apellido LIKE @buscar
-                  OR CONCAT(nombre, ' ', apellido) LIKE @buscar)";
+        string sql = @"
+            SELECT COUNT(id)
+            FROM autor
+            WHERE activo = 1
+              AND (@buscar IS NULL OR nombre LIKE @buscar
+              OR apellido LIKE @buscar
+              OR CONCAT(nombre, ' ', apellido) LIKE @buscar)";
 
-            using (MySqlCommand command = new MySqlCommand(sql, connection))
-            {
-                command.Parameters.AddWithValue("@buscar", paramBuscar);
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(sql, connection);
+        command.Parameters.AddWithValue("@buscar", paramBuscar);
 
-                connection.Open();
-                var result = command.ExecuteScalar();
-                if (result != null && result != DBNull.Value)
-                {
-                    total = Convert.ToInt32(result);
-                }
-            }
-        }
-        return total;
+        connection.Open();
+        return Convert.ToInt32(command.ExecuteScalar());
     }
 
     // Obtener Autor por ID
-    public Autor? GetById(int id)
+    public Autor? ObtenerPorId(int id)
     {
         var query = @"
-            SELECT a.id, a.nombre, a.apellido, a.id_nacionalidad, n.nombre AS nacionalidad_nombre, a.biografia, a.foto, a.activo 
+            SELECT a.id, a.nombre, a.apellido, a.id_nacionalidad, n.nombre AS nacionalidad_nombre, a.biografia, a.foto, a.activo
             FROM autor a
             LEFT JOIN nacionalidad n ON a.id_nacionalidad = n.id
             WHERE a.id = @id AND a.activo = 1";
@@ -129,9 +108,9 @@ public class RepositorioAutor : RepositorioBase
     }
 
     // Crear Autor
-    public int Create(Autor autor)
+    public int Crear(Autor autor)
     {
-        var query = @"INSERT INTO autor (nombre, apellido, id_nacionalidad, biografia, foto, activo) 
+        var query = @"INSERT INTO autor (nombre, apellido, id_nacionalidad, biografia, foto, activo)
                   VALUES (@nombre, @apellido, @id_nacionalidad, @biografia, @foto, 1);
                   SELECT LAST_INSERT_ID();";
 
@@ -150,11 +129,11 @@ public class RepositorioAutor : RepositorioBase
     }
 
     // Editar autor
-    public int Update(Autor autor)
+    public int Actualizar(Autor autor)
     {
-        var query = @"UPDATE autor 
-                      SET nombre = @nombre, apellido = @apellido, id_nacionalidad = @id_nacionalidad, 
-                          biografia = @biografia, foto = @foto 
+        var query = @"UPDATE autor
+                      SET nombre = @nombre, apellido = @apellido, id_nacionalidad = @id_nacionalidad,
+                          biografia = @biografia, foto = @foto
                       WHERE id = @id";
 
         using MySqlConnection connection = new(connectionString);
@@ -171,7 +150,7 @@ public class RepositorioAutor : RepositorioBase
     }
 
     // Borrado lógico (activo = 0)
-    public int DeleteLogico(int id)
+    public int BajaLogica(int id)
     {
         var query = "UPDATE autor SET activo = 0 WHERE id = @id";
         using MySqlConnection connection = new(connectionString);
@@ -183,13 +162,13 @@ public class RepositorioAutor : RepositorioBase
     }
 
     // Obtener listado reducido para selects
-    public IList<Autor> GetParaSelect(string? buscar = null, int limite = 20)
+    public IList<Autor> ObtenerParaSelect(string? buscar = null, int limite = 20)
     {
         var listado = new List<Autor>();
 
         string sql = @"
-            SELECT id, nombre, apellido 
-            FROM autor 
+            SELECT id, nombre, apellido
+            FROM autor
             WHERE activo = 1";
 
         if (!string.IsNullOrWhiteSpace(buscar))
@@ -199,30 +178,24 @@ public class RepositorioAutor : RepositorioBase
 
         sql += " ORDER BY apellido, nombre ASC LIMIT @limite";
 
-        using (MySqlConnection connection = new MySqlConnection(connectionString))
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(sql, connection);
+        if (!string.IsNullOrWhiteSpace(buscar))
         {
-            using (MySqlCommand command = new MySqlCommand(sql, connection))
-            {
-                if (!string.IsNullOrWhiteSpace(buscar))
-                {
-                    command.Parameters.AddWithValue("@buscar", $"%{buscar.Trim()}%");
-                }
-                command.Parameters.AddWithValue("@limite", limite);
+            command.Parameters.AddWithValue("@buscar", $"%{buscar.Trim()}%");
+        }
+        command.Parameters.AddWithValue("@limite", limite);
 
-                connection.Open();
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        listado.Add(new Autor
-                        {
-                            Id = reader.GetInt32("id"),
-                            Nombre = reader.GetString("nombre"),
-                            Apellido = reader.GetString("apellido")
-                        });
-                    }
-                }
-            }
+        connection.Open();
+        using MySqlDataReader reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            listado.Add(new Autor
+            {
+                Id = reader.GetInt32("id"),
+                Nombre = reader.GetString("nombre"),
+                Apellido = reader.GetString("apellido")
+            });
         }
 
         return listado;
