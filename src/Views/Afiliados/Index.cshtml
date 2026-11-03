@@ -99,6 +99,12 @@
                                    class="btn-icon" title="Ver pagos">
                                     <span class="material-symbols-outlined">receipt_long</span>
                                 </a>
+                                @* Resaltado si está sancionado: ahí están los préstamos vencidos *@
+                                <a asp-controller="Prestamos" asp-action="Index" asp-route-idAfiliado="@afiliado.Id"
+                                   class="btn-icon @(afiliado.Sancionado ? "btn-icon-alerta" : "")"
+                                   title="@(afiliado.Sancionado ? "Ver préstamos (tiene vencidos)" : "Ver préstamos")">
+                                    <span class="material-symbols-outlined">swap_horiz</span>
+                                </a>
                                 <a asp-action="Edit" asp-route-id="@afiliado.Id" class="btn-icon" title="Editar">
                                     <span class="material-symbols-outlined">edit</span>
                                 </a>

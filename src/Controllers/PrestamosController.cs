@@ -37,18 +37,30 @@ public class PrestamosController : Controller
     private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     // GET: /Prestamos - solo muestra la página; los datos los pide Vue
-    public IActionResult Index() => View();
+    // GET: /Prestamos?idAfiliado=3 - solo los préstamos de ese afiliado (desde el listado de afiliados)
+    public IActionResult Index(int? idAfiliado)
+    {
+        if (idAfiliado.HasValue)
+        {
+            var afiliado = _repositorioAfiliado.ObtenerPorId(idAfiliado.Value);
+            if (afiliado == null) return NotFound();
 
-    // GET: /Prestamos/Listar?buscar=...&pagina=1
+            ViewData["Afiliado"] = afiliado;
+        }
+
+        return View();
+    }
+
+    // GET: /Prestamos/Listar?buscar=...&idAfiliado=3&pagina=1
     [HttpGet]
-    public IActionResult Listar(string? buscar, int pagina = 1)
+    public IActionResult Listar(string? buscar, int? idAfiliado, int pagina = 1)
     {
         pagina = Math.Max(1, pagina);
-        int total = _repositorioPrestamo.ObtenerCantidad(buscar);
+        int total = _repositorioPrestamo.ObtenerCantidad(buscar, idAfiliado);
 
         return Json(new
         {
-            items = _repositorioPrestamo.ObtenerPaginado(buscar, pagina, TamPagina),
+            items = _repositorioPrestamo.ObtenerPaginado(buscar, idAfiliado, pagina, TamPagina),
             pagina,
             totalPaginas = Math.Max(1, (int)Math.Ceiling(total / (double)TamPagina))
         });
@@ -89,14 +101,12 @@ public class PrestamosController : Controller
         if (afiliado == null)
             return BadRequest(new { message = "El afiliado no existe." });
 
+        // Sancionado se calcula en RepositorioAfiliado: tiene préstamos vencidos sin devolver
         if (afiliado.Sancionado)
-            return BadRequest(new { message = "El afiliado está sancionado." });
+            return BadRequest(new { message = "El afiliado está sancionado: tiene préstamos vencidos sin devolver." });
 
         if (_repositorioSuscripcion.ObtenerVigente(afiliado.Id) == null)
             return BadRequest(new { message = "El afiliado no tiene una suscripción vigente y pagada." });
-
-        if (_repositorioPrestamo.TieneVencidos(afiliado.Id))
-            return BadRequest(new { message = "El afiliado tiene préstamos vencidos sin devolver." });
 
         try
         {

@@ -67,6 +67,9 @@
                     @if (Model.Sancionado)
                     {
                         <span class="badge badge-inactive">Sancionado</span>
+                        <a asp-controller="Prestamos" asp-action="Index" asp-route-idAfiliado="@Model.Id" class="small">
+                            Ver préstamos vencidos
+                        </a>
                     }
                     else
                     {

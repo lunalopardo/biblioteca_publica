@@ -367,6 +367,20 @@ textarea.form-control {
   color: #ffffff;
 }
 
+/* Acción que requiere atención (por ejemplo, préstamos de un afiliado sancionado) */
+.btn-icon-alerta {
+  background-color: var(--color-danger-bg);
+  border-color: var(--color-danger-border);
+  color: var(--color-danger);
+}
+
+.btn-icon-alerta:hover,
+.btn-icon-alerta:focus-visible {
+  background-color: var(--color-danger);
+  border-color: var(--color-danger);
+  color: #ffffff;
+}
+
 .btn-icon .material-symbols-outlined {
   font-size: 1.15rem;
   vertical-align: middle;

@@ -19,26 +19,31 @@ public class RepositorioPrestamo : RepositorioBase
         INNER JOIN ejemplar e ON pr.id_ejemplar = e.id
         INNER JOIN libro l ON e.id_libro = l.id ";
 
+    // @idAfiliado: listado de un solo afiliado (botón "Préstamos" del listado de afiliados)
     private const string Filtro = @"
         WHERE pr.activo = 1
+          AND (@idAfiliado IS NULL OR pr.id_afiliado = @idAfiliado)
           AND (@buscar IS NULL
                OR a.nombre LIKE @buscar OR a.apellido LIKE @buscar
                OR CONCAT(a.nombre, ' ', a.apellido) LIKE @buscar
                OR l.titulo LIKE @buscar
                OR e.codigo_inventario LIKE @buscar) ";
 
-    public List<Prestamo> ObtenerPaginado(string? buscar = null, int paginaNro = 1, int tamPagina = 10)
+    public List<Prestamo> ObtenerPaginado(string? buscar = null, int? idAfiliado = null, int paginaNro = 1, int tamPagina = 10)
     {
         int offset = Math.Max(0, (paginaNro - 1) * tamPagina);
         var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
 
         const string query = SelectBase + FromConJoins + Filtro + @"
-            ORDER BY (pr.fecha_devolucion_real IS NULL) DESC, pr.id DESC
+            ORDER BY (pr.fecha_devolucion_real IS NULL) DESC,
+                     (pr.fecha_devolucion_real IS NULL AND pr.fecha_devolucion_pactada < CURDATE()) DESC,
+                     pr.id DESC
             LIMIT @limit OFFSET @offset";
 
         using MySqlConnection connection = new(connectionString);
         using MySqlCommand command = new(query, connection);
         command.Parameters.AddWithValue("@buscar", paramBuscar);
+        command.Parameters.AddWithValue("@idAfiliado", (object?)idAfiliado ?? DBNull.Value);
         command.Parameters.AddWithValue("@limit", tamPagina);
         command.Parameters.AddWithValue("@offset", offset);
 
@@ -53,7 +58,7 @@ public class RepositorioPrestamo : RepositorioBase
         return listado;
     }
 
-    public int ObtenerCantidad(string? buscar = null)
+    public int ObtenerCantidad(string? buscar = null, int? idAfiliado = null)
     {
         var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
 
@@ -62,6 +67,7 @@ public class RepositorioPrestamo : RepositorioBase
         using MySqlConnection connection = new(connectionString);
         using MySqlCommand command = new(query, connection);
         command.Parameters.AddWithValue("@buscar", paramBuscar);
+        command.Parameters.AddWithValue("@idAfiliado", (object?)idAfiliado ?? DBNull.Value);
 
         connection.Open();
         return Convert.ToInt32(command.ExecuteScalar());
@@ -91,23 +97,6 @@ public class RepositorioPrestamo : RepositorioBase
         connection.Open();
         using MySqlDataReader reader = command.ExecuteReader();
         return reader.Read() ? Parse(reader) : null;
-    }
-
-    // chequear si el afiliado tiene algún préstamo en progreso con la fecha pactada ya pasada
-    public bool TieneVencidos(int idAfiliado)
-    {
-        const string query = @"SELECT COUNT(id) FROM prestamo
-                               WHERE id_afiliado = @idAfiliado
-                                 AND activo = 1
-                                 AND fecha_devolucion_real IS NULL
-                                 AND fecha_devolucion_pactada < CURDATE()";
-
-        using MySqlConnection connection = new(connectionString);
-        using MySqlCommand command = new(query, connection);
-        command.Parameters.AddWithValue("@idAfiliado", idAfiliado);
-
-        connection.Open();
-        return Convert.ToInt32(command.ExecuteScalar()) > 0;
     }
 
     // Crea el préstamo y marca el ejemplar como Prestado.

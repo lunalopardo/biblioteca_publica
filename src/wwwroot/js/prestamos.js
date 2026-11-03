@@ -3,6 +3,8 @@ const { createApp, ref, reactive, computed, onMounted } = Vue;
 const root = document.getElementById('prestamos-app');
 const token = root.dataset.token;
 const diasPorDefecto = Number(root.dataset.dias);
+// Solo viene cuando se entra desde un afiliado (/Prestamos?idAfiliado=3)
+const idAfiliado = root.dataset.idAfiliado || '';
 
 async function request(url, options = {}) {
     const res = await fetch(url, {
@@ -67,7 +69,7 @@ createApp({
             cargando.value = true;
             try {
                 const data = await request(
-                    `/Prestamos/Listar?buscar=${encodeURIComponent(buscar.value)}&pagina=${pagina.value}`);
+                    `/Prestamos/Listar?buscar=${encodeURIComponent(buscar.value)}&idAfiliado=${idAfiliado}&pagina=${pagina.value}`);
                 prestamos.value = data.items;
                 totalPaginas.value = data.totalPaginas;
             } catch (err) {
