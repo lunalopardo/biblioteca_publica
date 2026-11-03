@@ -228,6 +228,27 @@ public class RepositorioAutor : RepositorioBase
         return listado;
     }
 
+    // Busca un autor activo por nombre y apellido exactos.
+    public Autor? ObtenerPorNombre(string nombre, string apellido)
+    {
+        const string query = @"
+            SELECT a.id, a.nombre, a.apellido, a.id_nacionalidad, n.nombre AS nacionalidad_nombre,
+                   a.biografia, a.foto, a.activo
+            FROM autor a
+            LEFT JOIN nacionalidad n ON a.id_nacionalidad = n.id
+            WHERE a.activo = 1 AND a.nombre = @nombre AND a.apellido = @apellido
+            LIMIT 1";
+
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(query, connection);
+        command.Parameters.AddWithValue("@nombre", nombre);
+        command.Parameters.AddWithValue("@apellido", apellido);
+
+        connection.Open();
+        using MySqlDataReader reader = command.ExecuteReader();
+        return reader.Read() ? ParseAutor(reader) : null;
+    }
+
     // Función auxiliar para mapear el registro de la base de datos al modelo
     private static Autor ParseAutor(MySqlDataReader reader)
     {

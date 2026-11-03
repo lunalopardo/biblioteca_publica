@@ -21,6 +21,8 @@ builder.Services.AddAuthorization(options =>
     );
 });
 
+builder.Services.AddHttpClient();
+
 builder.Services.AddScoped<IPasswordHasher<Usuario>, PasswordHasher<Usuario>>();
 
 // Add services to the container.

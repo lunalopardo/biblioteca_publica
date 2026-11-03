@@ -114,6 +114,20 @@ public class RepositorioEditorial : RepositorioBase
         return total;
     }
 
+    // Busca una editorial activa por nombre exacto
+    public Editorial? ObtenerPorNombre(string nombre)
+    {
+        const string query = "SELECT id, nombre, activo FROM Editorial WHERE activo = 1 AND nombre = @nombre LIMIT 1";
+
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(query, connection);
+        command.Parameters.AddWithValue("@nombre", nombre);
+
+        connection.Open();
+        using MySqlDataReader reader = command.ExecuteReader();
+        return reader.Read() ? ParseEditorial(reader) : null;
+    }
+
     // obtener por id
     public Editorial? ObtenerPorId(int id)
     {
