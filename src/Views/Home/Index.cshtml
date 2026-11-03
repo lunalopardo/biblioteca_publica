@@ -121,8 +121,18 @@
                                 @foreach (var libro in Model.UltimosLibros)
                                 {
                                     <a asp-controller="Libros" asp-action="Details" asp-route-id="@libro.Id" class="recent-item">
-                                        <div class="recent-image"><img src="@libro.Portada" alt="Portada"
-                                                                           class="details-cover-img-sm" /></div>
+                                        <div class="recent-image">
+                                            @if (!string.IsNullOrEmpty(libro.Portada))
+                                            {
+                                                <img src="@libro.Portada" alt="Portada" class="details-cover-img-sm" />
+                                            }
+                                            else
+                                            {
+                                                <div class="recent-cover-placeholder" title="Sin portada">
+                                                    <span class="material-symbols-outlined">menu_book</span>
+                                                </div>
+                                            }
+                                        </div>
                                             <div class="recent-info">
                                                 <span class="recent-title">@libro.Titulo</span>
                                                 <span class="recent-subtitle">@(libro.Autor != null ? $"{libro.Autor.Apellido},                  {libro.Autor.Nombre}" : "Autor desconocido")</span>

@@ -572,6 +572,22 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
+/* Libro sin portada en el dashboard */
+.recent-cover-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 56px;
+  background-color: var(--border-color);
+  color: var(--text-muted, #6c757d);
+  border-radius: 6px;
+}
+
+.recent-cover-placeholder .material-symbols-outlined {
+  font-size: 1.4rem;
+}
+
 .recent-info {
   flex: 1;
   display: flex;
