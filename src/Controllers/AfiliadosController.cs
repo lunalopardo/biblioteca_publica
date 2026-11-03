@@ -102,7 +102,6 @@ public class AfiliadosController : Controller
 
     // POST: Afiliados/Delete/5
     [HttpPost]
-    [Authorize(Policy = UsuarioActual.PolicyAdministrador)]
     public IActionResult Delete(int id)
     {
         _repositorioAfiliado.BajaLogica(id);

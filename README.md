@@ -26,8 +26,8 @@ Una aplicación web interna, usada solo por empleados y administradores, que cen
 
 | Rol | Qué puede hacer |
 |---|---|
-| **Administrador** | Todo lo del empleado, más la gestión de usuarios (ver, crear, editar, cambiar el rol, dar de baja y reactivar). Es el único que puede dar de baja **libros, autores y afiliados**. |
-| **Empleado** | Creación, lectura y edición de las entidades mencionadas. Solo puede ver y editar su propio perfil. |
+| **Administrador** | Todo lo del empleado, más la gestión de usuarios (ver, crear, editar, cambiar el rol, dar de baja y reactivar). Es el único que puede dar de baja el **catálogo**: libros, ejemplares, autores, editoriales, géneros y nacionalidades. |
+| **Empleado** | Creación, lectura y edición de todas las entidades. Puede dar de baja lo relacionado con la gestión de afiliados (afiliados, suscripciones y pagos) y anular préstamos. Solo puede ver y editar su propio perfil. |
 
 ---
 

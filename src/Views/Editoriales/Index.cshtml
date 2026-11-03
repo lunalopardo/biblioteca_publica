@@ -62,10 +62,13 @@
                                     <span class="material-symbols-outlined">edit</span>
                                 </button>
 
-                                <button type="button" class="btn-icon btn-icon-danger" title="Borrar" data-bs-toggle="modal"
-                                        data-bs-target="#modalEliminar" data-id="@editorial.Id" data-nombre="@editorial.Nombre">
-                                    <span class="material-symbols-outlined">delete</span>
-                                </button>
+                                @if (User.EsAdministrador())
+                                {
+                                    <button type="button" class="btn-icon btn-icon-danger" title="Borrar" data-bs-toggle="modal"
+                                            data-bs-target="#modalEliminar" data-id="@editorial.Id" data-nombre="@editorial.Nombre">
+                                        <span class="material-symbols-outlined">delete</span>
+                                    </button>
+                                }
                             </td>
                         </tr>
                     }

@@ -10,7 +10,7 @@ namespace BibliotecaPublica.Controllers;
 [AutoValidateAntiforgeryToken]
 public class AutoresController : Controller
 {
-    private const int TamPagina = 5;
+    private const int TamPagina = 10;
     private const string CarpetaFotos = "autores";
 
     private readonly RepositorioAutor _repositorioAutor;

@@ -87,6 +87,7 @@ public class NacionalidadesController : Controller
 
     // POST: Nacionalidades/Delete/5
     [HttpPost]
+    [Authorize(Policy = UsuarioActual.PolicyAdministrador)]
     public IActionResult Delete(int id)
     {
         try

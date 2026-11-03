@@ -87,6 +87,7 @@ public class GenerosController : Controller
 
     // POST: Generos/Delete/5
     [HttpPost]
+    [Authorize(Policy = UsuarioActual.PolicyAdministrador)]
     public IActionResult Delete(int id)
     {
         try
