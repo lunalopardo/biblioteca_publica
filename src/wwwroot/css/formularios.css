@@ -94,6 +94,7 @@
 }
 
 @media (max-width: 768px) {
+
   .form-grid-2,
   .form-grid-3 {
     grid-template-columns: 1fr;
@@ -636,4 +637,16 @@
 /* Utilidades */
 .is-hidden {
   display: none !important;
+}
+
+.modal-panel-wide {
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.form-hint {
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }

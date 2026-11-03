@@ -195,6 +195,38 @@ public class RepositorioEjemplar : RepositorioBase
         };
     }
 
+    // Ejemplares disponibles para prestar (con el título del libro)
+    public List<Ejemplar> ObtenerDisponibles(string? buscar = null, int limite = 10)
+    {
+        var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
+
+        const string query = @"SELECT e.id, e.id_libro, e.codigo_inventario, e.estado, e.activo,
+                                  l.titulo AS libro_titulo
+                           FROM Ejemplar e
+                           INNER JOIN Libro l ON e.id_libro = l.id
+                           WHERE e.activo = 1 AND l.activo = 1 AND e.estado = 'Disponible'
+                             AND (@buscar IS NULL OR e.codigo_inventario LIKE @buscar OR l.titulo LIKE @buscar)
+                           ORDER BY l.titulo, e.codigo_inventario
+                           LIMIT @limite";
+
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(query, connection);
+        command.Parameters.AddWithValue("@buscar", paramBuscar);
+        command.Parameters.AddWithValue("@limite", limite);
+
+        connection.Open();
+        using MySqlDataReader reader = command.ExecuteReader();
+
+        var listado = new List<Ejemplar>();
+        while (reader.Read())
+        {
+            var ejemplar = ParseEjemplar(reader);
+            ejemplar.Libro = new Libro { Id = ejemplar.IdLibro, Titulo = reader.GetString("libro_titulo") };
+            listado.Add(ejemplar);
+        }
+        return listado;
+    }
+
     // Ejemplar + Libro + Autor (por si hago listado gral)
     private static Ejemplar ParseEjemplarConLibro(MySqlDataReader reader)
     {

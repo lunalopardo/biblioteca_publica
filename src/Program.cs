@@ -36,6 +36,7 @@ builder.Services.AddScoped<RepositorioEditorial>();
 builder.Services.AddScoped<RepositorioEjemplar>();
 builder.Services.AddScoped<RepositorioSuscripcion>();
 builder.Services.AddScoped<RepositorioPago>();
+builder.Services.AddScoped<RepositorioPrestamo>();
 
 var app = builder.Build();
 
