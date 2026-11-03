@@ -66,8 +66,8 @@
                                     </div>
                                 }
                             </td>
-                            <td class="fw-bold">@libro.Titulo</td>
-                            <td>@(libro.AutorNombre ?? "Desconocido")</td>
+                            <td class="fw-bold td-wrap">@libro.Titulo</td>
+                            <td class="td-wrap">@(libro.AutorNombre ?? "Desconocido")</td>
                             <td>@(libro.Anio?.ToString() ?? "-")</td>
                             <td>@(string.IsNullOrEmpty(libro.Isbn) ? "-" : libro.Isbn)</td>
                             <td>
