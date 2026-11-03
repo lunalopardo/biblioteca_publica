@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
+using BibliotecaPublica.Helpers;
 
 namespace BibliotecaPublica.Models;
 
@@ -23,7 +24,7 @@ public class Usuario
     public string Nombre { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "El apellido es obligatorio.")]
-    [StringLength(30, ErrorMessage = "El apellido no puede superar los 300 caracteres.")]
+    [StringLength(30, ErrorMessage = "El apellido no puede superar los 30 caracteres.")]
     public string Apellido { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "El email es obligatorio.")]
@@ -36,6 +37,7 @@ public class Usuario
 
     public string? Avatar { get; set; }
 
+    [ImagenValida]
     [Display(Name = "Avatar")]
     public IFormFile? AvatarFile { get; set; }
 

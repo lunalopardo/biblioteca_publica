@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using BibliotecaPublica.Helpers;
 
 namespace BibliotecaPublica.Models;
 
@@ -39,6 +40,7 @@ public class Libro
 
     public string? Portada { get; set; }
 
+    [ImagenValida]
     [Display(Name = "Imagen de portada")]
     public IFormFile? PortadaFile { get; set; }
 

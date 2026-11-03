@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
+using BibliotecaPublica.Helpers;
 
 namespace BibliotecaPublica.Models;
 
@@ -25,6 +26,7 @@ public class Autor
 
     public string? Foto { get; set; }
 
+    [ImagenValida]
     [Display(Name = "Foto del autor")]
     public IFormFile? FotoFile { get; set; }
 
