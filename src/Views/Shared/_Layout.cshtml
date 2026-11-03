@@ -41,7 +41,7 @@
                                 <a class="nav-link px-3" asp-controller="Home" asp-action="Index">Inicio</a>
                             </li>
 
-                            @if (User.IsInRole("Administrador"))
+                            @if (User.EsAdministrador())
                             {
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle px-3" href="#" id="usuariosDropdown" role="button"
@@ -55,6 +55,7 @@
                                                asp-action="Create">Registrar usuario</a></li>
                                     </ul>
                                 </li>
+                            }
 
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle px-3" href="#" id="afiliadosDropdown" role="button"
@@ -119,7 +120,6 @@
                                 <li class="nav-item">
                                     <a class="nav-link px-3" asp-controller="Prestamos" asp-action="Index">Préstamos</a>
                                 </li>
-                            }
                         </ul>
 
                         <ul class="navbar-nav align-items-center gap-3 ms-auto">
