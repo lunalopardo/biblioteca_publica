@@ -1,0 +1,9 @@
+@* Mensajes de TempData: "Mensaje" para éxito (se cierra solo, ver alert.js) y "Error" para errores *@
+@if (TempData["Mensaje"] != null)
+{
+    <div class="alert alert-success text-center">@TempData["Mensaje"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger text-center">@TempData["Error"]</div>
+}

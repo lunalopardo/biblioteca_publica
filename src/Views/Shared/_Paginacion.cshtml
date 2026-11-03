@@ -1,0 +1,66 @@
+@*
+    Paginación compartida. Lee de ViewData lo que carga Paginacion.CargarPaginado en el controlador:
+    FiltroActual, PaginaActual y TotalPaginas. Los links apuntan a la acción actual.
+    Si la vista necesita mandar otros parámetros en los links (por ejemplo idAfiliado),
+    los pone en ViewData["RutaPaginado"] como Dictionary<string, string>.
+*@
+@{
+    int paginaActual = (int)(ViewData["PaginaActual"] ?? 1);
+    int totalPaginas = (int)(ViewData["TotalPaginas"] ?? 1);
+
+    var rutaBase = ViewData["RutaPaginado"] as Dictionary<string, string> ?? new Dictionary<string, string>();
+    if (ViewData["FiltroActual"] is string filtro && !string.IsNullOrEmpty(filtro))
+    {
+        rutaBase["buscar"] = filtro;
+    }
+
+    // Se muestran 2 páginas a cada lado de la actual, más la primera y la última
+    int rangoInicio = Math.Max(1, paginaActual - 2);
+    int rangoFin = Math.Min(totalPaginas, paginaActual + 2);
+
+    Dictionary<string, string> Ruta(int pagina) => new(rutaBase) { ["pagina"] = pagina.ToString() };
+}
+
+@if (totalPaginas > 1)
+{
+    <nav class="pagination-container">
+        <ul class="pagination-custom">
+            <li class="page-item @(paginaActual <= 1 ? "disabled" : "")">
+                <a class="page-link" asp-all-route-data="Ruta(paginaActual - 1)">Anterior</a>
+            </li>
+
+            @if (rangoInicio > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link" asp-all-route-data="Ruta(1)">1</a>
+                </li>
+                @if (rangoInicio > 2)
+                {
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                }
+            }
+
+            @for (int i = rangoInicio; i <= rangoFin; i++)
+            {
+                <li class="page-item @(i == paginaActual ? "active" : "")">
+                    <a class="page-link" asp-all-route-data="Ruta(i)">@i</a>
+                </li>
+            }
+
+            @if (rangoFin < totalPaginas)
+            {
+                @if (rangoFin < totalPaginas - 1)
+                {
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                }
+                <li class="page-item">
+                    <a class="page-link" asp-all-route-data="Ruta(totalPaginas)">@totalPaginas</a>
+                </li>
+            }
+
+            <li class="page-item @(paginaActual >= totalPaginas ? "disabled" : "")">
+                <a class="page-link" asp-all-route-data="Ruta(paginaActual + 1)">Siguiente</a>
+            </li>
+        </ul>
+    </nav>
+}
