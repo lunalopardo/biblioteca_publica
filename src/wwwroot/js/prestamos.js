@@ -189,4 +189,19 @@ createApp({
             pedirConfirmacion, confirmar
         };
     }
-}).mount(root);
+})
+    // v-calendario: el input de fecha está dentro del modal (v-if), así que el calendario se activa cuando Vue lo crea
+    .directive('calendario', {
+        mounted(el) {
+            activarCalendario(el, {
+                onChange: (_, valor) => {
+                    el.value = valor;
+                    el.dispatchEvent(new Event('input'));
+                }
+            });
+        },
+        unmounted(el) {
+            if (el._flatpickr) el._flatpickr.destroy();
+        }
+    })
+    .mount(root);

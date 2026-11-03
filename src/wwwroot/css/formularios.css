@@ -726,3 +726,18 @@ textarea.form-control {
   font-size: 0.8rem;
   color: var(--text-muted);
 }
+
+/* Calendario (flatpickr): días que no se pueden elegir */
+.flatpickr-day.flatpickr-disabled,
+.flatpickr-day.flatpickr-disabled:hover {
+  background-color: var(--border-color);
+  border-color: transparent;
+  color: var(--text-muted);
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.flatpickr-input[readonly] {
+  background-color: #ffffff;
+  cursor: pointer;
+}

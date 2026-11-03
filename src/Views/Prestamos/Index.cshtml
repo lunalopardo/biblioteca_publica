@@ -122,7 +122,7 @@
 
             <div class="form-group">
                 <label class="form-label">Devolución pactada</label>
-                <input type="date" v-model="form.fechaDevolucionPactada" :min="manana" class="form-control" required />
+                <input type="date" v-model="form.fechaDevolucionPactada" :min="manana" v-calendario class="form-control" required />
             </div>
 
             <p v-if="errorModal" class="mensaje-error">{{ errorModal }}</p>

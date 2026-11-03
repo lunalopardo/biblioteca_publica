@@ -1,4 +1,19 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
+﻿// Calendario (flatpickr) para todos los campos de fecha
+function activarCalendario(input, opciones) {
+    if (!window.flatpickr) return null;
+    if (input._flatpickr) return input._flatpickr;
 
-// Write your JavaScript code.
+    return flatpickr(input, Object.assign({
+        locale: 'es',
+        dateFormat: 'Y-m-d',
+        altInput: true,
+        altFormat: 'd/m/Y',
+        minDate: input.min || null,
+        maxDate: input.max || null,
+        disableMobile: true
+    }, opciones));
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('input[type="date"]').forEach(input => activarCalendario(input));
+});
