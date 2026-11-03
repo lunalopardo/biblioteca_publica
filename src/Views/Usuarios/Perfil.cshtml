@@ -1,10 +1,8 @@
-@using BibliotecaPublica.Models
 @model BibliotecaPublica.Models.Usuario
 @{
     ViewData["Title"] = "Perfil de Usuario";
-    int currentUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
-    bool esMiPerfil = (Model.Id == currentUserId);
-    bool esAdmin = User.IsInRole("Administrador");
+    bool esMiPerfil = Model.Id == User.ObtenerId();
+    bool esAdmin = User.EsAdministrador();
 }
 
 <div class="form-card form-card-narrow">
@@ -75,8 +73,24 @@
                    placeholder="Dejar en blanco para mantener la actual" disabled="@(!Model.Activo)" />
         </div>
 
+        @if (esAdmin && !esMiPerfil)
+        {
+            <div class="form-group">
+                <label asp-for="Rol" class="form-label">Rol de Usuario</label>
+                <select asp-for="Rol" class="form-select" asp-items="Html.GetEnumSelectList<EnRoles>()"
+                        disabled="@(!Model.Activo)"></select>
+            </div>
+        }
+
         <div class="form-actions">
-            <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+            @if (esAdmin)
+            {
+                <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+            }
+            else
+            {
+                <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+            }
             @if (Model.Activo)
             {
                 <button type="submit" class="btn btn-primary">Guardar Cambios</button>

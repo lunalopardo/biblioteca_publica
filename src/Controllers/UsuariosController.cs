@@ -35,46 +35,43 @@ public class UsuariosController : Controller
     }
 
     // GET: Login
+    // returnUrl lo agrega la cookie cuando alguien sin sesión entra a una página protegida
     [AllowAnonymous]
     [HttpGet]
-    public IActionResult Login()
+    public IActionResult Login(string? returnUrl = null)
     {
         if (User.Identity is { IsAuthenticated: true })
         {
             return RedirectToAction("Index", "Home");
         }
+
+        ViewData["ReturnUrl"] = returnUrl;
         return View();
     }
 
     // POST: Login
     [AllowAnonymous]
     [HttpPost]
-    public async Task<IActionResult> Login(LoginViewModel model)
+    public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
     {
+        ViewData["ReturnUrl"] = returnUrl;
+
         if (!ModelState.IsValid)
         {
             return View(model);
         }
 
-        var usuario = _repositorioUsuario.ValidarLogin(model.Email, model.Password, _passwordHasher);
+        var usuario = _repositorioUsuario.ObtenerActivoPorLogin(model.Email);
 
-        if (usuario != null)
+        if (usuario != null && ContraseniaValida(usuario, model.Password))
         {
-            var claims = new List<Claim>
+            await IniciarSesionAsync(usuario);
+
+            // Solo se vuelve a URLs del propio sitio, para no redirigir a páginas externas
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             {
-                new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
-                new Claim(ClaimTypes.Name, usuario.Email),
-                new Claim("FullName", $"{usuario.Nombre} {usuario.Apellido}"),
-                new Claim(ClaimTypes.Role, usuario.RolNombre ?? "Usuario"),
-                new Claim("Avatar", usuario.Avatar ?? "")
-            };
-
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(claimsIdentity));
-
+                return LocalRedirect(returnUrl);
+            }
             return RedirectToAction("Index", "Home");
         }
 
@@ -87,7 +84,7 @@ public class UsuariosController : Controller
     public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-        return RedirectToAction("Index", "Home");
+        return RedirectToAction(nameof(Login));
     }
 
     [AllowAnonymous]
@@ -98,15 +95,15 @@ public class UsuariosController : Controller
     }
 
     // GET: /Usuarios/Perfil/5
+    // El administrador puede ver cualquier perfil; el empleado solo el suyo
     [HttpGet]
     public IActionResult Perfil(int id)
     {
-        int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-        bool esAdmin = User.IsInRole("Administrador");
+        int idActual = User.ObtenerId();
 
-        if (!esAdmin && id != currentUserId)
+        if (!User.EsAdministrador() && id != idActual)
         {
-            return RedirectToAction("Perfil", new { id = currentUserId });
+            return RedirectToAction(nameof(Perfil), new { id = idActual });
         }
 
         var usuario = _repositorioUsuario.ObtenerPorId(id);
@@ -121,13 +118,15 @@ public class UsuariosController : Controller
     }
 
     // POST: /Usuarios/Perfil/5
+    // El administrador puede editar cualquier perfil y cambiar el rol de los demás, el empleado solo edita sus datos.
     [HttpPost]
     public async Task<IActionResult> Perfil(int id, Usuario modelo)
     {
-        int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-        bool esAdmin = User.IsInRole("Administrador");
+        int idActual = User.ObtenerId();
+        bool esAdmin = User.EsAdministrador();
+        bool esMiPerfil = id == idActual;
 
-        if (!esAdmin && id != currentUserId)
+        if (!esAdmin && !esMiPerfil)
         {
             return Forbid();
         }
@@ -135,11 +134,24 @@ public class UsuariosController : Controller
         var usuarioExistente = _repositorioUsuario.ObtenerPorId(id);
         if (usuarioExistente == null) return NotFound();
 
-        // La imagen se valida con [ImagenValida]; si no es válida no se guarda nada
-        string? errorAvatar = ModelState[nameof(Usuario.AvatarFile)]?.Errors.FirstOrDefault()?.ErrorMessage;
-        if (errorAvatar != null)
+        if (!usuarioExistente.Activo)
         {
-            TempData["Error"] = errorAvatar;
+            TempData["Error"] = "No se puede editar un usuario inactivo. Reactivalo primero.";
+            return RedirectToAction(nameof(Perfil), new { id });
+        }
+
+        // El nombre de usuario no se edita y la contraseña puede quedar vacía (se mantiene la actual)
+        ModelState.Remove(nameof(Usuario.NombreUsuario));
+        ModelState.Remove(nameof(Usuario.Password));
+
+        if (_repositorioUsuario.ExisteEmail(modelo.Email, id))
+        {
+            ModelState.AddModelError(nameof(Usuario.Email), "El correo electrónico ya se encuentra registrado.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = ModelState.Values.SelectMany(v => v.Errors).First().ErrorMessage;
             return RedirectToAction(nameof(Perfil), new { id });
         }
 
@@ -155,26 +167,22 @@ public class UsuariosController : Controller
         }
 
         // Manejo de la Contraseña
-        if (string.IsNullOrWhiteSpace(modelo.Password))
-        {
-            modelo.Password = usuarioExistente.Password;
-        }
-        else
-        {
-            modelo.Password = _passwordHasher.HashPassword(modelo, modelo.Password);
-        }
+        modelo.Password = string.IsNullOrWhiteSpace(modelo.Password)
+            ? usuarioExistente.Password
+            : _passwordHasher.HashPassword(modelo, modelo.Password);
 
         modelo.Id = id;
         modelo.NombreUsuario = usuarioExistente.NombreUsuario;
-        modelo.Rol = usuarioExistente.Rol;
+        modelo.Activo = usuarioExistente.Activo;
 
         if (esAdmin)
         {
+            bool puedeCambiarRol = !esMiPerfil && Enum.IsDefined(typeof(EnRoles), modelo.Rol);
+            modelo.Rol = puedeCambiarRol ? modelo.Rol : usuarioExistente.Rol;
             _repositorioUsuario.ActualizarCompleto(modelo);
         }
         else
         {
-            modelo.Activo = usuarioExistente.Activo;
             _repositorioUsuario.ActualizarPerfil(modelo);
         }
 
@@ -184,21 +192,14 @@ public class UsuariosController : Controller
             Archivos.Borrar(avatarAnterior, _environment);
         }
 
-        var usuarioActualizado = _repositorioUsuario.ObtenerPorId(id);
-
-        if (id == currentUserId && usuarioActualizado != null)
+        // Si editó su propio perfil se renueva la cookie para que la navbar muestre los datos nuevos
+        if (esMiPerfil)
         {
-            var claims = new List<Claim>
+            var usuarioActualizado = _repositorioUsuario.ObtenerPorId(id);
+            if (usuarioActualizado != null)
             {
-                new Claim(ClaimTypes.NameIdentifier, usuarioActualizado.Id.ToString()),
-                new Claim(ClaimTypes.Name, usuarioActualizado.Email),
-                new Claim("FullName", $"{usuarioActualizado.Nombre} {usuarioActualizado.Apellido}"),
-                new Claim(ClaimTypes.Role, usuarioActualizado.RolNombre),
-                new Claim("Avatar", usuarioActualizado.Avatar ?? "")
-            };
-
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+                await IniciarSesionAsync(usuarioActualizado);
+            }
         }
 
         TempData["Mensaje"] = "Perfil actualizado correctamente.";
@@ -207,7 +208,7 @@ public class UsuariosController : Controller
 
     // GET: /Usuarios/Index
     [HttpGet]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Policy = UsuarioActual.PolicyAdministrador)]
     public IActionResult Index(string? buscar = null, int pagina = 1)
     {
         var usuarios = _repositorioUsuario.ObtenerPaginado(buscar, pagina, TamPagina);
@@ -217,16 +218,22 @@ public class UsuariosController : Controller
     }
 
     [HttpPost]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Policy = UsuarioActual.PolicyAdministrador)]
     public IActionResult Eliminar(int id)
     {
+        if (id == User.ObtenerId())
+        {
+            TempData["Error"] = "No podés dar de baja tu propio usuario.";
+            return RedirectToAction(nameof(Index));
+        }
+
         _repositorioUsuario.BajaLogica(id);
         TempData["Mensaje"] = "Usuario eliminado correctamente.";
-        return RedirectToAction("Index");
+        return RedirectToAction(nameof(Index));
     }
 
     [HttpPost]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Policy = UsuarioActual.PolicyAdministrador)]
     public IActionResult Reactivar(int id)
     {
         try
@@ -248,11 +255,11 @@ public class UsuariosController : Controller
             TempData["Error"] = "Ocurrió un error al intentar reactivar el usuario.";
         }
 
-        return RedirectToAction("Index");
+        return RedirectToAction(nameof(Index));
     }
 
     [HttpGet]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Policy = UsuarioActual.PolicyAdministrador)]
     public IActionResult Create()
     {
         return View();
@@ -260,10 +267,20 @@ public class UsuariosController : Controller
 
     //POST: /Usuarios/Create
     [HttpPost]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Policy = UsuarioActual.PolicyAdministrador)]
     public async Task<IActionResult> Create(Usuario usuario)
     {
         ModelState.Remove(nameof(Usuario.Avatar));
+
+        if (string.IsNullOrWhiteSpace(usuario.Password))
+        {
+            ModelState.AddModelError(nameof(Usuario.Password), "La contraseña es obligatoria.");
+        }
+
+        if (!Enum.IsDefined(typeof(EnRoles), usuario.Rol))
+        {
+            ModelState.AddModelError(nameof(Usuario.Rol), "Elegí un rol válido.");
+        }
 
         if (_repositorioUsuario.ExisteNombreUsuario(usuario.NombreUsuario))
         {
@@ -286,13 +303,10 @@ public class UsuariosController : Controller
             usuario.Avatar = await Archivos.GuardarImagenAsync(usuario.AvatarFile, _environment, CarpetaAvatares);
         }
 
-        if (usuario.Rol == 0)
-        {
-            usuario.Rol = (int)EnRoles.Empleado;
-        }
+        usuario.Password = _passwordHasher.HashPassword(usuario, usuario.Password);
         usuario.Activo = true;
 
-        int resultado = _repositorioUsuario.Crear(usuario, _passwordHasher);
+        int resultado = _repositorioUsuario.Crear(usuario);
 
         if (resultado > 0)
         {
@@ -302,5 +316,30 @@ public class UsuariosController : Controller
 
         ModelState.AddModelError(string.Empty, "Ocurrió un error al crear el usuario.");
         return View(usuario);
+    }
+
+    private bool ContraseniaValida(Usuario usuario, string password)
+    {
+        var resultado = _passwordHasher.VerifyHashedPassword(usuario, usuario.Password, password);
+        return resultado is PasswordVerificationResult.Success or PasswordVerificationResult.SuccessRehashNeeded;
+    }
+
+    // Crea la cookie de sesión con los datos que usan la navbar y la autorización por rol
+    private async Task IniciarSesionAsync(Usuario usuario)
+    {
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+            new(ClaimTypes.Name, usuario.Email),
+            new("FullName", $"{usuario.Nombre} {usuario.Apellido}"),
+            new(ClaimTypes.Role, usuario.RolNombre),
+            new("Avatar", usuario.Avatar ?? "")
+        };
+
+        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            new ClaimsPrincipal(claimsIdentity));
     }
 }

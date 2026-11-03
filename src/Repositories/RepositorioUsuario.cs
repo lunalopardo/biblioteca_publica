@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Identity;
 using MySqlConnector;
 using BibliotecaPublica.Models;
 
@@ -8,8 +7,8 @@ public class RepositorioUsuario : RepositorioBase
 {
     public RepositorioUsuario(IConfiguration configuration) : base(configuration) { }
 
-    // Buscar si existe el usuario/correo
-    public Usuario? ValidarLogin(string login, string password, IPasswordHasher<Usuario> passwordHasher)
+    // Usuario activo por nombre de usuario o email (para el login). La contraseña se verifica en el controlador.
+    public Usuario? ObtenerActivoPorLogin(string login)
     {
         string sql = @"
                 SELECT * FROM usuario
@@ -22,20 +21,7 @@ public class RepositorioUsuario : RepositorioBase
 
         connection.Open();
         using MySqlDataReader reader = command.ExecuteReader();
-        if (reader.Read())
-        {
-            var usuario = ParseUsuario(reader);
-
-            // Verificamos si la contraseña tipeada coincide con el hash guardado
-            var resultado = passwordHasher.VerifyHashedPassword(usuario, usuario.Password, password);
-
-            if (resultado == PasswordVerificationResult.Success ||
-                resultado == PasswordVerificationResult.SuccessRehashNeeded)
-            {
-                return usuario;
-            }
-        }
-        return null;
+        return reader.Read() ? ParseUsuario(reader) : null;
     }
 
     // Listado de usuarios (empleados) paginado
@@ -108,14 +94,9 @@ public class RepositorioUsuario : RepositorioBase
         return null;
     }
 
-    // Crear usuario (no usamos registro)
-    public int Crear(Usuario usuario, IPasswordHasher<Usuario>? passwordHasher = null)
+    // Crear usuario (no usamos registro). La contraseña tiene que llegar ya hasheada.
+    public int Crear(Usuario usuario)
     {
-        if (passwordHasher != null && !string.IsNullOrEmpty(usuario.Password))
-        {
-            usuario.Password = passwordHasher.HashPassword(usuario, usuario.Password);
-        }
-
         string sql = @"INSERT INTO usuario
                       (nombre_usuario, nombre, apellido, email, password, avatar, rol, activo)
                       VALUES
@@ -186,17 +167,6 @@ public class RepositorioUsuario : RepositorioBase
         command.Parameters.AddWithValue("@rol", usuario.Rol);
         command.Parameters.AddWithValue("@activo", usuario.Activo);
 
-        connection.Open();
-        return command.ExecuteNonQuery();
-    }
-
-    // Borrado por si hace falta
-    public int Eliminar(int id)
-    {
-        string sql = "DELETE FROM usuario WHERE id = @id";
-        using MySqlConnection connection = new(connectionString);
-        using MySqlCommand command = new(sql, connection);
-        command.Parameters.AddWithValue("@id", id);
         connection.Open();
         return command.ExecuteNonQuery();
     }
