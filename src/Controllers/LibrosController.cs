@@ -8,6 +8,7 @@ using BibliotecaPublica.Repositories;
 namespace BibliotecaPublica.Controllers;
 
 [Authorize]
+[AutoValidateAntiforgeryToken]
 public class LibrosController : Controller
 {
     private const int RegistrosPorPagina = 10;
@@ -93,7 +94,6 @@ public class LibrosController : Controller
 
     // POST: /Libros/Create
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(Libro libro)
     {
         if (!ModelState.IsValid)
@@ -135,7 +135,6 @@ public class LibrosController : Controller
 
     // POST: /Libros/Edit/5
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, Libro libro)
     {
         if (id != libro.Id) return NotFound();
@@ -180,7 +179,6 @@ public class LibrosController : Controller
 
     // POST: /Libros/Delete/5
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public IActionResult Delete(int id)
     {
         if (_repositorioLibro.TienePrestamosEnCurso(id))
@@ -247,7 +245,6 @@ public class LibrosController : Controller
 
     // POST: /Libros/ImportarExterno
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> ImportarExterno(LibroExterno externo)
     {
         if (string.IsNullOrWhiteSpace(externo.AutorNombre))

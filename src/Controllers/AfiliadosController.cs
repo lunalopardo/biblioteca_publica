@@ -6,6 +6,7 @@ using BibliotecaPublica.Repositories;
 namespace BibliotecaPublica.Controllers
 {
     [Authorize]
+    [AutoValidateAntiforgeryToken]
     public class AfiliadosController(RepositorioAfiliado repo, RepositorioSuscripcion repoSuscripcion) : Controller
     {
         // GET: Afiliados (con paginado)
@@ -45,7 +46,6 @@ namespace BibliotecaPublica.Controllers
 
         // POST: Afiliados/Create
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public IActionResult Create(Afiliado afiliado)
         {
             if (repo.ExistsEmail(afiliado.Email))
@@ -76,7 +76,6 @@ namespace BibliotecaPublica.Controllers
 
         // POST: Afiliados/Edit/5
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public IActionResult Edit(int id, Afiliado afiliado)
         {
             if (id != afiliado.Id) return NotFound();
@@ -96,23 +95,10 @@ namespace BibliotecaPublica.Controllers
             return View(afiliado);
         }
 
-        // GET: Afiliados/Delete/5
-        [Authorize(Roles = "Administrador")]
-        public IActionResult Delete(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var afiliado = repo.ObtenerPorId(id.Value);
-            if (afiliado == null) return NotFound();
-
-            return View(afiliado);
-        }
-
         // POST: Afiliados/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
+        [HttpPost]
         [Authorize(Roles = "Administrador")]
-        public IActionResult DeleteConfirmed(int id)
+        public IActionResult Delete(int id)
         {
             repo.DeleteLogico(id);
             TempData["Mensaje"] = "Afiliado dado de baja correctamente.";

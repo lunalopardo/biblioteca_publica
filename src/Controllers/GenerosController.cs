@@ -5,14 +5,19 @@ using BibliotecaPublica.Repositories;
 
 namespace BibliotecaPublica.Controllers;
 
+// El alta, la edición y la baja se hacen con modales desde el Index,
+// por eso todas las acciones POST vuelven al Index con el mensaje en TempData.
 [Authorize]
+[AutoValidateAntiforgeryToken]
 public class GenerosController : Controller
 {
     private readonly RepositorioGenero _repositorioGenero;
+    private readonly ILogger<GenerosController> _logger;
 
-    public GenerosController(RepositorioGenero repoGenero)
+    public GenerosController(RepositorioGenero repoGenero, ILogger<GenerosController> logger)
     {
         _repositorioGenero = repoGenero;
+        _logger = logger;
     }
 
     // GET: Generos/Index
@@ -30,63 +35,32 @@ public class GenerosController : Controller
         return View(listado);
     }
 
-    // GET: Generos/Details/5
-    public IActionResult Details(int id)
-    {
-        var genero = _repositorioGenero.ObtenerPorId(id);
-        if (genero == null)
-        {
-            TempData["Error"] = "El género solicitado no existe.";
-            return RedirectToAction(nameof(Index));
-        }
-
-        return View(genero);
-    }
-
-    // GET: Generos/Create
-    public IActionResult Create()
-    {
-        return View();
-    }
-
     // POST: Generos/Create
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public IActionResult Create(Genero genero)
     {
-        if (ModelState.IsValid)
+        if (!ModelState.IsValid)
         {
-            try
-            {
-                _repositorioGenero.Create(genero);
-                TempData["Mensaje"] = "Género creado exitosamente.";
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Error al guardar el género: " + ex.Message;
-            }
-        }
-
-        return View(genero);
-    }
-
-    // GET: Generos/Edit/5
-    public IActionResult Edit(int id)
-    {
-        var genero = _repositorioGenero.ObtenerPorId(id);
-        if (genero == null)
-        {
-            TempData["Error"] = "El género a editar no existe.";
+            TempData["Error"] = PrimerError();
             return RedirectToAction(nameof(Index));
         }
 
-        return View(genero);
+        try
+        {
+            _repositorioGenero.Create(genero);
+            TempData["Mensaje"] = "Género creado exitosamente.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al crear el género {Nombre}", genero.Nombre);
+            TempData["Error"] = "No se pudo guardar el género.";
+        }
+
+        return RedirectToAction(nameof(Index));
     }
 
     // POST: Generos/Edit/5
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public IActionResult Edit(int id, Genero genero)
     {
         if (id != genero.Id)
@@ -94,40 +68,29 @@ public class GenerosController : Controller
             return BadRequest();
         }
 
-        if (ModelState.IsValid)
+        if (!ModelState.IsValid)
         {
-            try
-            {
-                _repositorioGenero.Update(genero);
-                TempData["Mensaje"] = "Género actualizado exitosamente.";
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Error al actualizar el género: " + ex.Message;
-            }
-        }
-
-        return View(genero);
-    }
-
-    // GET: Generos/Delete/5
-    public IActionResult Delete(int id)
-    {
-        var genero = _repositorioGenero.ObtenerPorId(id);
-        if (genero == null)
-        {
-            TempData["Error"] = "El género a eliminar no existe.";
+            TempData["Error"] = PrimerError();
             return RedirectToAction(nameof(Index));
         }
 
-        return View(genero);
+        try
+        {
+            _repositorioGenero.Update(genero);
+            TempData["Mensaje"] = "Género actualizado exitosamente.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al actualizar el género {Id}", genero.Id);
+            TempData["Error"] = "No se pudo actualizar el género.";
+        }
+
+        return RedirectToAction(nameof(Index));
     }
 
     // POST: Generos/Delete/5
-    [HttpPost, ActionName("Delete")]
-    [ValidateAntiForgeryToken]
-    public IActionResult DeleteConfirmed(int id)
+    [HttpPost]
+    public IActionResult Delete(int id)
     {
         try
         {
@@ -136,9 +99,14 @@ public class GenerosController : Controller
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "No se pudo eliminar el género: " + ex.Message;
+            _logger.LogError(ex, "Error al eliminar el género {Id}", id);
+            TempData["Error"] = "No se pudo eliminar el género.";
         }
 
         return RedirectToAction(nameof(Index));
     }
+
+    private string PrimerError() =>
+        ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
+                  .FirstOrDefault(m => !string.IsNullOrEmpty(m)) ?? "Datos inválidos.";
 }

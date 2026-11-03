@@ -10,20 +10,24 @@ using BibliotecaPublica.Repositories;
 namespace BibliotecaPublica.Controllers;
 
 [Authorize]
+[AutoValidateAntiforgeryToken]
 public class UsuariosController : Controller
 {
     private readonly RepositorioUsuario _repositorioUsuario;
     private readonly IWebHostEnvironment _environment;
     private readonly IPasswordHasher<Usuario> _passwordHasher;
+    private readonly ILogger<UsuariosController> _logger;
 
     public UsuariosController(
         RepositorioUsuario repositorioUsuario,
         IWebHostEnvironment environment,
-        IPasswordHasher<Usuario> passwordHasher)
+        IPasswordHasher<Usuario> passwordHasher,
+        ILogger<UsuariosController> logger)
     {
         _repositorioUsuario = repositorioUsuario;
         _environment = environment;
         _passwordHasher = passwordHasher;
+        _logger = logger;
     }
 
     // GET: Login
@@ -41,7 +45,6 @@ public class UsuariosController : Controller
     // POST: Login
     [AllowAnonymous]
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(LoginViewModel model)
     {
         if (!ModelState.IsValid)
@@ -224,7 +227,6 @@ public class UsuariosController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
     [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> Edit(
         Usuario usuario,
@@ -277,13 +279,13 @@ public class UsuariosController : Controller
             }
             else
             {
-                TempData["Mensaje"] = "No se pudo reactivar el usuario.";
+                TempData["Error"] = "No se pudo reactivar el usuario.";
             }
         }
         catch (Exception ex)
         {
-            TempData["Mensaje"] = "Ocurrió un error al intentar reactivar el usuario.";
-            Console.Write(ex.Message);
+            _logger.LogError(ex, "Error al reactivar el usuario {Id}", id);
+            TempData["Error"] = "Ocurrió un error al intentar reactivar el usuario.";
         }
 
         return RedirectToAction("Index");
@@ -298,7 +300,6 @@ public class UsuariosController : Controller
 
     //POST: /Usuarios/Create
     [HttpPost]
-    [ValidateAntiForgeryToken]
     [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> Create(Usuario usuario)
     {

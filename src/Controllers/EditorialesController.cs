@@ -5,14 +5,19 @@ using BibliotecaPublica.Repositories;
 
 namespace BibliotecaPublica.Controllers;
 
+// El alta, la edición y la baja se hacen con modales desde el Index,
+// por eso todas las acciones POST vuelven al Index con el mensaje en TempData.
 [Authorize]
+[AutoValidateAntiforgeryToken]
 public class EditorialesController : Controller
 {
     private readonly RepositorioEditorial _repositorioEditorial;
+    private readonly ILogger<EditorialesController> _logger;
 
-    public EditorialesController(RepositorioEditorial repoEditorial)
+    public EditorialesController(RepositorioEditorial repoEditorial, ILogger<EditorialesController> logger)
     {
         _repositorioEditorial = repoEditorial;
+        _logger = logger;
     }
 
     // GET: Editoriales/Index
@@ -30,104 +35,62 @@ public class EditorialesController : Controller
         return View(listado);
     }
 
-    // GET: Editoriales/Details/5
-    public IActionResult Details(int id)
-    {
-        var Editorial = _repositorioEditorial.ObtenerPorId(id);
-        if (Editorial == null)
-        {
-            TempData["Error"] = "La editorial solicitada no existe.";
-            return RedirectToAction(nameof(Index));
-        }
-
-        return View(Editorial);
-    }
-
-    // GET: Editoriales/Create
-    public IActionResult Create()
-    {
-        return View();
-    }
-
     // POST: Editoriales/Create
     [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult Create(Editorial Editorial)
+    public IActionResult Create(Editorial editorial)
     {
-        if (ModelState.IsValid)
+        if (!ModelState.IsValid)
         {
-            try
-            {
-                _repositorioEditorial.Create(Editorial);
-                TempData["Mensaje"] = "Editorial creada exitosamente.";
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Error al guardar la editorial: " + ex.Message;
-            }
-        }
-
-        return View(Editorial);
-    }
-
-    // GET: Editoriales/Edit/5
-    public IActionResult Edit(int id)
-    {
-        var Editorial = _repositorioEditorial.ObtenerPorId(id);
-        if (Editorial == null)
-        {
-            TempData["Error"] = "La editorial a editar no existe.";
+            TempData["Error"] = PrimerError();
             return RedirectToAction(nameof(Index));
         }
 
-        return View(Editorial);
+        try
+        {
+            _repositorioEditorial.Create(editorial);
+            TempData["Mensaje"] = "Editorial creada exitosamente.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al crear la editorial {Nombre}", editorial.Nombre);
+            TempData["Error"] = "No se pudo guardar la editorial.";
+        }
+
+        return RedirectToAction(nameof(Index));
     }
 
     // POST: Editoriales/Edit/5
     [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult Edit(int id, Editorial Editorial)
+    public IActionResult Edit(int id, Editorial editorial)
     {
-        if (id != Editorial.Id)
+        if (id != editorial.Id)
         {
             return BadRequest();
         }
 
-        if (ModelState.IsValid)
+        if (!ModelState.IsValid)
         {
-            try
-            {
-                _repositorioEditorial.Update(Editorial);
-                TempData["Mensaje"] = "Editorial actualizada exitosamente.";
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Error al actualizar la editorial: " + ex.Message;
-            }
-        }
-
-        return View(Editorial);
-    }
-
-    // GET: Editoriales/Delete/5
-    public IActionResult Delete(int id)
-    {
-        var Editorial = _repositorioEditorial.ObtenerPorId(id);
-        if (Editorial == null)
-        {
-            TempData["Error"] = "El editorial a eliminar no existe.";
+            TempData["Error"] = PrimerError();
             return RedirectToAction(nameof(Index));
         }
 
-        return View(Editorial);
+        try
+        {
+            _repositorioEditorial.Update(editorial);
+            TempData["Mensaje"] = "Editorial actualizada exitosamente.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al actualizar la editorial {Id}", editorial.Id);
+            TempData["Error"] = "No se pudo actualizar la editorial.";
+        }
+
+        return RedirectToAction(nameof(Index));
     }
 
     // POST: Editoriales/Delete/5
-    [HttpPost, ActionName("Delete")]
-    [ValidateAntiForgeryToken]
-    public IActionResult DeleteConfirmed(int id)
+    [HttpPost]
+    public IActionResult Delete(int id)
     {
         try
         {
@@ -136,7 +99,8 @@ public class EditorialesController : Controller
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "No se pudo eliminar la editorial: " + ex.Message;
+            _logger.LogError(ex, "Error al eliminar la editorial {Id}", id);
+            TempData["Error"] = "No se pudo eliminar la editorial.";
         }
 
         return RedirectToAction(nameof(Index));
@@ -160,4 +124,8 @@ public class EditorialesController : Controller
 
         return Json(resultado);
     }
+
+    private string PrimerError() =>
+        ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
+                  .FirstOrDefault(m => !string.IsNullOrEmpty(m)) ?? "Datos inválidos.";
 }

@@ -5,14 +5,19 @@ using BibliotecaPublica.Repositories;
 
 namespace BibliotecaPublica.Controllers;
 
+// El alta, la edición y la baja se hacen con modales desde el Index,
+// por eso todas las acciones POST vuelven al Index con el mensaje en TempData.
 [Authorize]
+[AutoValidateAntiforgeryToken]
 public class NacionalidadesController : Controller
 {
     private readonly RepositorioNacionalidad _repoNacionalidad;
+    private readonly ILogger<NacionalidadesController> _logger;
 
-    public NacionalidadesController(RepositorioNacionalidad repoNacionalidad)
+    public NacionalidadesController(RepositorioNacionalidad repoNacionalidad, ILogger<NacionalidadesController> logger)
     {
         _repoNacionalidad = repoNacionalidad;
+        _logger = logger;
     }
 
     // GET: Nacionalidades/Index
@@ -30,104 +35,62 @@ public class NacionalidadesController : Controller
         return View(listado);
     }
 
-    // GET: Nacionalidades/Details/5
-    public IActionResult Details(int id)
-    {
-        var Nacionalidad = _repoNacionalidad.ObtenerPorId(id);
-        if (Nacionalidad == null)
-        {
-            TempData["Error"] = "La Nacionalidad solicitada no existe.";
-            return RedirectToAction(nameof(Index));
-        }
-
-        return View(Nacionalidad);
-    }
-
-    // GET: Nacionalidades/Create
-    public IActionResult Create()
-    {
-        return View();
-    }
-
     // POST: Nacionalidades/Create
     [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult Create(Nacionalidad Nacionalidad)
+    public IActionResult Create(Nacionalidad nacionalidad)
     {
-        if (ModelState.IsValid)
+        if (!ModelState.IsValid)
         {
-            try
-            {
-                _repoNacionalidad.Create(Nacionalidad);
-                TempData["Mensaje"] = "Nacionalidad creada exitosamente.";
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Error al guardar la Nacionalidad: " + ex.Message;
-            }
-        }
-
-        return View(Nacionalidad);
-    }
-
-    // GET: Nacionalidades/Edit/5
-    public IActionResult Edit(int id)
-    {
-        var Nacionalidad = _repoNacionalidad.ObtenerPorId(id);
-        if (Nacionalidad == null)
-        {
-            TempData["Error"] = "La Nacionalidad a editar no existe.";
+            TempData["Error"] = PrimerError();
             return RedirectToAction(nameof(Index));
         }
 
-        return View(Nacionalidad);
+        try
+        {
+            _repoNacionalidad.Create(nacionalidad);
+            TempData["Mensaje"] = "Nacionalidad creada exitosamente.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al crear la nacionalidad {Nombre}", nacionalidad.Nombre);
+            TempData["Error"] = "No se pudo guardar la nacionalidad.";
+        }
+
+        return RedirectToAction(nameof(Index));
     }
 
     // POST: Nacionalidades/Edit/5
     [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult Edit(int id, Nacionalidad Nacionalidad)
+    public IActionResult Edit(int id, Nacionalidad nacionalidad)
     {
-        if (id != Nacionalidad.Id)
+        if (id != nacionalidad.Id)
         {
             return BadRequest();
         }
 
-        if (ModelState.IsValid)
+        if (!ModelState.IsValid)
         {
-            try
-            {
-                _repoNacionalidad.Update(Nacionalidad);
-                TempData["Mensaje"] = "Nacionalidad actualizada exitosamente.";
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Error al actualizar la Nacionalidad: " + ex.Message;
-            }
-        }
-
-        return View(Nacionalidad);
-    }
-
-    // GET: Nacionalidades/Delete/5
-    public IActionResult Delete(int id)
-    {
-        var Nacionalidad = _repoNacionalidad.ObtenerPorId(id);
-        if (Nacionalidad == null)
-        {
-            TempData["Error"] = "El Nacionalidad a eliminar no existe.";
+            TempData["Error"] = PrimerError();
             return RedirectToAction(nameof(Index));
         }
 
-        return View(Nacionalidad);
+        try
+        {
+            _repoNacionalidad.Update(nacionalidad);
+            TempData["Mensaje"] = "Nacionalidad actualizada exitosamente.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al actualizar la nacionalidad {Id}", nacionalidad.Id);
+            TempData["Error"] = "No se pudo actualizar la nacionalidad.";
+        }
+
+        return RedirectToAction(nameof(Index));
     }
 
     // POST: Nacionalidades/Delete/5
-    [HttpPost, ActionName("Delete")]
-    [ValidateAntiForgeryToken]
-    public IActionResult DeleteConfirmed(int id)
+    [HttpPost]
+    public IActionResult Delete(int id)
     {
         try
         {
@@ -136,9 +99,14 @@ public class NacionalidadesController : Controller
         }
         catch (Exception ex)
         {
-            TempData["Error"] = "No se pudo eliminar la Nacionalidad: " + ex.Message;
+            _logger.LogError(ex, "Error al eliminar la nacionalidad {Id}", id);
+            TempData["Error"] = "No se pudo eliminar la nacionalidad.";
         }
 
         return RedirectToAction(nameof(Index));
     }
+
+    private string PrimerError() =>
+        ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
+                  .FirstOrDefault(m => !string.IsNullOrEmpty(m)) ?? "Datos inválidos.";
 }

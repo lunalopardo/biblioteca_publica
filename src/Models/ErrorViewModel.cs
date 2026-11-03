@@ -1,4 +1,4 @@
-namespace src.Models;
+namespace BibliotecaPublica.Models;
 
 public class ErrorViewModel
 {

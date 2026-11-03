@@ -6,6 +6,7 @@ using BibliotecaPublica.Repositories;
 namespace BibliotecaPublica.Controllers;
 
 [Authorize]
+[AutoValidateAntiforgeryToken]
 public class AutoresController : Controller
 {
     private readonly RepositorioAutor _repositorioAutor;
@@ -58,7 +59,6 @@ public class AutoresController : Controller
 
     // POST: Autores/Create
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(Autor autor)
     {
         ModelState.Remove(nameof(Autor.Foto));
@@ -105,7 +105,6 @@ public class AutoresController : Controller
 
     // POST: Autores/Edit/5
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, Autor autor)
     {
         if (id != autor.Id) return NotFound();
@@ -152,7 +151,6 @@ public class AutoresController : Controller
 
     // POST: Autores/Delete/5
     [HttpPost]
-    [ValidateAntiForgeryToken]
     [Authorize(Roles = "Administrador")]
     public IActionResult Delete(int id)
     {

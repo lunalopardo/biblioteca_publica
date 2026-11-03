@@ -1,8 +1,12 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using BibliotecaPublica.Repositories;
 
 namespace BibliotecaPublica.Controllers
 {
+    [Authorize]
+    [AutoValidateAntiforgeryToken]
     public class ImagenesController : Controller
     {
         private readonly RepositorioUsuario _repositorioUsuario;
@@ -50,11 +54,17 @@ namespace BibliotecaPublica.Controllers
 
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public IActionResult EliminarAvatarUsuario(
             int idUsuario,
-            [FromServices] IWebHostEnvironment environment = null!)
+            [FromServices] IWebHostEnvironment environment)
         {
+            // Igual que en el perfil: el admin puede tocar cualquier usuario, el resto solo el suyo
+            int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            if (!User.IsInRole("Administrador") && idUsuario != currentUserId)
+            {
+                return Forbid();
+            }
+
             var usuario = _repositorioUsuario.ObtenerPorId(idUsuario);
             if (usuario == null) return NotFound();
 
@@ -65,7 +75,7 @@ namespace BibliotecaPublica.Controllers
                 _repositorioUsuario.UpdateCompleto(usuario);
             }
 
-            return RedirectToAction("Edit", "Usuarios", new { id = idUsuario });
+            return RedirectToAction("Perfil", "Usuarios", new { id = idUsuario });
         }
     }
 }
