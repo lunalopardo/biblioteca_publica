@@ -1,11 +1,6 @@
 @model BibliotecaPublica.Models.LoginViewModel
 
-@if (TempData["Mensaje"] != null)
-{
-    <div id="alert-message" class="alert alert-success text-center">
-        @TempData["Mensaje"]
-    </div>
-}
+<partial name="_Alertas" />
 
 <form asp-controller="Usuarios" asp-action="Login" method="post">
     @Html.AntiForgeryToken()

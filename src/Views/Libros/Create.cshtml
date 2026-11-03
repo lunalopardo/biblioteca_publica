@@ -4,12 +4,6 @@
     ViewData["Title"] = "Carga Manual de Libro";
 }
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/site.css" />
-    <link rel="stylesheet" href="~/css/formularios.css" />
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-}
-
 <div class="form-card form-card-medium">
     <div class="card-header-flex">
         <h3>Nuevo Libro (Carga Manual)</h3>
@@ -29,7 +23,7 @@
                 <label for="PortadaFile" class="btn btn-outline-secondary btn-sm">
                     Seleccionar Portada
                 </label>
-                <input asp-for="PortadaFile" type="file" accept="image/*" class="is-hidden" id="PortadaFile" />
+                <input asp-for="PortadaFile" type="file" accept=".jpg,.jpeg,.png,.webp" class="is-hidden" id="PortadaFile" />
             </div>
             <span asp-validation-for="PortadaFile" class="mensaje-error"></span>
         </div>

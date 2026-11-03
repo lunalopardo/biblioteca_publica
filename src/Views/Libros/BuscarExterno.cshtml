@@ -2,19 +2,7 @@
 @model List<LibroExterno>
 @{
     ViewData["Title"] = "Importar desde Open Library";
-    string filtroExterno = ViewData["FiltroExterno"] as string ?? "";
-    int paginaActual = (int)(ViewData["PaginaActual"] ?? 1);
-    int totalPaginas = (int)(ViewData["TotalPaginas"] ?? 1);
-
-    int rangoInicio = Math.Max(1, paginaActual - 2);
-    int rangoFin = Math.Min(totalPaginas, paginaActual + 2);
-}
-
-@section Styles {
-    <link rel="stylesheet" href="~/css/site.css" />
-    <link rel="stylesheet" href="~/css/formularios.css" />
-    <link rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    string filtroActual = ViewData["FiltroActual"] as string ?? "";
 }
 
 <div class="page-container">
@@ -26,13 +14,10 @@
         <a asp-action="Create" class="btn btn-outline-secondary">Carga manual</a>
     </div>
 
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger text-center">@TempData["Error"]</div>
-    }
+    <partial name="_Alertas" />
 
     <form asp-action="BuscarExterno" method="get" class="search-bar">
-        <input type="text" name="q" value="@filtroExterno" class="form-control"
+        <input type="text" name="buscar" value="@filtroActual" class="form-control"
                placeholder="Escribí el título del libro o autor a buscar..." required />
 
         <button type="submit" class="btn btn-primary">
@@ -40,7 +25,7 @@
             <span>Buscar</span>
         </button>
 
-        @if (!string.IsNullOrEmpty(filtroExterno))
+        @if (!string.IsNullOrEmpty(filtroActual))
         {
             <a asp-action="BuscarExterno" class="btn btn-outline-secondary">Limpiar</a>
         }
@@ -123,59 +108,12 @@
             </table>
         </div>
 
-        @if (totalPaginas > 1)
-        {
-            <nav class="pagination-container">
-                <ul class="pagination-custom">
-                    <li class="page-item @(paginaActual <= 1 ? "disabled" : "")">
-                        <a class="page-link" asp-action="BuscarExterno" asp-route-q="@filtroExterno"
-                           asp-route-pagina="@(paginaActual - 1)">Anterior</a>
-                    </li>
-
-                    @if (rangoInicio > 1)
-                    {
-                        <li class="page-item">
-                            <a class="page-link" asp-action="BuscarExterno" asp-route-q="@filtroExterno"
-                               asp-route-pagina="1">1</a>
-                        </li>
-                        @if (rangoInicio > 2)
-                        {
-                            <li class="page-item disabled"><span class="page-link">...</span></li>
-                        }
-                    }
-
-                    @for (int p = rangoInicio; p <= rangoFin; p++)
-                    {
-                        <li class="page-item @(p == paginaActual ? "active" : "")">
-                            <a class="page-link" asp-action="BuscarExterno" asp-route-q="@filtroExterno"
-                               asp-route-pagina="@p">@p</a>
-                        </li>
-                    }
-
-                    @if (rangoFin < totalPaginas)
-                    {
-                        @if (rangoFin < totalPaginas - 1)
-                        {
-                            <li class="page-item disabled"><span class="page-link">...</span></li>
-                        }
-                        <li class="page-item">
-                            <a class="page-link" asp-action="BuscarExterno" asp-route-q="@filtroExterno"
-                               asp-route-pagina="@totalPaginas">@totalPaginas</a>
-                        </li>
-                    }
-
-                    <li class="page-item @(paginaActual >= totalPaginas ? "disabled" : "")">
-                        <a class="page-link" asp-action="BuscarExterno" asp-route-q="@filtroExterno"
-                           asp-route-pagina="@(paginaActual + 1)">Siguiente</a>
-                    </li>
-                </ul>
-            </nav>
-        }
+        <partial name="_Paginacion" />
     }
-    else if (!string.IsNullOrEmpty(filtroExterno))
+    else if (!string.IsNullOrEmpty(filtroActual))
     {
         <div class="text-center py-5 text-muted">
-            <p>No se encontraron resultados en Open Library para "@filtroExterno".</p>
+            <p>No se encontraron resultados en Open Library para "@filtroActual".</p>
             <a asp-action="Create" class="btn btn-primary mt-2">Cargar este libro manualmente</a>
         </div>
     }

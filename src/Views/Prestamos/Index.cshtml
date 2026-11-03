@@ -3,13 +3,6 @@
     ViewData["Title"] = "Préstamos";
 }
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/site.css" />
-    <link rel="stylesheet" href="~/css/formularios.css" />
-    <link rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
-}
-
 <!-- Todo lo que está dentro de este div lo maneja Vue -->
 <div class="page-container" id="prestamos-app" v-cloak data-token="@Antiforgery.GetAndStoreTokens(Context).RequestToken"
      data-dias="14">
@@ -26,7 +19,7 @@
     <form class="search-bar" v-on:submit.prevent="buscarPrestamos">
         <input type="text" v-model="buscar" class="form-control" placeholder="Buscar por afiliado, libro o código..." />
         <button type="submit" class="btn btn-primary">
-            <span class="material-symbols-outlined">search</span>
+            <span class="material-symbols-outlined icon-inline">search</span>
             <span>Buscar</span>
         </button>
         <button v-if="buscar" type="button" class="btn btn-outline-secondary"

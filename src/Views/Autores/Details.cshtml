@@ -4,24 +4,19 @@
     ViewData["Title"] = "Detalles del Autor";
 }
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/site.css" />
-    <link rel="stylesheet" href="~/css/formularios.css" />
-}
-
 <div class="form-card form-card-narrow">
     <div class="card-header-flex">
         <h2>Detalles del Autor</h2>
     </div>
 
-    <div class="avatar-profile-box" style="text-align: center; margin-bottom: 20px;">
+    <div class="avatar-profile-box">
         @if (!string.IsNullOrEmpty(Model.Foto))
         {
-            <img src="@Model.Foto" alt="Foto del Autor" class="avatar-img-lg" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;" />
+            <img src="@Model.Foto" alt="Foto del Autor" class="avatar-img-lg" />
         }
         else
         {
-            <div class="avatar-placeholder-lg" style="width: 100px; height: 100px; border-radius: 50%; background-color: var(--primary-color); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto;">
+            <div class="avatar-placeholder-lg">
                 @(string.IsNullOrEmpty(Model.Nombre) ? "A" : Model.Nombre.Substring(0, 1).ToUpper())
             </div>
         }

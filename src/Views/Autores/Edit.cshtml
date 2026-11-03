@@ -4,11 +4,6 @@
     ViewData["Title"] = "Editar Autor";
 }
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/site.css" />
-    <link rel="stylesheet" href="~/css/formularios.css" />
-}
-
 <div class="form-card form-card-narrow">
     <div class="card-header-flex">
         <h2>Editar Autor</h2>
@@ -63,8 +58,9 @@
 
         <div class="form-group">
             <label for="fotoFile" class="form-label">Cambiar Foto (Opcional)</label>
-            <input type="file" id="fotoFile" name="fotoFile" accept="image/*" class="form-control"
+            <input type="file" id="fotoFile" name="fotoFile" accept=".jpg,.jpeg,.png,.webp" class="form-control"
                    onchange="previewImage(event)" />
+            <span asp-validation-for="FotoFile" class="mensaje-error"></span>
         </div>
 
         <div class="form-actions">

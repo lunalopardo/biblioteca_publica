@@ -3,18 +3,15 @@
 @{
     var afiliado = ViewBag.Afiliado as Afiliado;
     int? idAfiliado = ViewBag.IdAfiliado;
-    string buscar = ViewBag.Buscar as string ?? "";
-    int pagina = ViewBag.Pagina;
-    int totalPaginas = ViewBag.TotalPaginas;
+    string filtroActual = ViewData["FiltroActual"] as string ?? "";
+
+    // La paginación tiene que mantener el afiliado en los links
+    if (idAfiliado.HasValue)
+    {
+        ViewData["RutaPaginado"] = new Dictionary<string, string> { ["idAfiliado"] = idAfiliado.Value.ToString() };
+    }
 
     ViewData["Title"] = afiliado != null ? "Pagos del afiliado" : "Pagos";
-}
-
-@section Styles {
-    <link rel="stylesheet" href="~/css/site.css" />
-    <link rel="stylesheet" href="~/css/formularios.css" />
-    <link rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 }
 
 <div class="page-container">
@@ -22,29 +19,22 @@
         <h3>@(afiliado != null ? $"Pagos de {afiliado.Apellido}, {afiliado.Nombre}" : "Pagos")</h3>
     </div>
 
-    @if (TempData["Exito"] != null)
-    {
-        <div class="alert alert-success text-center">@TempData["Exito"]</div>
-    }
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger text-center">@TempData["Error"]</div>
-    }
+    <partial name="_Alertas" />
 
     <form asp-action="Index" method="get" class="search-bar">
         @if (idAfiliado.HasValue)
         {
             <input type="hidden" name="idAfiliado" value="@idAfiliado" />
         }
-        <input type="text" name="buscar" value="@buscar" class="form-control"
+        <input type="text" name="buscar" value="@filtroActual" class="form-control"
                placeholder="@(afiliado != null ? "Buscar por concepto..." : "Buscar por afiliado o concepto...")" />
 
         <button type="submit" class="btn btn-primary">
-            <span class="material-symbols-outlined">search</span>
+            <span class="material-symbols-outlined icon-inline">search</span>
             <span>Buscar</span>
         </button>
 
-        @if (!string.IsNullOrEmpty(buscar))
+        @if (!string.IsNullOrEmpty(filtroActual))
         {
             <a asp-action="Index" asp-route-idAfiliado="@idAfiliado" class="btn btn-outline-secondary">Limpiar</a>
         }
@@ -108,30 +98,7 @@
         </table>
     </div>
 
-    @if (totalPaginas > 1)
-    {
-        <nav class="pagination-container">
-            <ul class="pagination-custom">
-                <li class="page-item @(pagina <= 1 ? "disabled" : "")">
-                    <a class="page-link" asp-action="Index" asp-route-pagina="@(pagina - 1)"
-                       asp-route-idAfiliado="@idAfiliado" asp-route-buscar="@buscar">Anterior</a>
-                </li>
-
-                @for (int i = 1; i <= totalPaginas; i++)
-                {
-                    <li class="page-item @(i == pagina ? "active" : "")">
-                        <a class="page-link" asp-action="Index" asp-route-pagina="@i" asp-route-idAfiliado="@idAfiliado"
-                           asp-route-buscar="@buscar">@i</a>
-                    </li>
-                }
-
-                <li class="page-item @(pagina >= totalPaginas ? "disabled" : "")">
-                    <a class="page-link" asp-action="Index" asp-route-pagina="@(pagina + 1)"
-                       asp-route-idAfiliado="@idAfiliado" asp-route-buscar="@buscar">Siguiente</a>
-                </li>
-            </ul>
-        </nav>
-    }
+    <partial name="_Paginacion" />
 
     <div class="form-actions">
         @if (afiliado != null)

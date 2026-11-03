@@ -306,6 +306,21 @@ body {
   background-color: var(--nav-hover-bg);
 }
 
+.navbar-brand-icon {
+  font-size: 26px;
+}
+
+.navbar-avatar {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  font-size: 13px;
+}
+
+.navbar-logout-icon {
+  font-size: 16px;
+}
+
 @keyframes dropdownFade {
   from {
     opacity: 0;

@@ -5,13 +5,6 @@
     ViewData["Title"] = "Suscripciones";
 }
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/site.css" />
-    <link rel="stylesheet" href="~/css/formularios.css" />
-    <link rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
-}
-
 <div class="page-container">
     <div class="page-header">
         <h3>Suscripciones de @afiliado.Apellido, @afiliado.Nombre</h3>
@@ -20,14 +13,7 @@
         </a>
     </div>
 
-    @if (TempData["Exito"] != null)
-    {
-        <div class="alert alert-success text-center">@TempData["Exito"]</div>
-    }
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger text-center">@TempData["Error"]</div>
-    }
+    <partial name="_Alertas" />
 
     <div class="table-responsive">
         <table class="table-custom">

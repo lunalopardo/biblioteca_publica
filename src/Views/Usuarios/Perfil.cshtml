@@ -5,19 +5,13 @@
     int currentUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
     bool esMiPerfil = (Model.Id == currentUserId);
     bool esAdmin = User.IsInRole("Administrador");
-    var mensaje = ViewBag.Mensaje ?? TempData["Mensaje"];
-}
-
-@section Styles {
-    <link rel="stylesheet" href="~/css/site.css" />
-    <link rel="stylesheet" href="~/css/formularios.css" />
 }
 
 <div class="form-card form-card-narrow">
     <div class="card-header-flex">
         <h3>@(esMiPerfil ? "Mi Perfil" : $"Perfil de {Model.NombreUsuario}")</h3>
         <span class="badge badge-role">
-            @(Model.Rol == 1 ? "Administrador" : "Empleado")
+            @Model.RolNombre
         </span>
     </div>
 
@@ -28,16 +22,11 @@
         </div>
     }
 
-    @if (mensaje != null)
-    {
-        <div id="alerta-mensaje" class="alert alert-success text-center">
-            @mensaje
-        </div>
-    }
+    <partial name="_Alertas" />
 
     <form asp-controller="Usuarios" asp-action="Perfil" asp-route-id="@Model.Id" method="post"
           enctype="multipart/form-data">
-        
+
         <div class="avatar-profile-box">
             <img id="imgPreview" src="@(string.IsNullOrEmpty(Model.Avatar) ? "#" : Model.Avatar)"
                  class="avatar-img-lg @(string.IsNullOrEmpty(Model.Avatar) ? "is-hidden" : "")" alt="Avatar" />
@@ -53,7 +42,7 @@
                     <label for="avatarFile" class="btn btn-outline-secondary btn-sm">
                         Cambiar Foto de Perfil
                     </label>
-                    <input type="file" id="avatarFile" name="avatarFile" accept="image/*" class="is-hidden"
+                    <input type="file" id="avatarFile" name="avatarFile" accept=".jpg,.jpeg,.png,.webp" class="is-hidden"
                            onchange="previewImage(event)">
                 </div>
             }

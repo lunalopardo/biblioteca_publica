@@ -5,11 +5,6 @@
     ViewData["Title"] = "Crear Nuevo Usuario";
 }
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/site.css" />
-    <link rel="stylesheet" href="~/css/formularios.css" />
-}
-
 <div class="form-card form-card-narrow">
     <div class="card-header-flex">
         <h2>Crear Nuevo Usuario</h2>
@@ -62,7 +57,7 @@
 
         <div class="form-group">
             <label asp-for="AvatarFile" class="form-label">Foto de Perfil (Opcional)</label>
-            <input asp-for="AvatarFile" type="file" accept="image/*" class="form-control" />
+            <input asp-for="AvatarFile" type="file" accept=".jpg,.jpeg,.png,.webp" class="form-control" />
             <span asp-validation-for="AvatarFile" class="mensaje-error"></span>
         </div>
 
