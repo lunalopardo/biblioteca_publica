@@ -26,8 +26,8 @@ Una aplicación web interna, usada solo por empleados y administradores, que cen
 
 | Rol | Qué puede hacer |
 |---|---|
-| **Administrador** | Todo lo del empleado, más gestión de usuarios. Puede dar de baja afiliados. |
-| **Empleado** | Creación, lectura y edición de entidades mencionadas. |
+| **Administrador** | Todo lo del empleado, más la gestión de usuarios (ver, crear, editar, cambiar el rol, dar de baja y reactivar). Es el único que puede dar de baja **libros, autores y afiliados**. |
+| **Empleado** | Creación, lectura y edición de las entidades mencionadas. Solo puede ver y editar su propio perfil. |
 
 ---
 
@@ -48,7 +48,7 @@ Una aplicación web interna, usada solo por empleados y administradores, que cen
 
 ## 3. Modelo de datos
 
-![`/docs/der.png`](docs/DER.png)
+![`/docs/der.png`](docs/der.png)
 
 
 ### Tablas (13)
@@ -113,12 +113,12 @@ Si todo se cumple, el préstamo y el cambio de estado del ejemplar a `Prestado` 
 
 | # | Requerimiento mínimo | Estado | Enlace al código | Evidencia |
 |---|---|---|---|---|
-| 1 | **6+ tablas y relaciones 1:N y N:M** (13 tablas; N:M Libro–Género; Préstamo depende de Afiliado y Ejemplar) | ✅ Cumplido | [`Models/`](src/Models) · [`Repositories/`](src/Repositories) · [`database/biblioteca_db.sql`](database/biblioteca_db.sql) | DER en [`docs/DER.png`](docs/DER.png) |
-| 2 | **Login, roles y avatar** (cookies + claims; `[Authorize(Roles = "Administrador")]`; avatar en perfil y alta de usuario) | ✅ Cumplido | [`Program.cs` (autenticación)](src/Program.cs#L9) · [`UsuariosController.Login`](src/Controllers/UsuariosController.cs#L45) · [`UsuariosController.Perfil` (avatar)](src/Controllers/UsuariosController.cs#L118) · [`RepositorioUsuario.ValidarLogin`](src/Repositories/RepositorioUsuario.cs#L12) · [`Views/Usuarios/Login.cshtml`](src/Views/Usuarios/Login.cshtml) | Captura de pantalla de perfil con avatar en [`docs/evidencia_avatar.png`](docs/evidencia_avatar.png) |
-| 3 | **Manejo de archivos** (portadas de libros, fotos de autores, avatares) | ✅ Cumplido | [`ImagenesController.GuardarArchivoAsync`](src/Controllers/ImagenesController.cs#L16) · [`LibrosController.Create` (portada)](src/Controllers/LibrosController.cs#L67) · [`AutoresController.Create` (foto)](src/Controllers/AutoresController.cs#L62) · [`Views/Libros/Create.cshtml`](src/Views/Libros/Create.cshtml) | GIF mostrando subida en [`docs/evidencia_archivos.gif`](docs/evidencia_archivos.gif) |
+| 1 | **6+ tablas y relaciones 1:N y N:M** (13 tablas; N:M Libro–Género; Préstamo depende de Afiliado y Ejemplar) | ✅ Cumplido | [`Models/`](src/Models) · [`Repositories/`](src/Repositories) · [`database/biblioteca_db.sql`](database/biblioteca_db.sql) | DER en [`docs/der.png`](docs/der.png) |
+| 2 | **Login, roles y avatar** (cookies + claims; todo el sitio exige sesión; policy `Administrador` con `[Authorize(Policy = UsuarioActual.PolicyAdministrador)]`; avatar en perfil y alta de usuario) | ✅ Cumplido | [`Program.cs` (autenticación)](src/Program.cs#L10) · [`Program.cs` (sesión obligatoria y policy)](src/Program.cs#L18) · [`UsuariosController.Login`](src/Controllers/UsuariosController.cs#L55) · [`UsuariosController.ContraseniaValida`](src/Controllers/UsuariosController.cs#L321) · [`UsuariosController.IniciarSesionAsync` (claims)](src/Controllers/UsuariosController.cs#L328) · [`UsuariosController.Perfil` (avatar)](src/Controllers/UsuariosController.cs#L123) · [`RepositorioUsuario.ObtenerActivoPorLogin`](src/Repositories/RepositorioUsuario.cs#L11) · [`Helpers/UsuarioActual.cs`](src/Helpers/UsuarioActual.cs) · [`LibrosController.Delete` (solo admin)](src/Controllers/LibrosController.cs#L171) · [`Views/Usuarios/Login.cshtml`](src/Views/Usuarios/Login.cshtml) | Captura de pantalla de perfil con avatar en [`docs/evidencia_avatar.png`](docs/evidencia_avatar.png) |
+| 3 | **Manejo de archivos** (portadas de libros, fotos de autores, avatares; extensión y tamaño validados) | ✅ Cumplido | [`Archivos.GuardarImagenAsync`](src/Helpers/Archivos.cs#L28) · [`Archivos.ValidarImagen`](src/Helpers/Archivos.cs#L11) · [`ImagenValidaAttribute`](src/Helpers/ImagenValidaAttribute.cs#L6) · [`LibrosController.Create` (portada)](src/Controllers/LibrosController.cs#L86) · [`AutoresController.Create` (foto)](src/Controllers/AutoresController.cs#L59) · [`UsuariosController.Create` (avatar)](src/Controllers/UsuariosController.cs#L303) · [`Views/Libros/Create.cshtml`](src/Views/Libros/Create.cshtml) | GIF mostrando subida en [`docs/evidencia_archivos.gif`](docs/evidencia_archivos.gif) |
 | 4 | **ABM con Vue + AJAX** (Préstamos: alta, listado, devolución y anulación sin recargar) | ✅ Cumplido | [`Views/Prestamos/Index.cshtml`](src/Views/Prestamos/Index.cshtml) · [`wwwroot/js/prestamos.js`](src/wwwroot/js/prestamos.js) · [`PrestamosController.cs`](src/Controllers/PrestamosController.cs) | GIF del ABM dinámico en [`docs/evidencia_vue.gif`](docs/evidencia_vue.gif) |
-| 5 | **Paginado por servidor** (`LIMIT/OFFSET` en SQL; se pide solo la página actual) | ✅ Cumplido | [`RepositorioPrestamo.ObtenerPaginado`](src/Repositories/RepositorioPrestamo.cs#L30) · [`RepositorioPago.ObtenerPaginado`](src/Repositories/RepositorioPago.cs#L11) · [`RepositorioAfiliado.ObtenerPaginado`](src/Repositories/RepositorioAfiliado.cs#L11) · [`RepositorioLibro.ObtenerPaginado`](src/Repositories/RepositorioLibro.cs#L15) | Capturas del inspector de red enviando page=1 y page=2 en [`docs/evidencia_paginado1.png`](docs/evidencia_paginado1.png) y [`docs/evidencia_paginado2.png`](docs/evidencia_paginado2.png)|
-| 6 | **Selección asíncrona de entidades relacionadas** (afiliado y ejemplar al crear un préstamo, sin cargar todos los registros) | ✅ Cumplido | [`AfiliadosController.BuscarAsincrona`](src/Controllers/AfiliadosController.cs#L124) · [`PrestamosController.BuscarEjemplares`](src/Controllers/PrestamosController.cs#L59) · [`wwwroot/js/prestamos.js`](src/wwwroot/js/prestamos.js) | GIF buscando entidades en desplegable en [`docs/evidencia_busquedaajax.gif`](docs/evidencia_busquedaajax.gif) |
+| 5 | **Paginado por servidor** (`LIMIT/OFFSET` en SQL; se pide solo la página actual) | ✅ Cumplido | [`RepositorioPrestamo.ObtenerPaginado`](src/Repositories/RepositorioPrestamo.cs#L30) · [`RepositorioPago.ObtenerPaginado`](src/Repositories/RepositorioPago.cs#L11) · [`RepositorioAfiliado.ObtenerPaginado`](src/Repositories/RepositorioAfiliado.cs#L11) · [`RepositorioLibro.ObtenerPaginado`](src/Repositories/RepositorioLibro.cs#L25) · [`Paginacion.CargarPaginado`](src/Helpers/Paginacion.cs#L8) · [`Views/Shared/_Paginacion.cshtml`](src/Views/Shared/_Paginacion.cshtml) | Capturas del inspector de red enviando pagina=1 y pagina=2 en [`docs/evidencia_paginado1.png`](docs/evidencia_paginado1.png) y [`docs/evidencia_paginado2.png`](docs/evidencia_paginado2.png)|
+| 6 | **Selección asíncrona de entidades relacionadas** (afiliado y ejemplar al crear un préstamo; afiliado en la nueva suscripción; autor y editorial del libro con Select2; todo filtrado y limitado en SQL) | ✅ Cumplido | [`AfiliadosController.BuscarAsincrona`](src/Controllers/AfiliadosController.cs#L115) · [`RepositorioAfiliado.ObtenerParaSelect`](src/Repositories/RepositorioAfiliado.cs#L154) · [`PrestamosController.BuscarEjemplares`](src/Controllers/PrestamosController.cs#L59) · [`AutoresController.Buscar`](src/Controllers/AutoresController.cs#L145) · [`EditorialesController.Buscar`](src/Controllers/EditorialesController.cs#L108) · [`wwwroot/js/prestamos.js`](src/wwwroot/js/prestamos.js) · [`wwwroot/js/suscripciones-form.js`](src/wwwroot/js/suscripciones-form.js) · [`wwwroot/js/libros-form.js`](src/wwwroot/js/libros-form.js) | GIF buscando entidades en desplegable en [`docs/evidencia_busquedaajax.gif`](docs/evidencia_busquedaajax.gif) |
 | 7 | **Web API REST con JWT** | 🟡 Completar | Falta completar | Captura de Postman con Bearer Token y colección |
 
 ---
@@ -132,7 +132,7 @@ Si todo se cumple, el préstamo y el cambio de estado del ejemplar a `Prestado` 
    ```sql
    CREATE DATABASE biblioteca_db CHARACTER SET utf8mb4;
    ```
-   Luego importar `db/biblioteca_db.sql` (desde phpMyAdmin o por consola).
+   Luego importar `database/biblioteca_db.sql` (desde phpMyAdmin o por consola).
 3. Configurar la cadena de conexión en `appsettings.json`:
    ```json
    "ConnectionStrings": {
