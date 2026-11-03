@@ -49,19 +49,48 @@ public class SuscripcionesController : Controller
         return View(_repositorioSuscripcion.ObtenerPorAfiliado(idAfiliado));
     }
 
-    // GET: /Suscripciones/Create?idAfiliado=3
-    public IActionResult Create(int idAfiliado)
+    // GET: /Suscripciones/Create (el afiliado se elige con Select2)
+    // GET: /Suscripciones/Create?idAfiliado=3 (viene con el afiliado ya elegido)
+    public IActionResult Create(int? idAfiliado)
     {
-        var afiliado = _repositorioAfiliado.ObtenerPorId(idAfiliado);
-        if (afiliado == null) return NotFound();
+        var suscripcion = new Suscripcion();
 
-        ViewBag.Afiliado = afiliado;
-        return View(new Suscripcion { IdAfiliado = idAfiliado });
+        if (idAfiliado.HasValue)
+        {
+            var afiliado = _repositorioAfiliado.ObtenerPorId(idAfiliado.Value);
+            if (afiliado == null) return NotFound();
+
+            suscripcion.IdAfiliado = afiliado.Id;
+            suscripcion.Afiliado = afiliado;
+        }
+
+        return View(suscripcion);
+    }
+
+    // GET: /Suscripciones/Ocupadas?idAfiliado=3
+    // Rangos de días que ya cubre una suscripción del afiliado, para deshabilitarlos en el calendario.
+    [HttpGet]
+    public JsonResult Ocupadas(int idAfiliado)
+    {
+        var rangos = _repositorioSuscripcion.ObtenerPorAfiliado(idAfiliado)
+            .Select(s => new
+            {
+                desde = s.FechaInicio.ToString("yyyy-MM-dd"),
+                hasta = s.FechaFin.ToString("yyyy-MM-dd")
+            });
+        return Json(rangos);
     }
 
     [HttpPost]
     public IActionResult Create(Suscripcion suscripcion)
     {
+        suscripcion.Afiliado = suscripcion.IdAfiliado > 0 ? _repositorioAfiliado.ObtenerPorId(suscripcion.IdAfiliado) : null;
+
+        if (suscripcion.IdAfiliado > 0 && suscripcion.Afiliado == null)
+        {
+            ModelState.AddModelError(nameof(suscripcion.IdAfiliado), "El afiliado seleccionado no existe.");
+        }
+
         if (suscripcion.FechaFin.Date <= suscripcion.FechaInicio.Date)
         {
             ModelState.AddModelError(nameof(suscripcion.FechaFin),
@@ -75,7 +104,6 @@ public class SuscripcionesController : Controller
 
         if (!ModelState.IsValid)
         {
-            ViewBag.Afiliado = _repositorioAfiliado.ObtenerPorId(suscripcion.IdAfiliado);
             return View(suscripcion);
         }
 
@@ -89,7 +117,6 @@ public class SuscripcionesController : Controller
         {
             _logger.LogError(ex, "Error al crear suscripción del afiliado {IdAfiliado}", suscripcion.IdAfiliado);
             ModelState.AddModelError("", "No se pudo crear la suscripción.");
-            ViewBag.Afiliado = _repositorioAfiliado.ObtenerPorId(suscripcion.IdAfiliado);
             return View(suscripcion);
         }
     }

@@ -1,16 +1,27 @@
-@using BibliotecaPublica.Models
 @model BibliotecaPublica.Models.Suscripcion
 @{
-    var afiliado = (Afiliado)ViewBag.Afiliado;
     ViewData["Title"] = "Nueva suscripción";
+    var afiliado = Model.Afiliado;
 }
 
 <div class="form-card">
-    <h3>Nueva suscripción para @afiliado.Apellido, @afiliado.Nombre</h3>
+    <h3>Nueva suscripción</h3>
 
     <form asp-action="Create" method="post">
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-        <input type="hidden" asp-for="IdAfiliado" />
+
+        <div class="form-group mb-3">
+            <label asp-for="IdAfiliado" class="form-label"></label>
+            <select asp-for="IdAfiliado" class="form-control" id="IdAfiliado">
+                <option value="">-- Buscar afiliado por nombre, apellido o email --</option>
+                @if (afiliado != null)
+                {
+                    <option value="@afiliado.Id" selected>@afiliado.Apellido, @afiliado.Nombre - Email: @afiliado.Email</option>
+                }
+            </select>
+            <span asp-validation-for="IdAfiliado" class="text-danger"></span>
+            <div id="ayudaFechas" class="form-hint is-hidden"></div>
+        </div>
 
         <div class="form-group mb-3">
             <label asp-for="FechaInicio" class="form-label"></label>
@@ -32,11 +43,21 @@
 
         <div class="form-actions d-flex gap-2">
             <button type="submit" class="btn btn-primary">Guardar</button>
-            <a asp-action="Index" asp-route-idAfiliado="@Model.IdAfiliado" class="btn btn-outline-secondary">Cancelar</a>
+            @if (afiliado != null)
+            {
+                <a asp-action="Index" asp-route-idAfiliado="@afiliado.Id" class="btn btn-outline-secondary">Cancelar</a>
+            }
+            else
+            {
+                <a asp-action="Activas" class="btn btn-outline-secondary">Cancelar</a>
+            }
         </div>
     </form>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/es.js"></script>
+    <script src="~/js/suscripciones-form.js" asp-append-version="true"></script>
 }
