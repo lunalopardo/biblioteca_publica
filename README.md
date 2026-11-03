@@ -93,10 +93,11 @@ Una aplicación web interna, usada solo por empleados y administradores, que cen
 
 Al crear un préstamo, el servidor comprueba:
 
-1. El afiliado **no está sancionado**.
+1. El afiliado **no está sancionado**. La sanción no se carga a mano: un afiliado está sancionado mientras tenga **préstamos vencidos sin devolver** (se calcula en SQL, igual que el estado de la suscripción).
 2. Tiene una **suscripción vigente y pagada**.
-3. **No tiene préstamos vencidos** sin devolver.
-4. El ejemplar está **disponible**.
+3. El ejemplar está **disponible**.
+
+Desde el listado de afiliados, el botón **Préstamos** muestra solo los de ese afiliado, con los vencidos primero (se resalta cuando está sancionado).
 
 Si todo se cumple, el préstamo y el cambio de estado del ejemplar a `Prestado` se guardan **en una transacción**: o se hacen las dos cosas, o ninguna.
 
@@ -146,6 +147,14 @@ Si todo se cumple, el préstamo y el cambio de estado del ejemplar a `Prestado` 
    ```
 5. Abrir la dirección que indique la consola.
 
+---
+
+### Imágenes de prueba
+
+Las imágenes subidas (portadas, fotos de autores y avatares) se guardan en `src/wwwroot/uploads/`, y la base guarda solo la ruta (por ejemplo `/uploads/libros/<archivo>.jpg`).
+
+Esa carpeta **se incluye a propósito en el repositorio**: los datos de prueba de la base apuntan a esos archivos, así que sin ellos las imágenes aparecerían rotas. Al clonar el repositorio e importar la base, las imágenes se ven sin hacer nada más.
+
 ### Usuarios de prueba
 
 | Rol | Usuario | Contraseña |
@@ -159,15 +168,39 @@ Si todo se cumple, el préstamo y el cambio de estado del ejemplar a `Prestado` 
 
 ### Hecho
 
-- Catálogo completo (libros, ejemplares, autores, editoriales, géneros, nacionalidades).
-- Afiliados, suscripciones y pagos con sus reglas.
+**Catálogo**
+- Libros, ejemplares, autores, editoriales, géneros y nacionalidades.
+- Importación de libros desde **Open Library** (con idioma, descripción y portada).
+- Autor y editorial del libro se eligen con **Select2**, buscando en el servidor (filtrado y `LIMIT` en SQL).
+- Ubicación de cada ejemplar; su estado lo controlan los préstamos y no se puede dar de baja si está prestado.
+
+**Afiliados, suscripciones y pagos**
+- Reglas de suscripción y pago (sin superposición de fechas, monto tomado del servidor, anulación con auditoría).
+- Listado de **suscripciones activas** (vigentes y programadas) con búsqueda y paginación.
+- Alta de suscripción con Select2 para el afiliado y calendario que **deshabilita los días ya cubiertos** por otra suscripción.
+- La **sanción se calcula** desde los préstamos vencidos sin devolver.
+- Botón **Préstamos** en el listado de afiliados (resaltado si está sancionado), con los vencidos primero.
+
+**Préstamos**
 - Préstamos y devoluciones con Vue, transacciones y multa automática.
 - Auditoría de quién crea y anula pagos y préstamos.
+
+**Usuarios, roles y seguridad**
+- El empleado ve todo menos Usuarios y solo edita su propio perfil; el administrador gestiona usuarios (crear, editar, cambiar el rol, dar de baja y reactivar).
+- Solo el administrador da de baja el catálogo (libros, ejemplares, autores, editoriales, géneros y nacionalidades); el empleado puede dar de baja lo relacionado con afiliados.
+- Todo el sitio exige sesión (política global); un link sin sesión lleva al login y después vuelve a la página pedida.
+- Policy `Administrador` basada en `EnRoles`.
+- Contraseñas hasheadas en el controlador; tokens antiforgery en todos los formularios y llamadas AJAX.
+- Las llamadas AJAX sin sesión o sin permiso reciben 401/403 en JSON.
+- Imágenes validadas por extensión (`.jpg`, `.jpeg`, `.png`, `.webp`) y tamaño (5 MB).
+
+**Código**
+- Helpers compartidos: `Archivos` (imágenes), `Paginacion` y `UsuarioActual`.
+- Parciales `_Paginacion`, `_Alertas` y `_ModalConfirmacion` usados en todas las vistas.
 
 ### Pendiente respecto de la propuesta original
 
 - Renovar un préstamo (crear uno nuevo para el mismo afiliado y ejemplar).
 - Límite de préstamos simultáneos por afiliado.
-- Calcular la columna **Sanción** desde los préstamos vencidos, como ya se hace con la suscripción.
 - Informes: libros más prestados en los últimos X días, préstamos que vencen en X días, préstamos vencidos, afiliados sancionados.
 - Vista de auditoría para el administrador (quién cargó o anuló cada operación).
