@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using BibliotecaPublica.Helpers;
@@ -23,8 +22,7 @@ public class ImagenesController : Controller
     public IActionResult EliminarAvatarUsuario(int idUsuario)
     {
         // Igual que en el perfil: el admin puede tocar cualquier usuario, el resto solo el suyo
-        int currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-        if (!User.IsInRole("Administrador") && idUsuario != currentUserId)
+        if (!User.EsAdministrador() && idUsuario != User.ObtenerId())
         {
             return Forbid();
         }

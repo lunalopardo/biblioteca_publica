@@ -132,7 +132,7 @@ public class AutoresController : Controller
 
     // POST: Autores/Delete/5
     [HttpPost]
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Policy = UsuarioActual.PolicyAdministrador)]
     public IActionResult Delete(int id)
     {
         _repositorioAutor.BajaLogica(id);

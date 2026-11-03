@@ -1,8 +1,9 @@
+using BibliotecaPublica.Helpers;
 using BibliotecaPublica.Repositories;
 using BibliotecaPublica.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,9 +17,15 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("Administrador", policy =>
-        policy.RequireClaim(ClaimTypes.Role, "Administrador")
-    );
+    // Todo requiere sesión iniciada, salvo lo marcado con [AllowAnonymous] (login y página de error)
+    // Si alguien sin sesión entra a un link, la cookie lo manda a LoginPath con ?ReturnUrl=...
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+
+    // Se usa con [Authorize(Policy = UsuarioActual.PolicyAdministrador)]
+    options.AddPolicy(UsuarioActual.PolicyAdministrador, policy =>
+        policy.RequireRole(nameof(EnRoles.Administrador)));
 });
 
 builder.Services.AddHttpClient();

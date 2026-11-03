@@ -45,7 +45,7 @@ public class Usuario
     public int Rol { get; set; } = (int)EnRoles.Empleado;
 
     [Display(Name = "Rol")]
-    public string RolNombre => Rol == (int)EnRoles.Administrador ? "Administrador" : "Empleado";
+    public string RolNombre => ((EnRoles)Rol).ToString();
 
     [Display(Name = "Activo")]
     public bool Activo { get; set; } = true;
