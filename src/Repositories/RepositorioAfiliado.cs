@@ -107,8 +107,8 @@ public class RepositorioAfiliado : RepositorioBase
     // Crear Afiliado
     public int Crear(Afiliado afiliado)
     {
-        var query = @"INSERT INTO Afiliado (nombre, apellido, email, telefono, fecha_alta, estado, sancionado, activo)
-                      VALUES (@nombre, @apellido, @email, @telefono, @fechaAlta, @estado, @sancionado, 1)";
+        var query = @"INSERT INTO Afiliado (nombre, apellido, email, telefono, fecha_alta, activo)
+                      VALUES (@nombre, @apellido, @email, @telefono, @fechaAlta, 1)";
 
         using MySqlConnection connection = new(connectionString);
         using MySqlCommand command = new(query, connection);
@@ -117,8 +117,6 @@ public class RepositorioAfiliado : RepositorioBase
         command.Parameters.AddWithValue("@email", afiliado.Email);
         command.Parameters.AddWithValue("@telefono", (object?)afiliado.Telefono ?? DBNull.Value);
         command.Parameters.AddWithValue("@fechaAlta", afiliado.FechaAlta);
-        command.Parameters.AddWithValue("@estado", afiliado.Estado);
-        command.Parameters.AddWithValue("@sancionado", afiliado.Sancionado);
 
         connection.Open();
         return command.ExecuteNonQuery();
@@ -163,7 +161,7 @@ public class RepositorioAfiliado : RepositorioBase
         var listado = new List<Afiliado>();
 
         string sql = @"
-            SELECT id, nombre, apellido, email, estado, " + SancionCalculada + @"
+            SELECT id, nombre, apellido, email, " + SancionCalculada + @"
             FROM Afiliado
             WHERE activo = 1";
 
@@ -192,7 +190,6 @@ public class RepositorioAfiliado : RepositorioBase
                 Nombre = reader.GetString("nombre"),
                 Apellido = reader.GetString("apellido"),
                 Email = reader.GetString("email"),
-                Estado = reader.GetBoolean("estado"),
                 Sancionado = Convert.ToInt32(reader["sancion_calculada"]) == 1
             });
         }
@@ -211,7 +208,6 @@ public class RepositorioAfiliado : RepositorioBase
             Email = reader.GetString("email"),
             Telefono = reader.IsDBNull(reader.GetOrdinal("telefono")) ? string.Empty : reader.GetString("telefono"),
             FechaAlta = reader.GetDateTime("fecha_alta"),
-            Estado = reader.GetBoolean("estado"),
             Sancionado = Convert.ToInt32(reader["sancion_calculada"]) == 1,
             Activo = reader.GetBoolean("activo")
         };

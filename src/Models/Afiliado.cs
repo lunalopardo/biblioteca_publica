@@ -29,11 +29,9 @@ public class Afiliado
     [DataType(DataType.Date)]
     public DateTime FechaAlta { get; set; } = DateTime.Today;
 
-    [Display(Name = "Estado")]
-    public bool Estado { get; set; } = true;
-
+    // No se guarda: lo calcula RepositorioAfiliado (préstamos vencidos sin devolver).
     [Display(Name = "Sancionado")]
-    public bool Sancionado { get; set; } = false;
+    public bool Sancionado { get; set; }
 
     [Display(Name = "Activo")]
     public bool Activo { get; set; } = true;
