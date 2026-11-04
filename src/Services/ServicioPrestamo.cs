@@ -97,7 +97,7 @@ public class ServicioPrestamo
 
         try
         {
-            if (!_repositorioPrestamo.Devolver(id, hoy, multa))
+            if (!_repositorioPrestamo.Devolver(id, hoy, userId, multa))
                 return new(StatusCodes.Status409Conflict, "El préstamo ya fue devuelto.");
 
             var mensaje = multa == null

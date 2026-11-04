@@ -95,10 +95,10 @@ public class RepositorioPago : RepositorioBase
     public int Crear(Pago pago)
     {
         const string query = @"INSERT INTO pago
-                                 (id_afiliado, creado_por_user_id, tipo, id_suscripcion, id_prestamo,
+                                 (id_afiliado, creado_por_user_id, creado_en, tipo, id_suscripcion, id_prestamo,
                                   fecha_pago, monto, concepto, saldado, activo)
                                VALUES
-                                 (@id_afiliado, @creado_por, @tipo, @id_suscripcion, @id_prestamo,
+                                 (@id_afiliado, @creado_por, NOW(), @tipo, @id_suscripcion, @id_prestamo,
                                   @fecha_pago, @monto, @concepto, @saldado, 1);
                                SELECT LAST_INSERT_ID();";
 
@@ -122,7 +122,7 @@ public class RepositorioPago : RepositorioBase
     public int Anular(int id, int anuladoPorUserId)
     {
         const string query = @"UPDATE pago
-                               SET activo = 0, anulado_por_user_id = @user
+                               SET activo = 0, anulado_por_user_id = @user, anulado_en = NOW()
                                WHERE id = @id AND activo = 1";
 
         using MySqlConnection connection = new(connectionString);
@@ -143,6 +143,10 @@ public class RepositorioPago : RepositorioBase
             CreadoPorUserId = reader.GetInt32("creado_por_user_id"),
             AnuladoPorUserId = reader.IsDBNull(reader.GetOrdinal("anulado_por_user_id"))
                 ? null : reader.GetInt32("anulado_por_user_id"),
+            CreadoEn = reader.IsDBNull(reader.GetOrdinal("creado_en"))
+                ? null : reader.GetDateTime("creado_en"),
+            AnuladoEn = reader.IsDBNull(reader.GetOrdinal("anulado_en"))
+                ? null : reader.GetDateTime("anulado_en"),
             Tipo = Enum.Parse<TipoPago>(reader.GetString("tipo")),
             IdSuscripcion = reader.IsDBNull(reader.GetOrdinal("id_suscripcion"))
                 ? null : reader.GetInt32("id_suscripcion"),

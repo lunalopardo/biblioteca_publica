@@ -21,6 +21,10 @@ public class Pago
 
     public int? AnuladoPorUserId { get; set; }
 
+    // Auditoría
+    public DateTime? CreadoEn { get; set; }
+    public DateTime? AnuladoEn { get; set; }
+
     [Display(Name = "Tipo de pago")]
     public TipoPago Tipo { get; set; } = TipoPago.Cuota;
 

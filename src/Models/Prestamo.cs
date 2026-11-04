@@ -21,6 +21,11 @@ public class Prestamo
     public int CreadoPorUserId { get; set; }
 
     public int? AnuladoPorUserId { get; set; }
+    // Auditoría
+    public int? DevueltoPorUserId { get; set; }
+    public DateTime? CreadoEn { get; set; }
+    public DateTime? DevueltoEn { get; set; }
+    public DateTime? AnuladoEn { get; set; }
 
     [Display(Name = "Fecha de préstamo")]
     [DataType(DataType.Date)]

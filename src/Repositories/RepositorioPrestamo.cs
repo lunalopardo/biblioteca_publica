@@ -115,10 +115,10 @@ public class RepositorioPrestamo : RepositorioBase
         if (cmdMarcar.ExecuteNonQuery() == 0) return 0;
 
         const string insertar = @"INSERT INTO prestamo
-                                    (id_afiliado, id_ejemplar, creado_por_user_id, fecha_prestamo,
+                                    (id_afiliado, id_ejemplar, creado_por_user_id, creado_en, fecha_prestamo,
                                      fecha_devolucion_pactada, estado, activo)
                                   VALUES
-                                    (@id_afiliado, @id_ejemplar, @creado_por, @fecha_prestamo,
+                                    (@id_afiliado, @id_ejemplar, @creado_por, NOW(), @fecha_prestamo,
                                      @fecha_pactada, @estado, 1);
                                   SELECT LAST_INSERT_ID();";
         using var cmdInsertar = new MySqlCommand(insertar, connection, tx);
@@ -135,19 +135,21 @@ public class RepositorioPrestamo : RepositorioBase
     }
 
     // Registra la devolución, libera el ejemplar y (si corresponde) guarda la multa.
-    public bool Devolver(int id, DateTime fechaReal, Pago? multa)
+    public bool Devolver(int id, DateTime fechaReal, int devueltoPorUserId, Pago? multa)
     {
         using MySqlConnection connection = new(connectionString);
         connection.Open();
         using MySqlTransaction tx = connection.BeginTransaction();
 
         const string actualizarPrestamo = @"UPDATE prestamo
-                                            SET fecha_devolucion_real = @fecha, estado = @estado
+                                            SET fecha_devolucion_real = @fecha, estado = @estado,
+                                                devuelto_por_user_id = @user, devuelto_en = NOW()
                                             WHERE id = @id AND activo = 1 AND fecha_devolucion_real IS NULL";
         using var cmdActualizar = new MySqlCommand(actualizarPrestamo, connection, tx);
         cmdActualizar.Parameters.AddWithValue("@id", id);
         cmdActualizar.Parameters.AddWithValue("@fecha", fechaReal.Date);
         cmdActualizar.Parameters.AddWithValue("@estado", Prestamo.EstadoDevuelto);
+        cmdActualizar.Parameters.AddWithValue("@user", devueltoPorUserId);
         if (cmdActualizar.ExecuteNonQuery() == 0) return false;
 
         const string liberarEjemplar = @"UPDATE ejemplar e
@@ -161,10 +163,10 @@ public class RepositorioPrestamo : RepositorioBase
         if (multa != null)
         {
             const string insertarMulta = @"INSERT INTO pago
-                                             (id_afiliado, creado_por_user_id, tipo, id_prestamo,
+                                             (id_afiliado, creado_por_user_id, creado_en, tipo, id_prestamo,
                                               fecha_pago, monto, concepto, saldado, activo)
                                            VALUES
-                                             (@id_afiliado, @creado_por, @tipo, @id_prestamo,
+                                             (@id_afiliado, @creado_por, NOW(), @tipo, @id_prestamo,
                                               @fecha_pago, @monto, @concepto, @saldado, 1)";
             using var cmdMulta = new MySqlCommand(insertarMulta, connection, tx);
             cmdMulta.Parameters.AddWithValue("@id_afiliado", multa.IdAfiliado);
@@ -190,7 +192,7 @@ public class RepositorioPrestamo : RepositorioBase
         using MySqlTransaction tx = connection.BeginTransaction();
 
         const string anular = @"UPDATE prestamo
-                                SET activo = 0, anulado_por_user_id = @user
+                                SET activo = 0, anulado_por_user_id = @user, anulado_en = NOW()
                                 WHERE id = @id AND activo = 1 AND fecha_devolucion_real IS NULL";
         using var cmdAnular = new MySqlCommand(anular, connection, tx);
         cmdAnular.Parameters.AddWithValue("@id", id);
@@ -219,6 +221,14 @@ public class RepositorioPrestamo : RepositorioBase
             CreadoPorUserId = reader.GetInt32("creado_por_user_id"),
             AnuladoPorUserId = reader.IsDBNull(reader.GetOrdinal("anulado_por_user_id"))
                 ? null : reader.GetInt32("anulado_por_user_id"),
+            DevueltoPorUserId = reader.IsDBNull(reader.GetOrdinal("devuelto_por_user_id"))
+                ? null : reader.GetInt32("devuelto_por_user_id"),
+            CreadoEn = reader.IsDBNull(reader.GetOrdinal("creado_en"))
+                ? null : reader.GetDateTime("creado_en"),
+            DevueltoEn = reader.IsDBNull(reader.GetOrdinal("devuelto_en"))
+                ? null : reader.GetDateTime("devuelto_en"),
+            AnuladoEn = reader.IsDBNull(reader.GetOrdinal("anulado_en"))
+                ? null : reader.GetDateTime("anulado_en"),
             FechaPrestamo = reader.GetDateTime("fecha_prestamo"),
             FechaDevolucionPactada = reader.GetDateTime("fecha_devolucion_pactada"),
             FechaDevolucionReal = reader.IsDBNull(reader.GetOrdinal("fecha_devolucion_real"))
