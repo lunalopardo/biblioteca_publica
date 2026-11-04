@@ -1,0 +1,116 @@
+@using BibliotecaPublica.Models
+@model IEnumerable<BibliotecaPublica.Models.RegistroAuditoria>
+@{
+    ViewData["Title"] = "Auditoría";
+
+    var usuarios = ViewBag.Usuarios as List<Usuario> ?? new List<Usuario>();
+    int? idUsuario = ViewBag.IdUsuario;
+    string? operacion = ViewBag.Operacion;
+    string? desde = ViewBag.Desde;
+    string? hasta = ViewBag.Hasta;
+    bool hayFiltros = idUsuario.HasValue || !string.IsNullOrEmpty(operacion)
+                      || !string.IsNullOrEmpty(desde) || !string.IsNullOrEmpty(hasta);
+
+    var ruta = new Dictionary<string, string>();
+    if (idUsuario.HasValue) ruta["idUsuario"] = idUsuario.Value.ToString();
+    if (!string.IsNullOrEmpty(operacion)) ruta["operacion"] = operacion;
+    if (!string.IsNullOrEmpty(desde)) ruta["desde"] = desde;
+    if (!string.IsNullOrEmpty(hasta)) ruta["hasta"] = hasta;
+    ViewData["RutaPaginado"] = ruta;
+}
+
+<div class="page-container page-container-wide">
+    <div class="page-header">
+        <div>
+            <h3>Auditoría</h3>
+            <p class="page-subtitle">Quién registró, devolvió o anuló cada préstamo y pago.</p>
+        </div>
+    </div>
+
+    <form asp-action="Index" method="get" class="search-bar">
+        <select name="idUsuario" class="form-control" aria-label="Usuario">
+            <option value="">Todos los usuarios</option>
+            @foreach (var u in usuarios)
+            {
+                <option value="@u.Id" selected="@(u.Id == idUsuario)">@u.Apellido, @u.Nombre</option>
+            }
+        </select>
+
+        <select name="operacion" class="form-control" aria-label="Operación">
+            <option value="">Todas las operaciones</option>
+            <option value="@RegistroAuditoria.OperacionPrestamo"
+                    selected="@(operacion == RegistroAuditoria.OperacionPrestamo)">Préstamos</option>
+            <option value="@RegistroAuditoria.OperacionPago"
+                    selected="@(operacion == RegistroAuditoria.OperacionPago)">Pagos</option>
+        </select>
+
+        <input type="date" name="desde" value="@desde" class="form-control" placeholder="Desde" aria-label="Desde" />
+        <input type="date" name="hasta" value="@hasta" class="form-control" placeholder="Hasta" aria-label="Hasta" />
+
+        <button type="submit" class="btn btn-primary">
+            <span class="material-symbols-outlined icon-inline">filter_alt</span>
+            <span>Filtrar</span>
+        </button>
+
+        @if (hayFiltros)
+        {
+            <a asp-action="Index" class="btn btn-outline-secondary">Limpiar</a>
+        }
+    </form>
+
+    <div class="table-responsive">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>Fecha y hora</th>
+                    <th>Usuario</th>
+                    <th>Acción</th>
+                    <th>Operación</th>
+                    <th>Detalle</th>
+                    <th>Afiliado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-3">No hay movimientos con esos filtros.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var r in Model)
+                    {
+                        <tr>
+                            <td class="text-nowrap">@r.FechaTexto</td>
+                            <td class="fw-bold">@(r.Usuario ?? "Sin registro")</td>
+                            <td>
+                                @if (r.Accion == RegistroAuditoria.AccionAnulacion)
+                                {
+                                    <span class="badge badge-inactive">@r.Accion</span>
+                                }
+                                else if (r.Accion == RegistroAuditoria.AccionDevolucion)
+                                {
+                                    <span class="badge badge-active">@r.Accion</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-neutral">@r.Accion</span>
+                                }
+                            </td>
+                            <td class="text-nowrap">@r.Operacion #@r.IdOperacion</td>
+                            <td class="td-wrap">@r.Detalle</td>
+                            <td>@r.Afiliado</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <p class="form-hint">
+        Las operaciones anteriores a la auditoría muestran solo el día. Lo que no se guardó en ese momento figura como "Sin registro".
+    </p>
+
+    <partial name="_Paginacion" />
+</div>

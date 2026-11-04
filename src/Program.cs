@@ -100,6 +100,7 @@ builder.Services.AddScoped<RepositorioSuscripcion>();
 builder.Services.AddScoped<RepositorioPago>();
 builder.Services.AddScoped<RepositorioPrestamo>();
 builder.Services.AddScoped<ServicioPrestamo>();
+builder.Services.AddScoped<RepositorioAuditoria>();
 
 var app = builder.Build();
 

@@ -77,6 +77,30 @@ public class RepositorioUsuario : RepositorioBase
     }
 
     // Traer un usuario por id
+    // Incluye a los dados de baja: sus operaciones siguen apareciendo en la auditoría
+    public List<Usuario> ObtenerParaFiltro()
+    {
+        const string query = "SELECT id, nombre, apellido FROM usuario ORDER BY apellido, nombre";
+
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(query, connection);
+
+        connection.Open();
+        using MySqlDataReader reader = command.ExecuteReader();
+
+        var listado = new List<Usuario>();
+        while (reader.Read())
+        {
+            listado.Add(new Usuario
+            {
+                Id = reader.GetInt32("id"),
+                Nombre = reader.GetString("nombre"),
+                Apellido = reader.GetString("apellido")
+            });
+        }
+        return listado;
+    }
+
     public Usuario? ObtenerPorId(int id)
     {
         string sql = "SELECT * FROM usuario WHERE id = @id";
