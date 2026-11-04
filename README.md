@@ -26,7 +26,7 @@ Una aplicación web interna, usada solo por empleados y administradores, que cen
 
 | Rol | Qué puede hacer |
 |---|---|
-| **Administrador** | Todo lo del empleado, más la gestión de usuarios (ver, crear, editar, cambiar el rol, dar de baja y reactivar). Es el único que puede dar de baja el **catálogo**: libros, ejemplares, autores, editoriales, géneros y nacionalidades. |
+| **Administrador** | Todo lo del empleado, más la gestión de usuarios (ver, crear, editar, cambiar el rol, dar de baja y reactivar) y la **auditoría**. Es el único que puede dar de baja el **catálogo**: libros, ejemplares, autores, editoriales, géneros y nacionalidades. |
 | **Empleado** | Creación, lectura y edición de todas las entidades. Puede dar de baja lo relacionado con la gestión de afiliados (afiliados, suscripciones y pagos) y anular préstamos. Solo puede ver y editar su propio perfil. |
 
 ---
@@ -73,7 +73,7 @@ Una aplicación web interna, usada solo por empleados y administradores, que cen
 - **1:N:** Libro → Ejemplar, Autor → Libro, Afiliado → Préstamo, Afiliado → Suscripción, entre otras.
 - **N:M:** Libro ↔ Género mediante `libro_genero`.
 - **Entidad que depende de otras dos:** `Prestamo` depende de `Afiliado` y de `Ejemplar`.
-- **Auditoría:** `prestamo` y `pago` guardan `creado_por_user_id` y `anulado_por_user_id`.
+- **Auditoría:** `prestamo` y `pago` guardan quién y cuándo los creó y anuló (`creado_por_user_id`, `creado_en`, `anulado_por_user_id`, `anulado_en`). `prestamo` también guarda quién y cuándo registró la devolución (`devuelto_por_user_id`, `devuelto_en`).
 - **Borrado lógico:** todas las entidades usan la bandera `activo` en lugar de `DELETE`, para no romper el historial.
 
 ---
@@ -107,6 +107,10 @@ Si todo se cumple, el préstamo y el cambio de estado del ejemplar a `Prestado` 
 - Si la devolución es posterior a la fecha pactada, se genera **automáticamente un pago de tipo `Multa`** asociado al préstamo ($100 por día de atraso, configurable en `ServicioPrestamo`).
 - Un préstamo cargado por error se puede **anular** mientras no esté devuelto; el ejemplar queda disponible otra vez.
 
+### Auditoría
+
+- La vista **Auditoría** (solo administrador, de solo lectura) muestra quién registró, devolvió o anuló cada préstamo y pago, con fecha y hora. Se puede filtrar por usuario, operación y fechas, con paginado en SQL.
+
 ---
 
 ## 5. Evidencias de requerimientos mínimos
@@ -114,8 +118,8 @@ Si todo se cumple, el préstamo y el cambio de estado del ejemplar a `Prestado` 
 
 | # | Requerimiento mínimo | Estado | Enlace al código | Evidencia |
 |---|---|---|---|---|
-| 1 | **6+ tablas y relaciones 1:N y N:M** (12 tablas; N:M Libro–Género; Préstamo depende de Afiliado y Ejemplar) | ✅ Cumplido | [`Models/`](src/Models) · [`Repositories/`](src/Repositories) · [`database/biblioteca_db.sql`](database/biblioteca_db.sql) | DER en [`docs/der.png`](docs/der.png) |
-| 2 | **Login, roles y avatar** (cookies + claims; todo el sitio exige sesión; policy `Administrador` con `[Authorize(Policy = UsuarioActual.PolicyAdministrador)]`; avatar en perfil y alta de usuario) | ✅ Cumplido | [`Program.cs` (autenticación)](src/Program.cs#L17) · [`Program.cs` (sesión obligatoria y policy)](src/Program.cs#L69) · [`UsuariosController.Login`](src/Controllers/UsuariosController.cs#L55) · [`UsuariosController.ContraseniaValida`](src/Controllers/UsuariosController.cs#L321) · [`UsuariosController.IniciarSesionAsync`](src/Controllers/UsuariosController.cs#L328) · [`UsuarioActual.CrearClaims` (claims)](src/Helpers/UsuarioActual.cs#L19) · [`UsuariosController.Perfil` (avatar)](src/Controllers/UsuariosController.cs#L123) · [`RepositorioUsuario.ObtenerActivoPorLogin`](src/Repositories/RepositorioUsuario.cs#L11) · [`Helpers/UsuarioActual.cs`](src/Helpers/UsuarioActual.cs) · [`LibrosController.Delete` (solo admin)](src/Controllers/LibrosController.cs#L171) · [`Views/Usuarios/Login.cshtml`](src/Views/Usuarios/Login.cshtml) | Captura de pantalla de perfil con avatar en [`docs/evidencia_avatar.png`](docs/evidencia_avatar.png) |
+| 1 | **6+ tablas y relaciones 1:N y N:M** (12 tablas; N:M Libro–Género; Préstamo depende de Afiliado y Ejemplar) | ✅ Cumplido | [`Models/`](src/Models) · [`Repositories/`](src/Repositories) · [`database/biblioteca_db.sql`](database/biblioteca_db.sql) | DER en [`docs/der_final.png`](docs/der_final.png) |
+| 2 | **Login, roles y avatar** (cookies + claims; todo el sitio exige sesión; policy `Administrador` con `[Authorize(Policy = UsuarioActual.PolicyAdministrador)]`; avatar en perfil y alta de usuario) | ✅ Cumplido | [`Program.cs` (autenticación)](src/Program.cs#L17) · [`Program.cs` (sesión obligatoria y policy)](src/Program.cs#L68) · [`UsuariosController.Login`](src/Controllers/UsuariosController.cs#L55) · [`UsuariosController.ContraseniaValida`](src/Controllers/UsuariosController.cs#L321) · [`UsuariosController.IniciarSesionAsync`](src/Controllers/UsuariosController.cs#L328) · [`UsuarioActual.CrearClaims` (claims)](src/Helpers/UsuarioActual.cs#L19) · [`UsuariosController.Perfil` (avatar)](src/Controllers/UsuariosController.cs#L123) · [`RepositorioUsuario.ObtenerActivoPorLogin`](src/Repositories/RepositorioUsuario.cs#L11) · [`Helpers/UsuarioActual.cs`](src/Helpers/UsuarioActual.cs) · [`LibrosController.Delete` (solo admin)](src/Controllers/LibrosController.cs#L171) · [`Views/Usuarios/Login.cshtml`](src/Views/Usuarios/Login.cshtml) | Captura de pantalla de perfil con avatar en [`docs/evidencia_avatar.png`](docs/evidencia_avatar.png) |
 | 3 | **Manejo de archivos** (portadas de libros, fotos de autores, avatares; extensión y tamaño validados) | ✅ Cumplido | [`Archivos.GuardarImagenAsync`](src/Helpers/Archivos.cs#L28) · [`Archivos.ValidarImagen`](src/Helpers/Archivos.cs#L11) · [`ImagenValidaAttribute`](src/Helpers/ImagenValidaAttribute.cs#L6) · [`LibrosController.Create` (portada)](src/Controllers/LibrosController.cs#L86) · [`AutoresController.Create` (foto)](src/Controllers/AutoresController.cs#L59) · [`UsuariosController.Create` (avatar)](src/Controllers/UsuariosController.cs#L303) · [`Views/Libros/Create.cshtml`](src/Views/Libros/Create.cshtml) | GIF mostrando subida en [`docs/evidencia_archivos.gif`](docs/evidencia_archivos.gif) |
 | 4 | **ABM con Vue + AJAX** (Préstamos: alta, listado, devolución y anulación sin recargar) | ✅ Cumplido | [`Views/Prestamos/Index.cshtml`](src/Views/Prestamos/Index.cshtml) · [`wwwroot/js/prestamos.js`](src/wwwroot/js/prestamos.js) · [`PrestamosController.cs`](src/Controllers/PrestamosController.cs) | GIF del ABM dinámico en [`docs/evidencia_vue.gif`](docs/evidencia_vue.gif) |
 | 5 | **Paginado por servidor** (`LIMIT/OFFSET` en SQL; se pide solo la página actual) | ✅ Cumplido | [`RepositorioPrestamo.ObtenerPaginado`](src/Repositories/RepositorioPrestamo.cs#L32) · [`RepositorioPago.ObtenerPaginado`](src/Repositories/RepositorioPago.cs#L11) · [`RepositorioAfiliado.ObtenerPaginado`](src/Repositories/RepositorioAfiliado.cs#L19) · [`RepositorioLibro.ObtenerPaginado`](src/Repositories/RepositorioLibro.cs#L25) · [`Paginacion.CargarPaginado`](src/Helpers/Paginacion.cs#L8) · [`Views/Shared/_Paginacion.cshtml`](src/Views/Shared/_Paginacion.cshtml) | Capturas del inspector de red enviando pagina=1 y pagina=2 en [`docs/evidencia_paginado1.png`](docs/evidencia_paginado1.png) y [`docs/evidencia_paginado2.png`](docs/evidencia_paginado2.png)|
@@ -210,7 +214,7 @@ El token dura 60 minutos; la clave, el emisor y la duración están en la secci�
 
 **Préstamos**
 - Préstamos y devoluciones con Vue, transacciones y multa automática.
-- Auditoría de quién crea y anula pagos y préstamos.
+- Vista de **auditoría** para el administrador: quién registró, devolvió o anuló cada préstamo y pago, con fecha, hora y filtros.
 
 **Usuarios, roles y seguridad**
 - El empleado ve todo menos Usuarios y solo edita su propio perfil; el administrador gestiona usuarios (crear, editar, cambiar el rol, dar de baja y reactivar).
@@ -237,4 +241,3 @@ El token dura 60 minutos; la clave, el emisor y la duración están en la secci�
 - Renovar un préstamo (crear uno nuevo para el mismo afiliado y ejemplar).
 - Límite de préstamos simultáneos por afiliado.
 - Informes: libros más prestados en los últimos X días, préstamos que vencen en X días, préstamos vencidos, afiliados sancionados.
-- Vista de auditoría para el administrador (quién cargó o anuló cada operación).
