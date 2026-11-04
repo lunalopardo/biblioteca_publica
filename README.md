@@ -42,16 +42,16 @@ Una aplicación web interna, usada solo por empleados y administradores, que cen
 | SPA / AJAX | **Vue 3** (por CDN) + `fetch` con JSON |
 | Íconos | Material Symbols |
 | Seguridad | Autenticación por cookies, roles, tokens antiforgery, contraseñas encriptadas |
-| API | (falta) Web API REST con JWT |
+| API | Web API REST con **JWT** (`Microsoft.AspNetCore.Authentication.JwtBearer`) |
 
 ---
 
 ## 3. Modelo de datos
 
-![`/docs/der.png`](docs/der.png)
+![`/docs/der_final.png`](docs/der_final.png)
 
 
-### Tablas (13)
+### Tablas (12)
 
 | Tabla | Descripción |
 |---|---|
@@ -104,7 +104,7 @@ Si todo se cumple, el préstamo y el cambio de estado del ejemplar a `Prestado` 
 ### Devoluciones y multas
 
 - Al devolver, se registra la fecha real y el ejemplar vuelve a `Disponible`.
-- Si la devolución es posterior a la fecha pactada, se genera **automáticamente un pago de tipo `Multa`** asociado al préstamo ($100 por día de atraso, configurable en `PrestamosController`).
+- Si la devolución es posterior a la fecha pactada, se genera **automáticamente un pago de tipo `Multa`** asociado al préstamo ($100 por día de atraso, configurable en `ServicioPrestamo`).
 - Un préstamo cargado por error se puede **anular** mientras no esté devuelto; el ejemplar queda disponible otra vez.
 
 ---
@@ -114,13 +114,13 @@ Si todo se cumple, el préstamo y el cambio de estado del ejemplar a `Prestado` 
 
 | # | Requerimiento mínimo | Estado | Enlace al código | Evidencia |
 |---|---|---|---|---|
-| 1 | **6+ tablas y relaciones 1:N y N:M** (13 tablas; N:M Libro–Género; Préstamo depende de Afiliado y Ejemplar) | ✅ Cumplido | [`Models/`](src/Models) · [`Repositories/`](src/Repositories) · [`database/biblioteca_db.sql`](database/biblioteca_db.sql) | DER en [`docs/der.png`](docs/der.png) |
-| 2 | **Login, roles y avatar** (cookies + claims; todo el sitio exige sesión; policy `Administrador` con `[Authorize(Policy = UsuarioActual.PolicyAdministrador)]`; avatar en perfil y alta de usuario) | ✅ Cumplido | [`Program.cs` (autenticación)](src/Program.cs#L10) · [`Program.cs` (sesión obligatoria y policy)](src/Program.cs#L18) · [`UsuariosController.Login`](src/Controllers/UsuariosController.cs#L55) · [`UsuariosController.ContraseniaValida`](src/Controllers/UsuariosController.cs#L321) · [`UsuariosController.IniciarSesionAsync` (claims)](src/Controllers/UsuariosController.cs#L328) · [`UsuariosController.Perfil` (avatar)](src/Controllers/UsuariosController.cs#L123) · [`RepositorioUsuario.ObtenerActivoPorLogin`](src/Repositories/RepositorioUsuario.cs#L11) · [`Helpers/UsuarioActual.cs`](src/Helpers/UsuarioActual.cs) · [`LibrosController.Delete` (solo admin)](src/Controllers/LibrosController.cs#L171) · [`Views/Usuarios/Login.cshtml`](src/Views/Usuarios/Login.cshtml) | Captura de pantalla de perfil con avatar en [`docs/evidencia_avatar.png`](docs/evidencia_avatar.png) |
+| 1 | **6+ tablas y relaciones 1:N y N:M** (12 tablas; N:M Libro–Género; Préstamo depende de Afiliado y Ejemplar) | ✅ Cumplido | [`Models/`](src/Models) · [`Repositories/`](src/Repositories) · [`database/biblioteca_db.sql`](database/biblioteca_db.sql) | DER en [`docs/der.png`](docs/der.png) |
+| 2 | **Login, roles y avatar** (cookies + claims; todo el sitio exige sesión; policy `Administrador` con `[Authorize(Policy = UsuarioActual.PolicyAdministrador)]`; avatar en perfil y alta de usuario) | ✅ Cumplido | [`Program.cs` (autenticación)](src/Program.cs#L17) · [`Program.cs` (sesión obligatoria y policy)](src/Program.cs#L69) · [`UsuariosController.Login`](src/Controllers/UsuariosController.cs#L55) · [`UsuariosController.ContraseniaValida`](src/Controllers/UsuariosController.cs#L321) · [`UsuariosController.IniciarSesionAsync`](src/Controllers/UsuariosController.cs#L328) · [`UsuarioActual.CrearClaims` (claims)](src/Helpers/UsuarioActual.cs#L19) · [`UsuariosController.Perfil` (avatar)](src/Controllers/UsuariosController.cs#L123) · [`RepositorioUsuario.ObtenerActivoPorLogin`](src/Repositories/RepositorioUsuario.cs#L11) · [`Helpers/UsuarioActual.cs`](src/Helpers/UsuarioActual.cs) · [`LibrosController.Delete` (solo admin)](src/Controllers/LibrosController.cs#L171) · [`Views/Usuarios/Login.cshtml`](src/Views/Usuarios/Login.cshtml) | Captura de pantalla de perfil con avatar en [`docs/evidencia_avatar.png`](docs/evidencia_avatar.png) |
 | 3 | **Manejo de archivos** (portadas de libros, fotos de autores, avatares; extensión y tamaño validados) | ✅ Cumplido | [`Archivos.GuardarImagenAsync`](src/Helpers/Archivos.cs#L28) · [`Archivos.ValidarImagen`](src/Helpers/Archivos.cs#L11) · [`ImagenValidaAttribute`](src/Helpers/ImagenValidaAttribute.cs#L6) · [`LibrosController.Create` (portada)](src/Controllers/LibrosController.cs#L86) · [`AutoresController.Create` (foto)](src/Controllers/AutoresController.cs#L59) · [`UsuariosController.Create` (avatar)](src/Controllers/UsuariosController.cs#L303) · [`Views/Libros/Create.cshtml`](src/Views/Libros/Create.cshtml) | GIF mostrando subida en [`docs/evidencia_archivos.gif`](docs/evidencia_archivos.gif) |
 | 4 | **ABM con Vue + AJAX** (Préstamos: alta, listado, devolución y anulación sin recargar) | ✅ Cumplido | [`Views/Prestamos/Index.cshtml`](src/Views/Prestamos/Index.cshtml) · [`wwwroot/js/prestamos.js`](src/wwwroot/js/prestamos.js) · [`PrestamosController.cs`](src/Controllers/PrestamosController.cs) | GIF del ABM dinámico en [`docs/evidencia_vue.gif`](docs/evidencia_vue.gif) |
-| 5 | **Paginado por servidor** (`LIMIT/OFFSET` en SQL; se pide solo la página actual) | ✅ Cumplido | [`RepositorioPrestamo.ObtenerPaginado`](src/Repositories/RepositorioPrestamo.cs#L30) · [`RepositorioPago.ObtenerPaginado`](src/Repositories/RepositorioPago.cs#L11) · [`RepositorioAfiliado.ObtenerPaginado`](src/Repositories/RepositorioAfiliado.cs#L11) · [`RepositorioLibro.ObtenerPaginado`](src/Repositories/RepositorioLibro.cs#L25) · [`Paginacion.CargarPaginado`](src/Helpers/Paginacion.cs#L8) · [`Views/Shared/_Paginacion.cshtml`](src/Views/Shared/_Paginacion.cshtml) | Capturas del inspector de red enviando pagina=1 y pagina=2 en [`docs/evidencia_paginado1.png`](docs/evidencia_paginado1.png) y [`docs/evidencia_paginado2.png`](docs/evidencia_paginado2.png)|
-| 6 | **Selección asíncrona de entidades relacionadas** (afiliado y ejemplar al crear un préstamo; afiliado en la nueva suscripción; autor y editorial del libro con Select2; todo filtrado y limitado en SQL) | ✅ Cumplido | [`AfiliadosController.BuscarAsincrona`](src/Controllers/AfiliadosController.cs#L115) · [`RepositorioAfiliado.ObtenerParaSelect`](src/Repositories/RepositorioAfiliado.cs#L154) · [`PrestamosController.BuscarEjemplares`](src/Controllers/PrestamosController.cs#L59) · [`AutoresController.Buscar`](src/Controllers/AutoresController.cs#L145) · [`EditorialesController.Buscar`](src/Controllers/EditorialesController.cs#L108) · [`wwwroot/js/prestamos.js`](src/wwwroot/js/prestamos.js) · [`wwwroot/js/suscripciones-form.js`](src/wwwroot/js/suscripciones-form.js) · [`wwwroot/js/libros-form.js`](src/wwwroot/js/libros-form.js) | GIF buscando entidades en desplegable en [`docs/evidencia_busquedaajax.gif`](docs/evidencia_busquedaajax.gif) |
-| 7 | **Web API REST con JWT** | 🟡 Completar | Falta completar | Captura de Postman con Bearer Token y colección |
+| 5 | **Paginado por servidor** (`LIMIT/OFFSET` en SQL; se pide solo la página actual) | ✅ Cumplido | [`RepositorioPrestamo.ObtenerPaginado`](src/Repositories/RepositorioPrestamo.cs#L32) · [`RepositorioPago.ObtenerPaginado`](src/Repositories/RepositorioPago.cs#L11) · [`RepositorioAfiliado.ObtenerPaginado`](src/Repositories/RepositorioAfiliado.cs#L19) · [`RepositorioLibro.ObtenerPaginado`](src/Repositories/RepositorioLibro.cs#L25) · [`Paginacion.CargarPaginado`](src/Helpers/Paginacion.cs#L8) · [`Views/Shared/_Paginacion.cshtml`](src/Views/Shared/_Paginacion.cshtml) | Capturas del inspector de red enviando pagina=1 y pagina=2 en [`docs/evidencia_paginado1.png`](docs/evidencia_paginado1.png) y [`docs/evidencia_paginado2.png`](docs/evidencia_paginado2.png)|
+| 6 | **Selección asíncrona de entidades relacionadas** (afiliado y ejemplar al crear un préstamo; afiliado en la nueva suscripción; autor y editorial del libro con Select2; todo filtrado y limitado en SQL) | ✅ Cumplido | [`AfiliadosController.BuscarAsincrona`](src/Controllers/AfiliadosController.cs#L114) · [`RepositorioAfiliado.ObtenerParaSelect`](src/Repositories/RepositorioAfiliado.cs#L159) · [`PrestamosController.BuscarEjemplares`](src/Controllers/PrestamosController.cs#L69) · [`AutoresController.Buscar`](src/Controllers/AutoresController.cs#L145) · [`EditorialesController.Buscar`](src/Controllers/EditorialesController.cs#L109) · [`wwwroot/js/prestamos.js`](src/wwwroot/js/prestamos.js) · [`wwwroot/js/suscripciones-form.js`](src/wwwroot/js/suscripciones-form.js) · [`wwwroot/js/libros-form.js`](src/wwwroot/js/libros-form.js) | GIF buscando entidades en desplegable en [`docs/evidencia_busquedaajax.gif`](docs/evidencia_busquedaajax.gif) |
+| 7 | **Web API REST con JWT** (login que emite el token; libros, afiliados y préstamos con `Authorization: Bearer`; 401 sin token o vencido, 403 por rol; mismas reglas que la web vía `ServicioPrestamo`) | ✅ Cumplido | [`Program.cs` (AddJwtBearer)](src/Program.cs#L35) · [`ServicioToken.Generar`](src/Services/ServicioToken.cs#L32) · [`AuthApiController.Login`](src/Controllers/Api/AuthApiController.cs#L32) · [`LibrosApiController`](src/Controllers/Api/LibrosApiController.cs) · [`AfiliadosApiController`](src/Controllers/Api/AfiliadosApiController.cs) · [`PrestamosApiController`](src/Controllers/Api/PrestamosApiController.cs) · [`ServicioPrestamo`](src/Services/ServicioPrestamo.cs) | Colección de pruebas en [`docs/postman/BibliotecaPublica.postman_collection.json`](docs/postman/BibliotecaPublica.postman_collection.json) · Captura del pedido con Bearer Token en [`docs/evidencia_api.png`](docs/evidencia_api.png) · GIF de la colección completa en [`docs/evidencia_api.gif`](docs/evidencia_api.gif) |
 
 ---
 
@@ -147,7 +147,14 @@ Si todo se cumple, el préstamo y el cambio de estado del ejemplar a `Prestado` 
    ```
 5. Abrir la dirección que indique la consola.
 
----
+### Usuarios de prueba
+
+| Rol | Usuario | Contraseña |
+|---|---|---|
+| Administrador | admin | admin |
+| Empleado | empleado | empleado |
+
+
 
 ### Imágenes de prueba
 
@@ -155,12 +162,32 @@ Las imágenes subidas (portadas, fotos de autores y avatares) se guardan en `src
 
 Esa carpeta **se incluye a propósito en el repositorio**: los datos de prueba de la base apuntan a esos archivos, así que sin ellos las imágenes aparecerían rotas. Al clonar el repositorio e importar la base, las imágenes se ven sin hacer nada más.
 
-### Usuarios de prueba
+### Probar la Web API
 
-| Rol | Usuario | Contraseña |
+La aplicación web no consume la API (sus pantallas usan la cookie de sesión), así que se prueba con la colección [`docs/postman/BibliotecaPublica.postman_collection.json`](docs/postman/BibliotecaPublica.postman_collection.json) (formato Postman v2.1).
+
+1. Con la aplicación corriendo, importar la colección. La variable `baseUrl` apunta a `http://localhost:5288` (modificar si se corre en otro puerto).
+2. Ejecutar **Autenticación → Login administrador**: devuelve el token y lo guarda en la variable `token`.
+3. El resto de los pedidos mandan `Authorization: Bearer {{token}}`. La carpeta **Seguridad** muestra los casos 401 (sin token o token inválido), 403 (empleado dando de baja un libro) y 404.
+
+> ! **Registrar préstamo** solo da 201 si el afiliado tiene la suscripción paga y sin sanción, y el ejemplar está disponible. Antes de ejecutarlo, conviene revisar las variables `idAfiliado` e `idEjemplar` de la colección.
+
+| Método | Ruta | Descripción |
 |---|---|---|
-| Administrador | admin | admin |
-| Empleado | empleado | empleado |
+| POST | `/api/auth/login` | Devuelve el JWT (`{ "email": "admin", "password": "admin" }`) |
+| GET | `/api/libros?buscar=&pagina=1` | Catálogo paginado con ejemplares disponibles |
+| GET | `/api/libros/{id}` | Detalle de un libro |
+| DELETE | `/api/libros/{id}` | Baja de un libro (solo administrador) |
+| GET | `/api/afiliados?buscar=&pagina=1` | Afiliados paginados |
+| GET | `/api/afiliados/{id}` | Detalle de un afiliado |
+| GET | `/api/prestamos?buscar=&idAfiliado=&pagina=1` | Préstamos paginados, opcionalmente de un afiliado |
+| GET | `/api/prestamos/{id}` | Detalle de un préstamo |
+| POST | `/api/prestamos` | Registrar préstamo (`idAfiliado`, `idEjemplar`, `fechaDevolucionPactada`) |
+| POST | `/api/prestamos/{id}/devolucion` | Registrar devolución (genera la multa si hay atraso) |
+| DELETE | `/api/prestamos/{id}` | Anular un préstamo no devuelto |
+
+El token dura 60 minutos; la clave, el emisor y la duración están en la sección `Jwt` de `appsettings.json`.
+
 
 ---
 
@@ -193,6 +220,13 @@ Esa carpeta **se incluye a propósito en el repositorio**: los datos de prueba d
 - Contraseñas hasheadas en el controlador; tokens antiforgery en todos los formularios y llamadas AJAX.
 - Las llamadas AJAX sin sesión o sin permiso reciben 401/403 en JSON.
 - Imágenes validadas por extensión (`.jpg`, `.jpeg`, `.png`, `.webp`) y tamaño (5 MB).
+
+**Web API**
+- Endpoints REST de libros, afiliados y préstamos autenticados con **JWT**, separados de la cookie de la web.
+- Login de la API con los mismos usuarios y contraseñas hasheadas; el token lleva los mismos claims que la cookie (id, rol).
+- 401 y 403 en JSON (token faltante, inválido o vencido; rol sin permiso).
+- Las reglas de préstamos (sanción, suscripción, multa) están en `ServicioPrestamo` y las usan la página de Vue y la API.
+- Colección de pruebas en `docs/postman/`.
 
 **Código**
 - Helpers compartidos: `Archivos` (imágenes), `Paginacion` y `UsuarioActual`.
