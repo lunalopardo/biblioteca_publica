@@ -49,16 +49,19 @@ public class PrestamosController : Controller
         return View();
     }
 
-    // GET: /Prestamos/Listar?buscar=...&idAfiliado=3&pagina=1
+    // GET: /Prestamos/Listar?buscar=...&idAfiliado=3&vencimiento=vencidos&pagina=1
+    // vencimiento para el filtro
     [HttpGet]
-    public IActionResult Listar(string? buscar, int? idAfiliado, int pagina = 1)
+    public IActionResult Listar(string? buscar, int? idAfiliado, string? vencimiento, int pagina = 1)
     {
         pagina = Math.Max(1, pagina);
-        int total = _repositorioPrestamo.ObtenerCantidad(buscar, idAfiliado);
+        bool soloVencidos = vencimiento == "vencidos";
+        int? venceEnDias = vencimiento is "5" or "10" or "15" ? int.Parse(vencimiento) : null;
+        int total = _repositorioPrestamo.ObtenerCantidad(buscar, idAfiliado, soloVencidos, venceEnDias);
 
         return Json(new
         {
-            items = _repositorioPrestamo.ObtenerPaginado(buscar, idAfiliado, pagina, TamPagina),
+            items = _repositorioPrestamo.ObtenerPaginado(buscar, idAfiliado, pagina, TamPagina, soloVencidos, venceEnDias),
             pagina,
             totalPaginas = Paginacion.TotalPaginas(total, TamPagina)
         });

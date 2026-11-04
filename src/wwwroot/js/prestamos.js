@@ -31,6 +31,7 @@ createApp({
         const prestamos = ref([]);
         const cargando = ref(true);
         const buscar = ref('');
+        const vencimiento = ref('');
         const pagina = ref(1);
         const totalPaginas = ref(1);
 
@@ -69,7 +70,7 @@ createApp({
             cargando.value = true;
             try {
                 const data = await request(
-                    `/Prestamos/Listar?buscar=${encodeURIComponent(buscar.value)}&idAfiliado=${idAfiliado}&pagina=${pagina.value}`);
+                    `/Prestamos/Listar?buscar=${encodeURIComponent(buscar.value)}&idAfiliado=${idAfiliado}&vencimiento=${vencimiento.value}&pagina=${pagina.value}`);
                 prestamos.value = data.items;
                 totalPaginas.value = data.totalPaginas;
             } catch (err) {
@@ -80,7 +81,7 @@ createApp({
         };
 
         const buscarPrestamos = () => { pagina.value = 1; cargarPrestamos(); };
-        const limpiarBusqueda = () => { buscar.value = ''; buscarPrestamos(); };
+        const limpiarBusqueda = () => { buscar.value = ''; vencimiento.value = ''; buscarPrestamos(); };
         const irAPagina = (n) => {
             if (n < 1 || n > totalPaginas.value) return;
             pagina.value = n;
@@ -181,7 +182,7 @@ createApp({
         onMounted(cargarPrestamos);
 
         return {
-            prestamos, cargando, buscar, pagina, totalPaginas,
+            prestamos, cargando, buscar, vencimiento, pagina, totalPaginas,
             mensaje, mensajeEsError,
             mostrarModal, guardando, errorModal, form,
             busquedaAfiliado, busquedaEjemplar, afiliados, ejemplares,

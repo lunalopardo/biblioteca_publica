@@ -27,15 +27,22 @@ public class RepositorioPrestamo : RepositorioBase
                OR a.nombre LIKE @buscar OR a.apellido LIKE @buscar
                OR CONCAT(a.nombre, ' ', a.apellido) LIKE @buscar
                OR l.titulo LIKE @buscar
-               OR e.codigo_inventario LIKE @buscar) ";
+               OR e.codigo_inventario LIKE @buscar)
+          AND (@soloVencidos = 0
+               OR (pr.fecha_devolucion_real IS NULL AND pr.fecha_devolucion_pactada < CURDATE()))
+          AND (@venceEnDias IS NULL
+               OR (pr.fecha_devolucion_real IS NULL
+                   AND pr.fecha_devolucion_pactada BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL @venceEnDias DAY))) ";
 
-    public List<Prestamo> ObtenerPaginado(string? buscar = null, int? idAfiliado = null, int paginaNro = 1, int tamPagina = 10)
+    public List<Prestamo> ObtenerPaginado(string? buscar = null, int? idAfiliado = null, int paginaNro = 1, int tamPagina = 10,
+        bool soloVencidos = false, int? venceEnDias = null)
     {
         int offset = Math.Max(0, (paginaNro - 1) * tamPagina);
         var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
 
         const string query = SelectBase + FromConJoins + Filtro + @"
-            ORDER BY (pr.fecha_devolucion_real IS NULL) DESC,
+            ORDER BY CASE WHEN @soloVencidos = 1 OR @venceEnDias IS NOT NULL THEN pr.fecha_devolucion_pactada END,
+                     (pr.fecha_devolucion_real IS NULL) DESC,
                      (pr.fecha_devolucion_real IS NULL AND pr.fecha_devolucion_pactada < CURDATE()) DESC,
                      pr.id DESC
             LIMIT @limit OFFSET @offset";
@@ -44,6 +51,8 @@ public class RepositorioPrestamo : RepositorioBase
         using MySqlCommand command = new(query, connection);
         command.Parameters.AddWithValue("@buscar", paramBuscar);
         command.Parameters.AddWithValue("@idAfiliado", (object?)idAfiliado ?? DBNull.Value);
+        command.Parameters.AddWithValue("@soloVencidos", soloVencidos);
+        command.Parameters.AddWithValue("@venceEnDias", (object?)venceEnDias ?? DBNull.Value);
         command.Parameters.AddWithValue("@limit", tamPagina);
         command.Parameters.AddWithValue("@offset", offset);
 
@@ -58,7 +67,7 @@ public class RepositorioPrestamo : RepositorioBase
         return listado;
     }
 
-    public int ObtenerCantidad(string? buscar = null, int? idAfiliado = null)
+    public int ObtenerCantidad(string? buscar = null, int? idAfiliado = null, bool soloVencidos = false, int? venceEnDias = null)
     {
         var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
 
@@ -68,6 +77,8 @@ public class RepositorioPrestamo : RepositorioBase
         using MySqlCommand command = new(query, connection);
         command.Parameters.AddWithValue("@buscar", paramBuscar);
         command.Parameters.AddWithValue("@idAfiliado", (object?)idAfiliado ?? DBNull.Value);
+        command.Parameters.AddWithValue("@soloVencidos", soloVencidos);
+        command.Parameters.AddWithValue("@venceEnDias", (object?)venceEnDias ?? DBNull.Value);
 
         connection.Open();
         return Convert.ToInt32(command.ExecuteScalar());
