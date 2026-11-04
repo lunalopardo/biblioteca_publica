@@ -55,6 +55,8 @@ public class Libro
     [Display(Name = "Géneros")]
     public List<int> GenerosSeleccionados { get; set; } = new();
 
+    public int CantidadPrestamos { get; set; }
+
     // Objetos mapeados mediante JOINs
     [ValidateNever] public Editorial? Editorial { get; set; }
     [ValidateNever] public Autor? Autor { get; set; }

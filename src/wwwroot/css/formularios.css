@@ -195,6 +195,15 @@ textarea.form-control {
   flex-shrink: 0;
 }
 
+.search-bar-filtros {
+  flex-wrap: wrap;
+}
+
+.search-bar-filtros .form-control,
+.search-bar-filtros .select2-container {
+  flex: 1 1 11rem;
+}
+
 /* Tablas */
 .page-container:has(.table-custom),
 .form-card:has(.table-custom),
@@ -991,7 +1000,8 @@ textarea.form-control {
   }
 
   .search-bar .form-control,
-  .form-search-bar .form-control {
+  .form-search-bar .form-control,
+  .search-bar-filtros .select2-container {
     flex-basis: 100%;
   }
 

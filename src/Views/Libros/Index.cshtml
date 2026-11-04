@@ -2,6 +2,21 @@
 @{
     ViewData["Title"] = "Listado de Libros";
     string filtroActual = ViewData["FiltroActual"] as string ?? "";
+
+    var autorElegido = ViewBag.Autor as Autor;
+    var idiomas = ViewBag.Idiomas as List<string> ?? new List<string>();
+    var periodos = ViewBag.Periodos as int[] ?? Array.Empty<int>();
+    int? idAutor = ViewBag.IdAutor;
+    string? idioma = ViewBag.Idioma;
+    int? dias = ViewBag.Dias;
+    bool hayFiltros = !string.IsNullOrEmpty(filtroActual) || idAutor.HasValue
+                      || !string.IsNullOrEmpty(idioma) || dias.HasValue;
+
+    var ruta = new Dictionary<string, string>();
+    if (idAutor.HasValue) ruta["idAutor"] = idAutor.Value.ToString();
+    if (!string.IsNullOrEmpty(idioma)) ruta["idioma"] = idioma;
+    if (dias.HasValue) ruta["dias"] = dias.Value.ToString();
+    ViewData["RutaPaginado"] = ruta;
 }
 
 <div class="page-container">
@@ -20,16 +35,40 @@
 
     <partial name="_Alertas" />
 
-    <form asp-action="Index" method="get" class="search-bar">
+    <form asp-action="Index" method="get" class="search-bar search-bar-filtros">
         <input type="text" name="buscar" value="@filtroActual" class="form-control"
                placeholder="Buscar por título o autor..." />
+
+        <select id="filtroAutor" name="idAutor" class="form-control" aria-label="Autor">
+            <option value=""></option>
+            @if (autorElegido != null)
+            {
+                <option value="@autorElegido.Id" selected>@autorElegido.Apellido, @autorElegido.Nombre</option>
+            }
+        </select>
+
+        <select name="idioma" class="form-control" aria-label="Idioma">
+            <option value="">Todos los idiomas</option>
+            @foreach (var i in idiomas)
+            {
+                <option value="@i" selected="@(i == idioma)">@i</option>
+            }
+        </select>
+
+        <select name="dias" class="form-control" aria-label="Más prestados">
+            <option value="">Más prestados: todos</option>
+            @foreach (var p in periodos)
+            {
+                <option value="@p" selected="@(p == dias)">Más prestados: @p días</option>
+            }
+        </select>
 
         <button type="submit" class="btn btn-primary">
             <span class="material-symbols-outlined icon-inline">search</span>
             <span>Buscar</span>
         </button>
 
-        @if (!string.IsNullOrEmpty(filtroActual))
+        @if (hayFiltros)
         {
             <a asp-action="Index" class="btn btn-outline-secondary">Limpiar</a>
         }
@@ -47,6 +86,10 @@
                     <th>Año</th>
                     <th>Páginas</th>
                     <th class="text-center">Ejemplares</th>
+                    @if (dias.HasValue)
+                    {
+                        <th class="text-center">Préstamos (@dias días)</th>
+                    }
                     <th class="text-end">Acciones</th>
                 </tr>
             </thead>
@@ -54,7 +97,7 @@
                 @if (!Model.Any())
                 {
                     <tr>
-                        <td colspan="9" class="text-center py-4 text-muted">No se encontraron libros registrados.</td>
+                        <td colspan="@(dias.HasValue ? 10 : 9)" class="text-center py-4 text-muted">No se encontraron libros.</td>
                     </tr>
                 }
                 else
@@ -99,6 +142,10 @@
                                     @(libro.Ejemplares != null ? libro.Ejemplares.Count(e => e.Activo) : 0)
                                 </span>
                             </td>
+                            @if (dias.HasValue)
+                            {
+                                <td class="text-center fw-bold">@libro.CantidadPrestamos</td>
+                            }
                             <td class="actions-cell">
                                 <a asp-action="Details" asp-route-id="@libro.Id" class="btn-icon" title="Ver detalle">
                                     <span class="material-symbols-outlined">visibility</span>
@@ -144,6 +191,9 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/es.js"></script>
+    <script src="~/js/libros-filtros.js" asp-append-version="true"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var modalEliminar = document.getElementById('modalEliminar');

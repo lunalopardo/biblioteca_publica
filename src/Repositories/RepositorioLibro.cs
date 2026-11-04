@@ -13,32 +13,48 @@ public class RepositorioLibro : RepositorioBase
         _repositorioEjemplar = repositorioEjemplar;
     }
 
-    // SELECT común: lo usan ObtenerPaginado y ObtenerPorId
-    private const string SelectConAutor = @"
+    // Partes comunes: las usan ObtenerPaginado y ObtenerPorId
+    private const string ColumnasConAutor = @"
         SELECT l.*,
                a.id AS autor_id, a.nombre AS autor_nombre, a.apellido AS autor_apellido,
-               ed.id AS editorial_id, ed.nombre AS editorial_nombre
+               ed.id AS editorial_id, ed.nombre AS editorial_nombre ";
+
+    private const string FromConAutor = @"
         FROM Libro l
         INNER JOIN Autor a ON l.id_autor = a.id
         LEFT JOIN Editorial ed ON l.id_editorial = ed.id ";
 
-    public IList<Libro> ObtenerPaginado(string? buscar = null, int paginaNro = 1, int tamPagina = 10)
+    // Préstamos de un libro en los últimos @dias días (los anulados no cuentan)
+    private const string PrestamosEnPeriodo = @"
+        FROM prestamo pr
+        INNER JOIN ejemplar e ON pr.id_ejemplar = e.id
+        WHERE e.id_libro = l.id
+          AND pr.activo = 1
+          AND pr.fecha_prestamo >= DATE_SUB(CURDATE(), INTERVAL @dias DAY) ";
+
+    private const string Filtro = @"
+        WHERE l.activo = 1
+          AND (@buscar IS NULL OR l.titulo LIKE @buscar OR a.nombre LIKE @buscar OR a.apellido LIKE @buscar)
+          AND (@idAutor IS NULL OR l.id_autor = @idAutor)
+          AND (@idioma IS NULL OR l.idioma = @idioma)
+          AND (@dias IS NULL OR EXISTS(SELECT 1 " + PrestamosEnPeriodo + ")) ";
+
+    public IList<Libro> ObtenerPaginado(string? buscar = null, int paginaNro = 1, int tamPagina = 10,
+        int? idAutor = null, string? idioma = null, int? dias = null)
     {
         var listado = new List<Libro>();
         int offset = Math.Max(0, (paginaNro - 1) * tamPagina);
-        var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
 
-        const string query = SelectConAutor + @"
-            WHERE l.activo = 1
-              AND (@buscar IS NULL OR l.titulo LIKE @buscar OR a.nombre LIKE @buscar OR a.apellido LIKE @buscar)
-            ORDER BY l.id DESC
+        const string query = ColumnasConAutor + ", (SELECT COUNT(*) " + PrestamosEnPeriodo + ") AS cantidad_prestamos "
+            + FromConAutor + Filtro + @"
+            ORDER BY CASE WHEN @dias IS NULL THEN 0 ELSE cantidad_prestamos END DESC, l.id DESC
             LIMIT @limit OFFSET @offset";
 
         // Bloque using: la conexión se cierra antes de cargar géneros y ejemplares de cada libro
         using (MySqlConnection connection = new(connectionString))
         {
             using MySqlCommand command = new(query, connection);
-            command.Parameters.AddWithValue("@buscar", paramBuscar);
+            CargarFiltros(command, buscar, idAutor, idioma, dias);
             command.Parameters.AddWithValue("@limit", tamPagina);
             command.Parameters.AddWithValue("@offset", offset);
 
@@ -46,7 +62,9 @@ public class RepositorioLibro : RepositorioBase
             using MySqlDataReader reader = command.ExecuteReader();
             while (reader.Read())
             {
-                listado.Add(ParseLibroConAutor(reader));
+                var libro = ParseLibroConAutor(reader);
+                libro.CantidadPrestamos = Convert.ToInt32(reader["cantidad_prestamos"]);
+                listado.Add(libro);
             }
         }
 
@@ -58,19 +76,13 @@ public class RepositorioLibro : RepositorioBase
         return listado;
     }
 
-    public int ObtenerCantidad(string? buscar = null)
+    public int ObtenerCantidad(string? buscar = null, int? idAutor = null, string? idioma = null, int? dias = null)
     {
-        var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
-
-        const string query = @"SELECT COUNT(l.id)
-                               FROM Libro l
-                               INNER JOIN Autor a ON l.id_autor = a.id
-                               WHERE l.activo = 1
-                                 AND (@buscar IS NULL OR l.titulo LIKE @buscar OR a.nombre LIKE @buscar OR a.apellido LIKE @buscar)";
+        const string query = "SELECT COUNT(l.id) " + FromConAutor + Filtro;
 
         using MySqlConnection connection = new(connectionString);
         using MySqlCommand command = new(query, connection);
-        command.Parameters.AddWithValue("@buscar", paramBuscar);
+        CargarFiltros(command, buscar, idAutor, idioma, dias);
 
         connection.Open();
         return Convert.ToInt32(command.ExecuteScalar());
@@ -80,7 +92,7 @@ public class RepositorioLibro : RepositorioBase
     {
         Libro? libro;
 
-        const string query = SelectConAutor + " WHERE l.id = @id AND l.activo = 1";
+        const string query = ColumnasConAutor + FromConAutor + " WHERE l.id = @id AND l.activo = 1";
 
         using (MySqlConnection connection = new(connectionString))
         {
@@ -97,6 +109,27 @@ public class RepositorioLibro : RepositorioBase
         libro.Generos = ObtenerGenerosDeLibro(libro.Id);
         libro.Ejemplares = _repositorioEjemplar.ObtenerPorLibro(libro.Id);
         return libro;
+    }
+
+    // Idiomas cargados en el catálogo (para el filtro del listado)
+    public List<string> ObtenerIdiomas()
+    {
+        const string query = @"SELECT DISTINCT idioma FROM Libro
+                               WHERE activo = 1 AND idioma IS NOT NULL AND idioma <> ''
+                               ORDER BY idioma";
+
+        using MySqlConnection connection = new(connectionString);
+        using MySqlCommand command = new(query, connection);
+
+        connection.Open();
+        using MySqlDataReader reader = command.ExecuteReader();
+
+        var idiomas = new List<string>();
+        while (reader.Read())
+        {
+            idiomas.Add(reader.GetString("idioma"));
+        }
+        return idiomas;
     }
 
     public int Crear(Libro libro)
@@ -235,6 +268,14 @@ public class RepositorioLibro : RepositorioBase
 
         connection.Open();
         return Convert.ToInt32(command.ExecuteScalar()) > 0;
+    }
+
+    private static void CargarFiltros(MySqlCommand command, string? buscar, int? idAutor, string? idioma, int? dias)
+    {
+        command.Parameters.AddWithValue("@buscar", string.IsNullOrWhiteSpace(buscar) ? DBNull.Value : $"%{buscar.Trim()}%");
+        command.Parameters.AddWithValue("@idAutor", (object?)idAutor ?? DBNull.Value);
+        command.Parameters.AddWithValue("@idioma", string.IsNullOrWhiteSpace(idioma) ? DBNull.Value : idioma);
+        command.Parameters.AddWithValue("@dias", (object?)dias ?? DBNull.Value);
     }
 
     private static Libro ParseLibroConAutor(MySqlDataReader reader)

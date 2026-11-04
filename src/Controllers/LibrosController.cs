@@ -15,6 +15,7 @@ public class LibrosController : Controller
     private const int ResultadosExternosPorPagina = 10;
     private const int MaxPaginasExternas = 20;
     private const string CarpetaPortadas = "libros";
+    private static readonly int[] PeriodosMasPrestados = { 30, 60, 90, 365 };
 
     private readonly RepositorioLibro _repositorioLibro;
     private readonly RepositorioAutor _repositorioAutor;
@@ -57,11 +58,24 @@ public class LibrosController : Controller
     private static string Recortar(string texto, int maximo) =>
         texto.Length > maximo ? texto[..maximo] : texto;
 
-    // GET: /Libros
-    public IActionResult Index(string? buscar, int pagina = 1)
+    // GET: /Libros?buscar=...&idAutor=3&idioma=Español&dias=30
+    public IActionResult Index(string? buscar, int? idAutor, string? idioma, int? dias, int pagina = 1)
     {
-        var listado = _repositorioLibro.ObtenerPaginado(buscar, pagina, TamPagina);
-        this.CargarPaginado(buscar, pagina, _repositorioLibro.ObtenerCantidad(buscar), TamPagina);
+        if (dias.HasValue && !PeriodosMasPrestados.Contains(dias.Value))
+        {
+            dias = null;
+        }
+
+        var listado = _repositorioLibro.ObtenerPaginado(buscar, pagina, TamPagina, idAutor, idioma, dias);
+        this.CargarPaginado(buscar, pagina, _repositorioLibro.ObtenerCantidad(buscar, idAutor, idioma, dias), TamPagina);
+
+        // El autor se busca por AJAX (Select2)
+        ViewBag.Autor = idAutor.HasValue ? _repositorioAutor.ObtenerPorId(idAutor.Value) : null;
+        ViewBag.Idiomas = _repositorioLibro.ObtenerIdiomas();
+        ViewBag.Periodos = PeriodosMasPrestados;
+        ViewBag.IdAutor = idAutor;
+        ViewBag.Idioma = idioma;
+        ViewBag.Dias = dias;
 
         return View(listado);
     }
