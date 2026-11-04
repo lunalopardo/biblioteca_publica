@@ -1,6 +1,8 @@
 using BibliotecaPublica.Helpers;
 using BibliotecaPublica.Repositories;
 using BibliotecaPublica.Models;
+using BibliotecaPublica.Services;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -56,6 +58,7 @@ builder.Services.AddScoped<RepositorioEjemplar>();
 builder.Services.AddScoped<RepositorioSuscripcion>();
 builder.Services.AddScoped<RepositorioPago>();
 builder.Services.AddScoped<RepositorioPrestamo>();
+builder.Services.AddScoped<ServicioPrestamo>();
 
 var app = builder.Build();
 

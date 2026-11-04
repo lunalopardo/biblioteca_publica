@@ -14,4 +14,14 @@ public static class UsuarioActual
 
     public static bool EsAdministrador(this ClaimsPrincipal usuario) =>
         usuario.IsInRole(nameof(EnRoles.Administrador));
+
+    // Los mismos datos van en la cookie (páginas) y en el token JWT (Web API)
+    public static List<Claim> CrearClaims(Usuario usuario) => new()
+    {
+        new(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+        new(ClaimTypes.Name, usuario.Email),
+        new("FullName", $"{usuario.Nombre} {usuario.Apellido}"),
+        new(ClaimTypes.Role, usuario.RolNombre),
+        new("Avatar", usuario.Avatar ?? "")
+    };
 }

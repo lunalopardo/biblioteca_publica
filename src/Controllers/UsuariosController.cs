@@ -327,16 +327,8 @@ public class UsuariosController : Controller
     // Crea la cookie de sesión con los datos que usan la navbar y la autorización por rol
     private async Task IniciarSesionAsync(Usuario usuario)
     {
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
-            new(ClaimTypes.Name, usuario.Email),
-            new("FullName", $"{usuario.Nombre} {usuario.Apellido}"),
-            new(ClaimTypes.Role, usuario.RolNombre),
-            new("Avatar", usuario.Avatar ?? "")
-        };
-
-        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var claimsIdentity = new ClaimsIdentity(UsuarioActual.CrearClaims(usuario),
+                                                CookieAuthenticationDefaults.AuthenticationScheme);
 
         await HttpContext.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
