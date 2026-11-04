@@ -28,10 +28,13 @@ public class AutoresController : Controller
     }
 
     // GET: Autores (con paginado)
-    public IActionResult Index(string? buscar = null, int pagina = 1)
+    public IActionResult Index(string? buscar = null, int? idNacionalidad = null, int pagina = 1)
     {
-        var listado = _repositorioAutor.ObtenerPaginado(buscar, pagina, TamPagina);
-        this.CargarPaginado(buscar, pagina, _repositorioAutor.ObtenerCantidad(buscar), TamPagina);
+        var listado = _repositorioAutor.ObtenerPaginado(buscar, pagina, TamPagina, idNacionalidad);
+        this.CargarPaginado(buscar, pagina, _repositorioAutor.ObtenerCantidad(buscar, idNacionalidad), TamPagina);
+
+        ViewBag.Nacionalidades = _repositorioNacionalidad.ObtenerTodos();
+        ViewBag.IdNacionalidad = idNacionalidad;
 
         return View(listado);
     }

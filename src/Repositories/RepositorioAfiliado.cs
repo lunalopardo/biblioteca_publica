@@ -8,15 +8,17 @@ public class RepositorioAfiliado : RepositorioBase
     public RepositorioAfiliado(IConfiguration configuration) : base(configuration) { }
 
     // un afiliado está sancionado mientras tenga préstamos vencidos sin devolver (las multas se cobran al registrar la devolución)
-    private const string SancionCalculada = @"
+    private const string TieneVencidos = @"
         EXISTS(SELECT 1 FROM prestamo p
                WHERE p.id_afiliado = Afiliado.id
                  AND p.activo = 1
                  AND p.fecha_devolucion_real IS NULL
-                 AND p.fecha_devolucion_pactada < CURDATE()) AS sancion_calculada";
+                 AND p.fecha_devolucion_pactada < CURDATE())";
+
+    private const string SancionCalculada = TieneVencidos + " AS sancion_calculada";
 
     // Listado paginado con búsqueda general
-    public IList<Afiliado> ObtenerPaginado(string? buscar = null, int paginaNro = 1, int tamPagina = 5)
+    public IList<Afiliado> ObtenerPaginado(string? buscar = null, int paginaNro = 1, int tamPagina = 5, bool soloSancionados = false)
     {
         var listado = new List<Afiliado>();
         int offset = Math.Max(0, (paginaNro - 1) * tamPagina);
@@ -30,12 +32,14 @@ public class RepositorioAfiliado : RepositorioBase
               OR apellido LIKE @buscar
               OR CONCAT(nombre, ' ', apellido) LIKE @buscar
               OR email LIKE @buscar)
+              AND (@soloSancionados = 0 OR " + TieneVencidos + @")
             ORDER BY id
             LIMIT @limit OFFSET @offset";
 
         using MySqlConnection connection = new(connectionString);
         using MySqlCommand command = new(sql, connection);
         command.Parameters.AddWithValue("@buscar", paramBuscar);
+        command.Parameters.AddWithValue("@soloSancionados", soloSancionados);
         command.Parameters.AddWithValue("@limit", tamPagina);
         command.Parameters.AddWithValue("@offset", offset);
 
@@ -49,7 +53,7 @@ public class RepositorioAfiliado : RepositorioBase
     }
 
     // Obtener la cantidad total de registros activos filtrados (para la paginación)
-    public int ObtenerCantidad(string? buscar = null)
+    public int ObtenerCantidad(string? buscar = null, bool soloSancionados = false)
     {
         var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
 
@@ -60,11 +64,13 @@ public class RepositorioAfiliado : RepositorioBase
               AND (@buscar IS NULL OR nombre LIKE @buscar
               OR apellido LIKE @buscar
               OR CONCAT(nombre, ' ', apellido) LIKE @buscar
-              OR email LIKE @buscar)";
+              OR email LIKE @buscar)
+              AND (@soloSancionados = 0 OR " + TieneVencidos + @")";
 
         using MySqlConnection connection = new(connectionString);
         using MySqlCommand command = new(sql, connection);
         command.Parameters.AddWithValue("@buscar", paramBuscar);
+        command.Parameters.AddWithValue("@soloSancionados", soloSancionados);
 
         connection.Open();
         return Convert.ToInt32(command.ExecuteScalar());

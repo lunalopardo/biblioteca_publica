@@ -31,7 +31,7 @@ public class RepositorioAutor : RepositorioBase
     }
 
     // Listado paginado
-    public IList<Autor> ObtenerPaginado(string? buscar = null, int paginaNro = 1, int tamPagina = 5)
+    public IList<Autor> ObtenerPaginado(string? buscar = null, int paginaNro = 1, int tamPagina = 5, int? idNacionalidad = null)
     {
         var listado = new List<Autor>();
         int offset = Math.Max(0, (paginaNro - 1) * tamPagina);
@@ -45,12 +45,14 @@ public class RepositorioAutor : RepositorioBase
               AND (@buscar IS NULL OR a.nombre LIKE @buscar
               OR a.apellido LIKE @buscar
               OR CONCAT(a.nombre, ' ', a.apellido) LIKE @buscar)
+              AND (@idNacionalidad IS NULL OR a.id_nacionalidad = @idNacionalidad)
             ORDER BY a.id
             LIMIT @limit OFFSET @offset";
 
         using MySqlConnection connection = new(connectionString);
         using MySqlCommand command = new(sql, connection);
         command.Parameters.AddWithValue("@buscar", paramBuscar);
+        command.Parameters.AddWithValue("@idNacionalidad", (object?)idNacionalidad ?? DBNull.Value);
         command.Parameters.AddWithValue("@limit", tamPagina);
         command.Parameters.AddWithValue("@offset", offset);
 
@@ -64,7 +66,7 @@ public class RepositorioAutor : RepositorioBase
     }
 
     // Obtener la cantidad total de registros activos filtrados (para la paginación)
-    public int ObtenerCantidad(string? buscar = null)
+    public int ObtenerCantidad(string? buscar = null, int? idNacionalidad = null)
     {
         var paramBuscar = string.IsNullOrWhiteSpace(buscar) ? (object)DBNull.Value : $"%{buscar.Trim()}%";
 
@@ -74,11 +76,13 @@ public class RepositorioAutor : RepositorioBase
             WHERE activo = 1
               AND (@buscar IS NULL OR nombre LIKE @buscar
               OR apellido LIKE @buscar
-              OR CONCAT(nombre, ' ', apellido) LIKE @buscar)";
+              OR CONCAT(nombre, ' ', apellido) LIKE @buscar)
+              AND (@idNacionalidad IS NULL OR id_nacionalidad = @idNacionalidad)";
 
         using MySqlConnection connection = new(connectionString);
         using MySqlCommand command = new(sql, connection);
         command.Parameters.AddWithValue("@buscar", paramBuscar);
+        command.Parameters.AddWithValue("@idNacionalidad", (object?)idNacionalidad ?? DBNull.Value);
 
         connection.Open();
         return Convert.ToInt32(command.ExecuteScalar());

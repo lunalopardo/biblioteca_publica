@@ -22,10 +22,11 @@ public class AfiliadosController : Controller
     }
 
     // GET: Afiliados (con paginado)
-    public IActionResult Index(string? buscar, int pagina = 1)
+    public IActionResult Index(string? buscar, bool sancionados = false, int pagina = 1)
     {
-        var listado = _repositorioAfiliado.ObtenerPaginado(buscar, pagina, TamPagina);
-        this.CargarPaginado(buscar, pagina, _repositorioAfiliado.ObtenerCantidad(buscar), TamPagina);
+        var listado = _repositorioAfiliado.ObtenerPaginado(buscar, pagina, TamPagina, sancionados);
+        this.CargarPaginado(buscar, pagina, _repositorioAfiliado.ObtenerCantidad(buscar, sancionados), TamPagina);
+        ViewBag.Sancionados = sancionados;
 
         // clave = id del afiliado, valor = true si la suscripción de hoy está pagada
         ViewData["EstadoSuscripciones"] = _repositorioSuscripcion.ObtenerEstadoActual(listado.Select(a => a.Id));

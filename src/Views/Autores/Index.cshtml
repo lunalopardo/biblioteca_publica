@@ -2,6 +2,15 @@
 @{
     ViewData["Title"] = "Listado de Autores";
     string filtroActual = ViewData["FiltroActual"] as string ?? "";
+
+    var nacionalidades = ViewBag.Nacionalidades as List<Nacionalidad> ?? new List<Nacionalidad>();
+    int? idNacionalidad = ViewBag.IdNacionalidad;
+
+    // La paginación tiene que mantener el filtro en los links
+    if (idNacionalidad.HasValue)
+    {
+        ViewData["RutaPaginado"] = new Dictionary<string, string> { ["idNacionalidad"] = idNacionalidad.Value.ToString() };
+    }
 }
 
 <div class="page-container">
@@ -14,16 +23,24 @@
 
     <partial name="_Alertas" />
 
-    <form asp-action="Index" method="get" class="search-bar">
+    <form asp-action="Index" method="get" class="search-bar search-bar-filtros">
         <input type="text" name="buscar" value="@filtroActual" class="form-control"
                placeholder="Buscar por nombre o apellido..." />
+
+        <select name="idNacionalidad" class="form-control" aria-label="Nacionalidad">
+            <option value="">Todas las nacionalidades</option>
+            @foreach (var n in nacionalidades)
+            {
+                <option value="@n.Id" selected="@(n.Id == idNacionalidad)">@n.Nombre</option>
+            }
+        </select>
 
         <button type="submit" class="btn btn-primary">
             <span class="material-symbols-outlined icon-inline">search</span>
             <span>Buscar</span>
         </button>
 
-        @if (!string.IsNullOrEmpty(filtroActual))
+        @if (!string.IsNullOrEmpty(filtroActual) || idNacionalidad.HasValue)
         {
             <a asp-action="Index" class="btn btn-outline-secondary">Limpiar</a>
         }
@@ -43,7 +60,7 @@
                 @if (!Model.Any())
                 {
                     <tr>
-                        <td colspan="4" class="text-center py-3">No se encontraron autores registrados.</td>
+                        <td colspan="4" class="text-center py-3">No se encontraron autores.</td>
                     </tr>
                 }
                 else

@@ -2,6 +2,12 @@
 @{
     ViewData["Title"] = "Listado de Afiliados";
     string filtroActual = ViewData["FiltroActual"] as string ?? "";
+    bool sancionados = ViewBag.Sancionados ?? false;
+
+    if (sancionados)
+    {
+        ViewData["RutaPaginado"] = new Dictionary<string, string> { ["sancionados"] = "true" };
+    }
 
     // true si la suscripción vigente de hoy está pagada.
     // Si el id no está en el diccionario, no tiene suscripción vigente hoy.
@@ -19,16 +25,21 @@
 
     <partial name="_Alertas" />
 
-    <form asp-action="Index" method="get" class="search-bar">
+    <form asp-action="Index" method="get" class="search-bar search-bar-filtros">
         <input type="text" name="buscar" value="@filtroActual" class="form-control"
                placeholder="Buscar por nombre, apellido o email..." />
+
+        <select name="sancionados" class="form-control" aria-label="Sanción">
+            <option value="false">Todos los afiliados</option>
+            <option value="true" selected="@sancionados">Sancionados</option>
+        </select>
 
         <button type="submit" class="btn btn-primary">
             <span class="material-symbols-outlined icon-inline">search</span>
             <span>Buscar</span>
         </button>
 
-        @if (!string.IsNullOrEmpty(filtroActual))
+        @if (!string.IsNullOrEmpty(filtroActual) || sancionados)
         {
             <a asp-action="Index" class="btn btn-outline-secondary">Limpiar</a>
         }
@@ -51,7 +62,7 @@
                 @if (!Model.Any())
                 {
                     <tr>
-                        <td colspan="7" class="text-center py-3">No se encontraron afiliados registrados.</td>
+                        <td colspan="7" class="text-center py-3">No se encontraron afiliados.</td>
                     </tr>
                 }
                 else
