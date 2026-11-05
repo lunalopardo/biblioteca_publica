@@ -137,7 +137,7 @@ Si todo se cumple, el préstamo y el cambio de estado del ejemplar a `Prestado` 
    ```sql
    CREATE DATABASE biblioteca_db CHARACTER SET utf8mb4;
    ```
-   Luego importar `database/biblioteca_db.sql` (desde phpMyAdmin o por consola).
+   Luego importar [`database/biblioteca_db.sql`](database/biblioteca_db.sql) (desde phpMyAdmin o por consola).
 3. Configurar la cadena de conexión en `appsettings.json`:
    ```json
    "ConnectionStrings": {
