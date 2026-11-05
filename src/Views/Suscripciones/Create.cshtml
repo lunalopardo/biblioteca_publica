@@ -16,7 +16,7 @@
                 <option value="">-- Buscar afiliado por nombre, apellido o email --</option>
                 @if (afiliado != null)
                 {
-                    <option value="@afiliado.Id" selected>@afiliado.Apellido, @afiliado.Nombre - Email: @afiliado.Email</option>
+                    <option value="@afiliado.Id" selected>@afiliado.Nombre @afiliado.Apellido - Email: @afiliado.Email</option>
                 }
             </select>
             <span asp-validation-for="IdAfiliado" class="text-danger"></span>

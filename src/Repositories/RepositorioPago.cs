@@ -19,7 +19,8 @@ public class RepositorioPago : RepositorioBase
                                WHERE p.activo = 1
                                AND (@idAfiliado IS NULL OR p.id_afiliado = @idAfiliado)
                                AND (@buscar IS NULL OR p.concepto LIKE @buscar
-                                    OR a.nombre LIKE @buscar OR a.apellido LIKE @buscar)
+                                    OR a.nombre LIKE @buscar OR a.apellido LIKE @buscar
+                                    OR CONCAT(a.nombre, ' ', a.apellido) LIKE @buscar)
                                ORDER BY p.fecha_pago DESC, p.id DESC
                                LIMIT @limit OFFSET @offset";
 
@@ -51,7 +52,8 @@ public class RepositorioPago : RepositorioBase
                                WHERE p.activo = 1
                                AND (@idAfiliado IS NULL OR p.id_afiliado = @idAfiliado)
                                AND (@buscar IS NULL OR p.concepto LIKE @buscar
-                                    OR a.nombre LIKE @buscar OR a.apellido LIKE @buscar)";
+                                    OR a.nombre LIKE @buscar OR a.apellido LIKE @buscar
+                                    OR CONCAT(a.nombre, ' ', a.apellido) LIKE @buscar)";
 
         using MySqlConnection connection = new(connectionString);
         using MySqlCommand command = new(query, connection);

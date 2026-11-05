@@ -13,7 +13,7 @@ public class RepositorioAuditoria : RepositorioBase
                pr.creado_por_user_id AS id_usuario, '" + RegistroAuditoria.AccionRegistro + @"' AS accion,
                '" + RegistroAuditoria.OperacionPrestamo + @"' AS operacion, pr.id AS id_operacion,
                CONCAT(l.titulo, ' (Cód. #', e.codigo_inventario, ')') AS detalle,
-               CONCAT(a.apellido, ', ', a.nombre) AS afiliado
+               CONCAT(a.nombre, ' ', a.apellido) AS afiliado
         FROM prestamo pr
         INNER JOIN afiliado a ON pr.id_afiliado = a.id
         INNER JOIN ejemplar e ON pr.id_ejemplar = e.id
@@ -25,7 +25,7 @@ public class RepositorioAuditoria : RepositorioBase
                pr.devuelto_por_user_id, '" + RegistroAuditoria.AccionDevolucion + @"',
                '" + RegistroAuditoria.OperacionPrestamo + @"', pr.id,
                CONCAT(l.titulo, ' (Cód. #', e.codigo_inventario, ')'),
-               CONCAT(a.apellido, ', ', a.nombre)
+               CONCAT(a.nombre, ' ', a.apellido)
         FROM prestamo pr
         INNER JOIN afiliado a ON pr.id_afiliado = a.id
         INNER JOIN ejemplar e ON pr.id_ejemplar = e.id
@@ -38,7 +38,7 @@ public class RepositorioAuditoria : RepositorioBase
                pr.anulado_por_user_id, '" + RegistroAuditoria.AccionAnulacion + @"',
                '" + RegistroAuditoria.OperacionPrestamo + @"', pr.id,
                CONCAT(l.titulo, ' (Cód. #', e.codigo_inventario, ')'),
-               CONCAT(a.apellido, ', ', a.nombre)
+               CONCAT(a.nombre, ' ', a.apellido)
         FROM prestamo pr
         INNER JOIN afiliado a ON pr.id_afiliado = a.id
         INNER JOIN ejemplar e ON pr.id_ejemplar = e.id
@@ -51,7 +51,7 @@ public class RepositorioAuditoria : RepositorioBase
                p.creado_por_user_id, '" + RegistroAuditoria.AccionRegistro + @"',
                '" + RegistroAuditoria.OperacionPago + @"', p.id,
                CONCAT(p.concepto, ' ($', FORMAT(p.monto, 2, 'es_AR'), ')'),
-               CONCAT(a.apellido, ', ', a.nombre)
+               CONCAT(a.nombre, ' ', a.apellido)
         FROM pago p
         INNER JOIN afiliado a ON p.id_afiliado = a.id
 
@@ -61,7 +61,7 @@ public class RepositorioAuditoria : RepositorioBase
                p.anulado_por_user_id, '" + RegistroAuditoria.AccionAnulacion + @"',
                '" + RegistroAuditoria.OperacionPago + @"', p.id,
                CONCAT(p.concepto, ' ($', FORMAT(p.monto, 2, 'es_AR'), ')'),
-               CONCAT(a.apellido, ', ', a.nombre)
+               CONCAT(a.nombre, ' ', a.apellido)
         FROM pago p
         INNER JOIN afiliado a ON p.id_afiliado = a.id
         WHERE p.activo = 0 ";

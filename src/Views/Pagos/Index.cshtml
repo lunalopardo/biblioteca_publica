@@ -16,7 +16,7 @@
 
 <div class="page-container">
     <div class="page-header">
-        <h3>@(afiliado != null ? $"Pagos de {afiliado.Apellido}, {afiliado.Nombre}" : "Pagos")</h3>
+        <h3>@(afiliado != null ? $"Pagos de {afiliado.Nombre} {afiliado.Apellido}" : "Pagos")</h3>
     </div>
 
     <partial name="_Alertas" />
@@ -70,7 +70,7 @@
                             <td>@p.FechaPago.ToString("dd/MM/yyyy")</td>
                             @if (afiliado == null)
                             {
-                                <td class="fw-bold">@p.Afiliado?.Apellido, @p.Afiliado?.Nombre</td>
+                                <td class="fw-bold">@p.Afiliado?.Nombre @p.Afiliado?.Apellido</td>
                             }
                             <td>
                                 @if (p.Tipo == TipoPago.Cuota)

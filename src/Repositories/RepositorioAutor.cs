@@ -178,8 +178,7 @@ public class RepositorioAutor : RepositorioBase
         if (!string.IsNullOrWhiteSpace(buscar))
         {
             sql += @" AND (nombre LIKE @buscar OR apellido LIKE @buscar
-                           OR CONCAT(nombre, ' ', apellido) LIKE @buscar
-                           OR CONCAT(apellido, ', ', nombre) LIKE @buscar)";
+                           OR CONCAT(nombre, ' ', apellido) LIKE @buscar)";
         }
 
         sql += " ORDER BY apellido, nombre ASC LIMIT @limite";

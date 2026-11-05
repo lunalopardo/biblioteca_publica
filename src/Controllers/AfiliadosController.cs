@@ -117,7 +117,7 @@ public class AfiliadosController : Controller
         var afiliados = _repositorioAfiliado.ObtenerParaSelect(term, 10);
         var resultado = afiliados.Select(a => new {
             id = a.Id,
-            text = $"{a.Apellido}, {a.Nombre} - Email: {a.Email}"
+            text = $"{a.Nombre} {a.Apellido} - Email: {a.Email}"
         });
         return Json(resultado);
     }

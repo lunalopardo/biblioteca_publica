@@ -32,7 +32,7 @@
             <option value="">Todos los usuarios</option>
             @foreach (var u in usuarios)
             {
-                <option value="@u.Id" selected="@(u.Id == idUsuario)">@u.Apellido, @u.Nombre</option>
+                <option value="@u.Id" selected="@(u.Id == idUsuario)">@u.Nombre @u.Apellido</option>
             }
         </select>
 
@@ -83,7 +83,7 @@
                     {
                         <tr>
                             <td class="text-nowrap">@r.FechaTexto</td>
-                            <td class="fw-bold">@(r.Usuario ?? "Sin registro")</td>
+                            <td class="fw-bold td-wrap-sm">@(r.Usuario ?? "Sin registro")</td>
                             <td>
                                 @if (r.Accion == RegistroAuditoria.AccionAnulacion)
                                 {
@@ -100,7 +100,7 @@
                             </td>
                             <td class="text-nowrap">@r.Operacion #@r.IdOperacion</td>
                             <td class="td-wrap">@r.Detalle</td>
-                            <td>@r.Afiliado</td>
+                            <td class="td-wrap-sm">@r.Afiliado</td>
                         </tr>
                     }
                 }

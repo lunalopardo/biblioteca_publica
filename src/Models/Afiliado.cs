@@ -40,5 +40,5 @@ public class Afiliado
     public List<Pago>? Pagos { get; set; }
     public List<Prestamo>? Prestamos { get; set; }
 
-    public override string ToString() => $"{Apellido}, {Nombre}";
+    public override string ToString() => $"{Nombre} {Apellido}";
 }

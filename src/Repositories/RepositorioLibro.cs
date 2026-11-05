@@ -34,7 +34,8 @@ public class RepositorioLibro : RepositorioBase
 
     private const string Filtro = @"
         WHERE l.activo = 1
-          AND (@buscar IS NULL OR l.titulo LIKE @buscar OR a.nombre LIKE @buscar OR a.apellido LIKE @buscar)
+          AND (@buscar IS NULL OR l.titulo LIKE @buscar OR a.nombre LIKE @buscar OR a.apellido LIKE @buscar
+               OR CONCAT(a.nombre, ' ', a.apellido) LIKE @buscar)
           AND (@idAutor IS NULL OR l.id_autor = @idAutor)
           AND (@idioma IS NULL OR l.idioma = @idioma)
           AND (@dias IS NULL OR EXISTS(SELECT 1 " + PrestamosEnPeriodo + ")) ";

@@ -173,7 +173,7 @@ public class RepositorioAfiliado : RepositorioBase
 
         if (!string.IsNullOrWhiteSpace(buscar))
         {
-            sql += " AND (nombre LIKE @buscar OR apellido LIKE @buscar OR email LIKE @buscar)";
+            sql += " AND (nombre LIKE @buscar OR apellido LIKE @buscar OR CONCAT(nombre, ' ', apellido) LIKE @buscar OR email LIKE @buscar)";
         }
 
         sql += " ORDER BY apellido, nombre ASC LIMIT @limite";

@@ -30,7 +30,7 @@
 
             <div class="details-info">
                 <h2 class="details-title">@Model.Titulo</h2>
-                <p><strong>Autor:</strong> @(Model.Autor is null ? "Desconocido" : $"{Model.Autor.Apellido},        {Model.Autor.Nombre}")</p>
+                <p><strong>Autor:</strong> @(Model.Autor is null ? "Desconocido" : $"{Model.Autor.Nombre} {Model.Autor.Apellido}")</p>
                 <p><strong>Editorial:</strong> @(Model.Editorial?.Nombre ?? "No especificada")</p>
                 <p><strong>Idioma:</strong> @(string.IsNullOrWhiteSpace(Model.Idioma) ? "No especificado" :
                                         Model.Idioma)</p>
