@@ -13,7 +13,7 @@
         @if (afiliado != null)
         {
             <div>
-                <h3>Préstamos de @afiliado.Apellido, @afiliado.Nombre</h3>
+                <h3>Préstamos de @afiliado.Nombre @afiliado.Apellido</h3>
                 @if (afiliado.Sancionado)
                 {
                     <p class="page-subtitle">
@@ -77,7 +77,7 @@
                 </tr>
                 <template v-else>
                     <tr v-for="p in prestamos" :key="p.id">
-                        <td class="fw-bold">{{ p.afiliado.apellido }}, {{ p.afiliado.nombre }}</td>
+                        <td class="fw-bold td-wrap-sm">{{ p.afiliado.nombre }} {{ p.afiliado.apellido }}</td>
                         <td class="td-wrap">
                             {{ p.ejemplar.libro.titulo }}
                             <span class="text-muted small">(Cód. #{{ p.ejemplar.codigoInventario }})</span>
@@ -130,23 +130,16 @@
 
             <div class="form-group">
                 <label class="form-label">Afiliado</label>
-                <input type="text" v-model="busquedaAfiliado" v-on:input="buscarAfiliados" class="form-control mb-2"
-                       placeholder="Buscar por nombre, apellido o email..." />
-                <select v-model="form.idAfiliado" size="4" class="form-control">
-                    <option v-for="a in afiliados" :key="a.id" :value="a.id">{{ a.text }}</option>
+                <select v-select2="busquedaAfiliado" class="form-control">
+                    <option value=""></option>
                 </select>
-                <div v-if="afiliados.length === 0" class="form-hint">No se encontraron afiliados.</div>
             </div>
 
             <div class="form-group">
                 <label class="form-label">Ejemplar disponible</label>
-                <input type="text" v-model="busquedaEjemplar" v-on:input="buscarEjemplares" class="form-control mb-2"
-                       placeholder="Buscar por título o código..." />
-                <select v-model="form.idEjemplar" size="4" class="form-control">
-                    <option v-for="e in ejemplares" :key="e.id" :value="e.id">{{ e.text }}</option>
+                <select v-select2="busquedaEjemplar" class="form-control">
+                    <option value=""></option>
                 </select>
-                <div v-if="ejemplares.length === 0" class="form-hint">No hay ejemplares disponibles con esa búsqueda.
-                </div>
             </div>
 
             <div class="form-group">
@@ -190,6 +183,8 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/es.js"></script>
     <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js"></script>
     <script src="~/js/prestamos.js" asp-append-version="true"></script>
 }

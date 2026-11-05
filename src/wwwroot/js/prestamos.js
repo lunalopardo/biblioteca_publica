@@ -43,10 +43,16 @@ createApp({
         const guardando = ref(false);
         const errorModal = ref('');
         const form = reactive({ idAfiliado: null, idEjemplar: null, fechaDevolucionPactada: '' });
-        const busquedaAfiliado = ref('');
-        const busquedaEjemplar = ref('');
-        const afiliados = ref([]);
-        const ejemplares = ref([]);
+        const busquedaAfiliado = {
+            url: '/Afiliados/BuscarAsincrona',
+            placeholder: 'Escriba para buscar por nombre, apellido o email...',
+            alElegir: (id) => { form.idAfiliado = id; errorModal.value = ''; }
+        };
+        const busquedaEjemplar = {
+            url: '/Prestamos/BuscarEjemplares',
+            placeholder: 'Escriba para buscar por título o código...',
+            alElegir: (id) => { form.idEjemplar = id; errorModal.value = ''; }
+        };
 
         const confirmacion = ref(null);
 
@@ -88,27 +94,6 @@ createApp({
             cargarPrestamos();
         };
 
-        // Búsquedas
-        const buscarAfiliados = async () => {
-            form.idAfiliado = null;
-            try {
-                afiliados.value = await request(
-                    `/Afiliados/BuscarAsincrona?term=${encodeURIComponent(busquedaAfiliado.value)}`);
-            } catch (err) {
-                errorModal.value = err.message;
-            }
-        };
-
-        const buscarEjemplares = async () => {
-            form.idEjemplar = null;
-            try {
-                ejemplares.value = await request(
-                    `/Prestamos/BuscarEjemplares?term=${encodeURIComponent(busquedaEjemplar.value)}`);
-            } catch (err) {
-                errorModal.value = err.message;
-            }
-        };
-
         // CREAR
         const abrirModalCrear = () => {
             const pactada = new Date();
@@ -117,21 +102,16 @@ createApp({
             form.idAfiliado = null;
             form.idEjemplar = null;
             form.fechaDevolucionPactada = aISO(pactada);
-            busquedaAfiliado.value = '';
-            busquedaEjemplar.value = '';
             errorModal.value = '';
             mensaje.value = '';
             mostrarModal.value = true;
-
-            buscarAfiliados();
-            buscarEjemplares();
         };
 
         const cerrarModal = () => { mostrarModal.value = false; };
 
         const guardarPrestamo = async () => {
             if (!form.idAfiliado || !form.idEjemplar) {
-                errorModal.value = 'Seleccioná un afiliado y un ejemplar de las listas.';
+                errorModal.value = 'Seleccioná un afiliado y un ejemplar.';
                 return;
             }
 
@@ -185,15 +165,34 @@ createApp({
             prestamos, cargando, buscar, vencimiento, pagina, totalPaginas,
             mensaje, mensajeEsError,
             mostrarModal, guardando, errorModal, form,
-            busquedaAfiliado, busquedaEjemplar, afiliados, ejemplares,
+            busquedaAfiliado, busquedaEjemplar,
             confirmacion, manana,
             formatearFecha, buscarPrestamos, limpiarBusqueda, irAPagina,
-            buscarAfiliados, buscarEjemplares,
             abrirModalCrear, cerrarModal, guardarPrestamo,
             pedirConfirmacion, confirmar
         };
     }
 })
+    // v-select2: busca en el servidor mientras se escribe. Los selects están dentro del modal (v-if), así que se activa cuando Vue los crea
+    .directive('select2', {
+        mounted(el, { value }) {
+            $(el).select2({
+                language: 'es',
+                placeholder: value.placeholder,
+                minimumInputLength: 1,
+                width: '100%',
+                ajax: {
+                    delay: 250,
+                    dataType: 'json',
+                    url: (params) => `${value.url}?term=${encodeURIComponent(params.term || '')}`,
+                    processResults: (res) => ({ results: res })
+                }
+            }).on('change', () => value.alElegir(Number(el.value) || null));
+        },
+        unmounted(el) {
+            $(el).select2('destroy');
+        }
+    })
     // v-calendario: el input de fecha está dentro del modal (v-if), así que el calendario se activa cuando Vue lo crea
     .directive('calendario', {
         mounted(el) {
