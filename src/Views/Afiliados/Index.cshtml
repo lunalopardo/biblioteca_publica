@@ -49,8 +49,7 @@
         <table class="table-custom">
             <thead>
                 <tr>
-                    <th>Nombre y Apellido</th>
-                    <th>Email</th>
+                    <th>Afiliado</th>
                     <th>Teléfono</th>
                     <th>Fecha de Alta</th>
                     <th>Suscripción</th>
@@ -62,7 +61,7 @@
                 @if (!Model.Any())
                 {
                     <tr>
-                        <td colspan="7" class="text-center py-3">No se encontraron afiliados.</td>
+                        <td colspan="6" class="text-center py-3">No se encontraron afiliados.</td>
                     </tr>
                 }
                 else
@@ -70,8 +69,10 @@
                     @foreach (var afiliado in Model)
                     {
                         <tr>
-                            <td class="fw-bold text-nowrap">@afiliado.Apellido, @afiliado.Nombre</td>
-                            <td>@afiliado.Email</td>
+                            <td>
+                                <div class="fw-bold">@afiliado.Nombre @afiliado.Apellido</div>
+                                <div class="small text-muted">@afiliado.Email</div>
+                            </td>
                             <td>@(string.IsNullOrEmpty(afiliado.Telefono) ? "-" : afiliado.Telefono)</td>
                             <td>@afiliado.FechaAlta.ToString("dd/MM/yyyy")</td>
                             <td>
@@ -121,7 +122,7 @@
                                 </a>
                                 <button type="button" class="btn-icon btn-icon-danger" title="Eliminar" data-bs-toggle="modal"
                                         data-bs-target="#modalEliminar" data-id="@afiliado.Id"
-                                        data-nombre="@afiliado.Apellido, @afiliado.Nombre">
+                                        data-nombre="@afiliado.Nombre @afiliado.Apellido">
                                     <span class="material-symbols-outlined">delete</span>
                                 </button>
                             </td>

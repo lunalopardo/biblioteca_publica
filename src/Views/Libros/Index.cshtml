@@ -43,7 +43,7 @@
             <option value=""></option>
             @if (autorElegido != null)
             {
-                <option value="@autorElegido.Id" selected>@autorElegido.Apellido, @autorElegido.Nombre</option>
+                <option value="@autorElegido.Id" selected>@autorElegido.Nombre @autorElegido.Apellido</option>
             }
         </select>
 
@@ -83,8 +83,11 @@
                     <th>Autor</th>
                     <th>Editorial</th>
                     <th>Géneros</th>
-                    <th>Año</th>
-                    <th>Páginas</th>
+                    @if (!dias.HasValue)
+                    {
+                        <th>Año</th>
+                        <th>Páginas</th>
+                    }
                     <th class="text-center">Ejemplares</th>
                     @if (dias.HasValue)
                     {
@@ -97,7 +100,7 @@
                 @if (!Model.Any())
                 {
                     <tr>
-                        <td colspan="@(dias.HasValue ? 10 : 9)" class="text-center py-4 text-muted">No se encontraron libros.</td>
+                        <td colspan="@(dias.HasValue ? 8 : 9)" class="text-center py-4 text-muted">No se encontraron libros.</td>
                     </tr>
                 }
                 else
@@ -118,8 +121,8 @@
                                 }
                             </td>
                             <td class="fw-bold text-start">@libro.Titulo</td>
-                            <td>@(libro.Autor != null ? $"{libro.Autor.Apellido}, {libro.Autor.Nombre}" : "-")</td>
-                            <td>@(libro.Editorial != null ? libro.Editorial.Nombre : "-")</td>
+                            <td class="td-wrap-sm">@(libro.Autor != null ? $"{libro.Autor.Nombre} {libro.Autor.Apellido}" : "-")</td>
+                            <td class="td-wrap-sm">@(libro.Editorial != null ? libro.Editorial.Nombre : "-")</td>
                             <td>
                                 <div class="table-generos-container">
                                     @if (libro.Generos != null && libro.Generos.Any())
@@ -135,8 +138,11 @@
                                     }
                                 </div>
                             </td>
-                            <td>@(libro.AnioPublicacion?.ToString() ?? "-")</td>
-                            <td>@(libro.Paginas?.ToString() ?? "-")</td>
+                            @if (!dias.HasValue)
+                            {
+                                <td>@(libro.AnioPublicacion?.ToString() ?? "-")</td>
+                                <td>@(libro.Paginas?.ToString() ?? "-")</td>
+                            }
                             <td class="text-center">
                                 <span class="badge-ejemplares">
                                     @(libro.Ejemplares != null ? libro.Ejemplares.Count(e => e.Activo) : 0)

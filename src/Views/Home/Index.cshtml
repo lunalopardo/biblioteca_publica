@@ -75,13 +75,13 @@
                             <span class="material-symbols-outlined action-arrow">chevron_right</span>
                         </a>
 
-                        <a asp-controller="Afiliados" asp-action="Index" class="quick-action-row">
+                        <a asp-controller="Suscripciones" asp-action="Activas" class="quick-action-row">
                             <div class="action-icon">
                                 <span class="material-symbols-outlined">workspace_premium</span>
                             </div>
                             <div class="action-info">
                                 <span class="action-name">Gestionar suscripciones</span>
-                                <span class="action-desc">Elegí un afiliado para crear su suscripción y registrar el pago de
+                                <span class="action-desc">Ver las suscripciones activas, crear nuevas y registrar el pago de
                                     la cuota</span>
                                 </div>
                                 <span class="material-symbols-outlined action-arrow">chevron_right</span>
@@ -135,7 +135,7 @@
                                         </div>
                                             <div class="recent-info">
                                                 <span class="recent-title">@libro.Titulo</span>
-                                                <span class="recent-subtitle">@(libro.Autor != null ? $"{libro.Autor.Apellido},                  {libro.Autor.Nombre}" : "Autor desconocido")</span>
+                                                <span class="recent-subtitle">@(libro.Autor != null ? $"{libro.Autor.Nombre} {libro.Autor.Apellido}" : "Autor desconocido")</span>
                                             </div>
                                             <span class="material-symbols-outlined recent-arrow">chevron_right</span>
                                         </a>
