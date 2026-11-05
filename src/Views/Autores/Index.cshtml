@@ -75,12 +75,12 @@
                                 }
                                 else
                                 {
-                                    <div class="avatar-placeholder-sm">
-                                        @(string.IsNullOrEmpty(autor.Nombre) ? "A" : autor.Nombre.Substring(0, 1).ToUpper())
+                                    <div class="avatar-placeholder-sm" title="Sin foto">
+                                        <span class="material-symbols-outlined">history_edu</span>
                                     </div>
                                 }
                             </td>
-                            <td class="fw-bold">@autor.Apellido, @autor.Nombre</td>
+                            <td class="fw-bold">@autor.Nombre @autor.Apellido</td>
                             <td>@(string.IsNullOrEmpty(autor.NacionalidadNombre) ? "-" : autor.NacionalidadNombre)</td>
 
                             <td class="actions-cell">
@@ -94,7 +94,7 @@
                                 {
                                     <button type="button" class="btn-icon btn-icon-danger" title="Eliminar" data-bs-toggle="modal"
                                             data-bs-target="#modalEliminar" data-id="@autor.Id"
-                                            data-nombre="@autor.Apellido, @autor.Nombre">
+                                            data-nombre="@autor.Nombre @autor.Apellido">
                                         <span class="material-symbols-outlined">delete</span>
                                     </button>
                                 }

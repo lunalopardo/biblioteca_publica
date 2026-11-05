@@ -161,6 +161,10 @@ public class UsuariosController : Controller
         {
             modelo.Avatar = await Archivos.GuardarImagenAsync(modelo.AvatarFile, _environment, CarpetaAvatares);
         }
+        else if (modelo.EliminarAvatar)
+        {
+            modelo.Avatar = null;
+        }
         else
         {
             modelo.Avatar = avatarAnterior;

@@ -18,6 +18,11 @@
 
         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
+        @await Html.PartialAsync("_SelectorImagen", new SelectorImagen
+        {
+            Titulo = "Foto de Perfil", Nombre = "Foto", Campo = "AvatarFile", CampoEliminar = "EliminarAvatar", Icono = "person"
+        })
+
         <div class="form-group">
             <label asp-for="Nombre" class="form-label">Nombre</label>
             <input asp-for="Nombre" class="form-control" required />
@@ -53,12 +58,6 @@
             <select asp-for="Rol" class="form-select" asp-items="Html.GetEnumSelectList<EnRoles>()">
             </select>
             <span asp-validation-for="Rol" class="mensaje-error"></span>
-        </div>
-
-        <div class="form-group">
-            <label asp-for="AvatarFile" class="form-label">Foto de Perfil (Opcional)</label>
-            <input asp-for="AvatarFile" type="file" accept=".jpg,.jpeg,.png,.webp" class="form-control" />
-            <span asp-validation-for="AvatarFile" class="mensaje-error"></span>
         </div>
 
         <div class="form-actions">

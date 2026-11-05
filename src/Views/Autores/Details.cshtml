@@ -16,15 +16,15 @@
         }
         else
         {
-            <div class="avatar-placeholder-lg">
-                @(string.IsNullOrEmpty(Model.Nombre) ? "A" : Model.Nombre.Substring(0, 1).ToUpper())
+            <div class="avatar-placeholder-lg" title="Sin foto">
+                <span class="material-symbols-outlined">history_edu</span>
             </div>
         }
     </div>
 
     <div class="form-group">
         <label class="form-label">Nombre y Apellido</label>
-        <div class="form-control-view">@Model.Apellido, @Model.Nombre</div>
+        <div class="form-control-view">@Model.Nombre @Model.Apellido</div>
     </div>
 
     <div class="form-group">

@@ -10,23 +10,11 @@
     </div>
 
     <form asp-action="Create" method="post" enctype="multipart/form-data">
-        <div class="form-group text-center mb-4">
-            <label class="form-label d-block">Portada del Libro</label>
-
-            <img id="imgPreview" src="#" alt="Portada" class="mb-3 is-hidden book-cover-preview" />
-
-            <div id="portadaPlaceholder" class="text-muted mb-3 book-preview-placeholder">
-                Ninguna imagen seleccionada
-            </div>
-
-            <div>
-                <label for="PortadaFile" class="btn btn-outline-secondary btn-sm">
-                    Seleccionar Portada
-                </label>
-                <input asp-for="PortadaFile" type="file" accept=".jpg,.jpeg,.png,.webp" class="is-hidden" id="PortadaFile" />
-            </div>
-            <span asp-validation-for="PortadaFile" class="mensaje-error"></span>
-        </div>
+        @await Html.PartialAsync("_SelectorImagen", new SelectorImagen
+        {
+            Titulo = "Portada del Libro", Nombre = "Portada", Campo = "PortadaFile", CampoEliminar = "EliminarPortada", Icono = "menu_book",
+            EsPortada = true
+        })
 
         <div class="form-group">
             <label asp-for="Titulo" class="form-label"></label>

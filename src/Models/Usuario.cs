@@ -41,6 +41,8 @@ public class Usuario
     [Display(Name = "Avatar")]
     public IFormFile? AvatarFile { get; set; }
 
+    public bool EliminarAvatar { get; set; }
+
     [Required(ErrorMessage = "El rol es obligatorio.")]
     public int Rol { get; set; } = (int)EnRoles.Empleado;
 
@@ -50,5 +52,5 @@ public class Usuario
     [Display(Name = "Activo")]
     public bool Activo { get; set; } = true;
 
-    public override string ToString() => $"{Apellido}, {Nombre} ({NombreUsuario})";
+    public override string ToString() => $"{Nombre} {Apellido} ({NombreUsuario})";
 }

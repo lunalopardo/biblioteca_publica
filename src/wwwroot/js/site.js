@@ -18,6 +18,46 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('input[type="date"]').forEach(input => activarCalendario(input));
 });
 
+// Selector de imagen de los formularios (Views/Shared/_SelectorImagen.cshtml)
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-selector-imagen]').forEach(selector => {
+        const input = selector.querySelector('input[type="file"]');
+        if (!input) return;
+
+        const vistaPrevia = selector.querySelector('[data-vista-previa]');
+        const sinImagen = selector.querySelector('[data-sin-imagen]');
+        const botonElegir = selector.querySelector('[data-boton-elegir]');
+        const botonQuitar = selector.querySelector('[data-boton-quitar]');
+        const eliminar = selector.querySelector('[data-eliminar]');
+
+        const mostrar = (src) => {
+            vistaPrevia.classList.toggle('is-hidden', !src);
+            sinImagen.classList.toggle('is-hidden', !!src);
+            botonQuitar.classList.toggle('is-hidden', !src);
+            botonElegir.textContent = src ? selector.dataset.textoCambiar : selector.dataset.textoElegir;
+
+            if (src) vistaPrevia.src = src;
+            else vistaPrevia.removeAttribute('src');
+        };
+
+        input.addEventListener('change', function () {
+            if (!input.files || !input.files[0]) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => mostrar(e.target.result);
+            reader.readAsDataURL(input.files[0]);
+            eliminar.value = 'false';
+        });
+
+        // La imagen se borra recién al guardar el formulario
+        botonQuitar.addEventListener('click', function () {
+            input.value = '';
+            eliminar.value = 'true';
+            mostrar(null);
+        });
+    });
+});
+
 // Devuelve una promesa: true si aceptó, false si canceló o cerró el modal.
 function confirmar(mensaje, { titulo = 'Confirmar acción', textoBoton = 'Confirmar', tipo = 'danger' } = {}) {
     const elemento = document.getElementById('modalConfirmacion');

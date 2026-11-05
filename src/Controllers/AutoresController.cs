@@ -115,6 +115,10 @@ public class AutoresController : Controller
         {
             autor.Foto = await Archivos.GuardarImagenAsync(autor.FotoFile, _environment, CarpetaFotos);
         }
+        else if (autor.EliminarFoto)
+        {
+            autor.Foto = null;
+        }
         else
         {
             autor.Foto = fotoAnterior;
@@ -150,7 +154,7 @@ public class AutoresController : Controller
         var resultado = _repositorioAutor.ObtenerParaSelect(q).Select(a => new
         {
             id = a.Id,
-            text = $"{a.Apellido}, {a.Nombre}"
+            text = $"{a.Nombre} {a.Apellido}"
         });
 
         return Json(resultado);

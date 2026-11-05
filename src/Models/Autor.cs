@@ -30,11 +30,13 @@ public class Autor
     [Display(Name = "Foto del autor")]
     public IFormFile? FotoFile { get; set; }
 
+    public bool EliminarFoto { get; set; }
+
     [Display(Name = "Activo")]
     public bool Activo { get; set; } = true;
 
     // Propiedad poblada manualmente
     public List<Libro>? Libros { get; set; }
 
-    public override string ToString() => $"{Apellido}, {Nombre}";
+    public override string ToString() => $"{Nombre} {Apellido}";
 }

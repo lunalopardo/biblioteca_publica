@@ -140,11 +140,11 @@
                                         }
                                         else
                                         {
-                                            <div class="rounded-circle bg-dark text-white d-flex align-items-center justify-content-center fw-bold navbar-avatar">
-                                                @(string.IsNullOrEmpty(fullName) ? "U" : fullName.Substring(0, 1).ToUpper())
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center navbar-avatar navbar-avatar-vacio" title="Sin foto">
+                                                <span class="material-symbols-outlined">person</span>
                                             </div>
                                         }
-                                        <span class="fw-semibold small d-none d-xl-inline">@fullName</span>
+                                        <span class="fw-semibold small d-none d-xxl-inline">@fullName</span>
                                     </a>
                                 </li>
                                 <li class="nav-item">

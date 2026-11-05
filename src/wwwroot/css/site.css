@@ -473,9 +473,14 @@ a:hover {
   font-size: 13px;
 }
 
-/* Inicial del usuario cuando no tiene avatar */
-.navbar-avatar.bg-dark {
-  background: linear-gradient(135deg, var(--palette-orange), var(--palette-brick)) !important;
+/* Usuario sin avatar */
+.navbar-avatar-vacio {
+  background-color: var(--bg-muted);
+  color: var(--text-muted);
+}
+
+.navbar-avatar-vacio .material-symbols-outlined {
+  font-size: 1.25rem;
 }
 
 .navbar-logout-icon {

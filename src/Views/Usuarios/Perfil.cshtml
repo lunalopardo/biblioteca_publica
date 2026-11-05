@@ -25,26 +25,11 @@
     <form asp-controller="Usuarios" asp-action="Perfil" asp-route-id="@Model.Id" method="post"
           enctype="multipart/form-data">
 
-        <div class="avatar-profile-box">
-            <img id="imgPreview" src="@(string.IsNullOrEmpty(Model.Avatar) ? "#" : Model.Avatar)"
-                 class="avatar-img-lg @(string.IsNullOrEmpty(Model.Avatar) ? "is-hidden" : "")" alt="Avatar" />
-
-            <div id="avatarPlaceholder"
-                 class="avatar-placeholder-lg @(!string.IsNullOrEmpty(Model.Avatar) ? "is-hidden" : "")">
-                @(string.IsNullOrEmpty(Model.Nombre) ? "U" : Model.Nombre.Substring(0, 1).ToUpper())
-            </div>
-
-            @if (Model.Activo)
-            {
-                <div>
-                    <label for="avatarFile" class="btn btn-outline-secondary btn-sm">
-                        Cambiar Foto de Perfil
-                    </label>
-                    <input type="file" id="avatarFile" name="avatarFile" accept=".jpg,.jpeg,.png,.webp" class="is-hidden"
-                           onchange="previewImage(event)">
-                </div>
-            }
-        </div>
+        @await Html.PartialAsync("_SelectorImagen", new SelectorImagen
+        {
+            Titulo = "Foto de Perfil", Nombre = "Foto", Campo = "AvatarFile", CampoEliminar = "EliminarAvatar", Icono = "person",
+            ImagenActual = Model.Avatar, Editable = Model.Activo
+        })
 
         <div class="form-group">
             <label class="form-label">Nombre de Usuario</label>
@@ -132,28 +117,3 @@
         }
     }
 </div>
-
-@section Scripts {
-    <script>
-        function previewImage(event) {
-            const input = event.target;
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-
-                reader.onload = function (e) {
-                    const imgPreview = document.getElementById('imgPreview');
-                    const placeholder = document.getElementById('avatarPlaceholder');
-
-                    imgPreview.src = e.target.result;
-                    imgPreview.classList.remove('is-hidden');
-
-                    if (placeholder) {
-                        placeholder.classList.add('is-hidden');
-                    }
-                };
-
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-    </script>
-}

@@ -17,6 +17,11 @@
 
         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
+        @await Html.PartialAsync("_SelectorImagen", new SelectorImagen
+        {
+            Titulo = "Foto del Autor", Nombre = "Foto", Campo = "FotoFile", CampoEliminar = "EliminarFoto", Icono = "history_edu"
+        })
+
         <div class="form-group">
             <label asp-for="Nombre" class="form-label">Nombre</label>
             <input asp-for="Nombre" class="form-control" required />
@@ -42,12 +47,6 @@
             <label asp-for="Biografia" class="form-label">Biografía</label>
             <textarea asp-for="Biografia" class="form-control" rows="3"></textarea>
             <span asp-validation-for="Biografia" class="mensaje-error"></span>
-        </div>
-
-        <div class="form-group">
-            <label for="fotoFile" class="form-label">Foto del Autor (Opcional)</label>
-            <input type="file" id="fotoFile" name="fotoFile" accept=".jpg,.jpeg,.png,.webp" class="form-control" />
-            <span asp-validation-for="FotoFile" class="mensaje-error"></span>
         </div>
 
         <div class="form-actions">

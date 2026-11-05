@@ -11,34 +11,12 @@
 
     <form asp-action="Edit" method="post" enctype="multipart/form-data">
         <input type="hidden" asp-for="Id" />
-        <input type="hidden" asp-for="EliminarPortada" id="EliminarPortada" />
 
-        <div class="form-group text-center mb-4">
-            <label class="form-label d-block">Portada del Libro</label>
-
-            <img id="imgPreview" src="@(string.IsNullOrEmpty(Model.Portada) ? "#" : Model.Portada)" alt="Portada"
-                 class="mb-3 book-cover-preview @(string.IsNullOrEmpty(Model.Portada) ? "is-hidden" : "")" />
-
-            <div id="portadaPlaceholder"
-                 class="text-muted mb-3 book-preview-placeholder @(!string.IsNullOrEmpty(Model.Portada) ? "is-hidden" : "")">
-                Sin portada registrada
-            </div>
-
-            <div class="d-flex gap-2 justify-content-center">
-                <label for="PortadaFile" class="btn btn-outline-secondary btn-sm">
-                    Cambiar Portada
-                </label>
-                <input asp-for="PortadaFile" type="file" accept=".jpg,.jpeg,.png,.webp" class="is-hidden" id="PortadaFile" />
-
-                @if (!string.IsNullOrEmpty(Model.Portada))
-                {
-                    <button type="button" id="btnQuitarPortada" class="btn btn-outline-danger btn-sm">
-                        Quitar Portada
-                    </button>
-                }
-            </div>
-            <span asp-validation-for="PortadaFile" class="mensaje-error"></span>
-        </div>
+        @await Html.PartialAsync("_SelectorImagen", new SelectorImagen
+        {
+            Titulo = "Portada del Libro", Nombre = "Portada", Campo = "PortadaFile", CampoEliminar = "EliminarPortada", Icono = "menu_book",
+            ImagenActual = Model.Portada, EsPortada = true
+        })
 
         <div class="form-group">
             <label asp-for="Titulo" class="form-label"></label>
@@ -52,7 +30,7 @@
                 <select asp-for="IdAutor" class="form-control" id="IdAutor" required>
                     @if (Model.Autor != null)
                     {
-                        <option value="@Model.IdAutor" selected>@Model.Autor.Apellido, @Model.Autor.Nombre</option>
+                        <option value="@Model.IdAutor" selected>@Model.Autor.Nombre @Model.Autor.Apellido</option>
                     }
                 </select>
                 <span asp-validation-for="IdAutor" class="mensaje-error"></span>

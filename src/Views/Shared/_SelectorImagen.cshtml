@@ -1,0 +1,38 @@
+@model BibliotecaPublica.Models.SelectorImagen
+@{
+    bool tieneImagen = !string.IsNullOrEmpty(Model.ImagenActual);
+    string claseImagen = Model.EsPortada ? "book-cover-preview" : "avatar-img-lg";
+    string clasePlaceholder = Model.EsPortada ? "book-preview-placeholder" : "avatar-placeholder-lg";
+    string textoElegir = $"Seleccionar {Model.Nombre}";
+    string textoCambiar = $"Cambiar {Model.Nombre}";
+}
+
+<div class="avatar-profile-box" data-selector-imagen data-texto-elegir="@textoElegir"
+     data-texto-cambiar="@textoCambiar">
+    <span class="form-label mb-0">@Model.Titulo</span>
+
+    <img src="@Model.ImagenActual" alt="@Model.Titulo" data-vista-previa
+         class="@claseImagen @(tieneImagen ? "" : "is-hidden")" />
+
+    <div data-sin-imagen class="@clasePlaceholder @(tieneImagen ? "is-hidden" : "")" title="Sin imagen">
+        <span class="material-symbols-outlined">@Model.Icono</span>
+    </div>
+
+    @if (Model.Editable)
+    {
+        <div class="d-flex flex-wrap gap-2 justify-content-center">
+            <label for="@Model.Campo" class="btn btn-outline-secondary btn-sm mb-0" data-boton-elegir>
+                @(tieneImagen ? textoCambiar : textoElegir)
+            </label>
+            <input type="file" id="@Model.Campo" name="@Model.Campo" accept=".jpg,.jpeg,.png,.webp" class="is-hidden" />
+
+            <button type="button" data-boton-quitar class="btn btn-outline-danger btn-sm @(tieneImagen ? "" : "is-hidden")">
+                Quitar @Model.Nombre
+            </button>
+        </div>
+
+        <input type="hidden" name="@Model.CampoEliminar" value="false" data-eliminar />
+    }
+
+    @Html.ValidationMessage(Model.Campo, new { @class = "mensaje-error" })
+</div>

@@ -265,6 +265,11 @@ textarea.form-control {
 }
 
 /* Filas de "no hay resultados" o "cargando" */
+.table-custom td.td-wrap-sm {
+  min-width: 7rem;
+  white-space: normal;
+}
+
 .table-custom td[colspan] {
   white-space: normal;
 }
@@ -472,6 +477,25 @@ textarea.form-control {
   justify-content: center;
   flex-shrink: 0;
   border-radius: 50%;
+}
+
+/* Sin imagen */
+.avatar-placeholder-sm,
+.avatar-placeholder-lg {
+  background-color: var(--bg-muted);
+  color: var(--text-muted);
+}
+
+.avatar-placeholder-sm .material-symbols-outlined {
+  font-size: 1.25rem;
+}
+
+.avatar-placeholder-lg .material-symbols-outlined {
+  font-size: 3rem;
+}
+
+/* Iniciales del afiliado (no tiene foto) */
+.avatar-placeholder-md {
   background: linear-gradient(135deg, var(--palette-orange), var(--palette-brick));
   color: #ffffff;
   font-weight: 700;
@@ -481,7 +505,6 @@ textarea.form-control {
 .avatar-placeholder-sm {
   width: 38px;
   height: 38px;
-  font-size: 0.9rem;
 }
 
 .avatar-placeholder-md {
@@ -496,6 +519,9 @@ textarea.form-control {
   width: 110px !important;
   height: 110px !important;
   border-radius: 50% !important;
+}
+
+.avatar-img-lg {
   border: 3px solid var(--color-accent-soft);
   box-shadow: var(--shadow-md);
 }
@@ -503,10 +529,6 @@ textarea.form-control {
 .avatar-img-lg {
   display: block;
   object-fit: cover !important;
-}
-
-.avatar-placeholder-lg {
-  font-size: 2.5rem;
 }
 
 .avatar-profile-box {
@@ -711,7 +733,6 @@ textarea.form-control {
   display: block;
   width: 100px;
   height: 140px;
-  margin: 0 auto 1rem;
   object-fit: cover;
   border: 1px solid var(--border-color);
   border-radius: 4px;
@@ -719,7 +740,18 @@ textarea.form-control {
 }
 
 .book-preview-placeholder {
-  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 140px;
+  background-color: var(--bg-muted);
+  color: var(--text-muted);
+  border-radius: 4px;
+}
+
+.book-preview-placeholder .material-symbols-outlined {
+  font-size: 2.5rem;
 }
 
 .book-details-layout {
